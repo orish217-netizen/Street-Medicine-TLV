@@ -1,0 +1,2245 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Street Med">
+  <meta name="theme-color" content="#1a3a5c">
+  <title>Street Medicine</title>
+  <link rel="manifest" href="manifest.json">
+  <link rel="apple-touch-icon" href="apple-touch-icon.png">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+  <style>
+    :root {
+      --primary:    #1a3a5c;
+      --accent:     #2ecc71;
+      --accent-dk:  #27ae60;
+      --danger:     #e74c3c;
+      --warn:       #f39c12;
+      --bg:         #f2f2f7;
+      --card:       #ffffff;
+      --text:       #1c1c1e;
+      --text-light: #6e6e73;
+      --border:     #d1d1d6;
+      --radius:     13px;
+      --safe-top:    env(safe-area-inset-top, 0px);
+      --safe-bottom: env(safe-area-inset-bottom, 0px);
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100dvh;
+      overflow-x: hidden;
+    }
+
+    /* ── PAGES ── */
+    .page { display: none; flex-direction: column; min-height: 100dvh; }
+    .page.active { display: flex; }
+
+    /* ── HEADER ── */
+    .hdr {
+      background: var(--primary);
+      color: #fff;
+      padding: calc(var(--safe-top) + 14px) 16px 14px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      box-shadow: 0 1px 0 rgba(0,0,0,0.15);
+    }
+    .hdr h1 { font-size: 19px; font-weight: 700; flex: 1; line-height: 1.2; }
+    .hdr-btn {
+      background: none; border: none; color: #fff;
+      font-size: 26px; cursor: pointer; padding: 2px 4px; line-height: 1;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .hdr-btn-text {
+      background: none; border: none; color: rgba(255,255,255,0.85);
+      font-size: 14px; cursor: pointer; padding: 4px 0; font-weight: 600;
+    }
+
+    /* ── SCROLL CONTENT ── */
+    .content {
+      flex: 1;
+      overflow-y: auto;
+      padding: 16px;
+      padding-bottom: calc(var(--safe-bottom) + 90px);
+    }
+
+    /* ── BUTTONS ── */
+    .btn {
+      display: block; width: 100%;
+      padding: 14px 20px; border: none; border-radius: var(--radius);
+      font-size: 16px; font-weight: 600; cursor: pointer;
+      text-align: center; transition: opacity .12s; font-family: inherit;
+    }
+    .btn:active { opacity: .72; }
+    .btn-primary  { background: var(--primary); color: #fff; }
+    .btn-accent   { background: var(--accent);  color: #fff; }
+    .btn-danger   { background: var(--danger);  color: #fff; }
+    .btn-outline  { background: transparent; color: var(--primary); border: 2px solid var(--primary); }
+    .btn-gray     { background: var(--bg); color: var(--text); border: 1px solid var(--border); }
+    .btn-sm       { padding: 8px 14px; font-size: 14px; display: inline-block; width: auto; }
+
+    /* ── CARDS ── */
+    .card {
+      background: var(--card);
+      border-radius: var(--radius);
+      padding: 14px 16px;
+      margin-bottom: 10px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.07);
+    }
+    .card-row { display: flex; justify-content: space-between; align-items: center; cursor: pointer; gap: 12px; }
+    .card-title { font-weight: 700; font-size: 16px; }
+    .card-sub { color: var(--text-light); font-size: 13px; margin-top: 3px; line-height: 1.4; }
+    .card-arrow { color: var(--border); font-size: 20px; flex-shrink: 0; }
+
+    /* ── SECTION HEADERS ── */
+    .section-hdr {
+      display: flex; justify-content: space-between; align-items: center;
+      margin: 18px 0 8px;
+    }
+    .section-hdr h2 { font-size: 17px; font-weight: 700; }
+
+    /* ── FORM SECTIONS ── */
+    .form-section {
+      background: var(--card);
+      border-radius: var(--radius);
+      overflow: hidden;
+      margin-bottom: 16px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.07);
+    }
+    .form-section-title {
+      background: var(--primary);
+      color: #fff;
+      padding: 9px 16px;
+      font-size: 12px; font-weight: 700;
+      letter-spacing: 0.6px; text-transform: uppercase;
+    }
+    .form-field {
+      padding: 11px 16px;
+      border-bottom: 1px solid var(--border);
+    }
+    .form-field:last-child { border-bottom: none; }
+    .form-field label {
+      display: block; font-size: 11px; font-weight: 700;
+      color: var(--text-light); text-transform: uppercase;
+      letter-spacing: 0.4px; margin-bottom: 4px;
+    }
+    .form-field input,
+    .form-field textarea,
+    .form-field select {
+      width: 100%; border: none; outline: none;
+      font-size: 16px; color: var(--text);
+      font-family: inherit; background: transparent;
+      -webkit-appearance: none;
+    }
+    .form-field textarea { resize: none; min-height: 72px; line-height: 1.5; }
+
+    /* Vitals 2-col grid */
+    .vitals-grid {
+      display: grid; grid-template-columns: 1fr 1fr;
+    }
+    .vc {
+      padding: 11px 16px;
+      border-bottom: 1px solid var(--border);
+      border-right: 1px solid var(--border);
+    }
+    .vc:nth-child(2n) { border-right: none; }
+    .vc:nth-last-child(-n+2) { border-bottom: none; }
+    .vc label {
+      display: block; font-size: 11px; font-weight: 700;
+      color: var(--text-light); text-transform: uppercase;
+      letter-spacing: 0.4px; margin-bottom: 3px;
+    }
+    .vc input {
+      width: 100%; border: none; outline: none;
+      font-size: 16px; font-family: inherit; background: transparent;
+    }
+
+    /* Checkboxes */
+    .chk-row {
+      display: flex; align-items: flex-start;
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--border);
+      gap: 12px; cursor: pointer;
+    }
+    .chk-row:last-child { border-bottom: none; }
+    .chk-row input[type="checkbox"] {
+      width: 20px; height: 20px; cursor: pointer; flex-shrink: 0; margin-top: 1px;
+      accent-color: var(--accent);
+    }
+    .chk-row .chk-label { font-size: 15px; flex: 1; cursor: pointer; }
+    .sub-input-wrap { margin-top: 8px; }
+    .sub-input {
+      width: 100%; border: none; border-bottom: 1px solid var(--border);
+      padding: 4px 0; font-size: 14px; font-family: inherit; background: transparent; outline: none;
+    }
+
+    /* Photos */
+    .photos-grid {
+      display: grid; grid-template-columns: repeat(3, 1fr);
+      gap: 8px; padding: 12px 16px;
+    }
+    .photo-thumb {
+      aspect-ratio: 1; border-radius: 8px; overflow: hidden;
+      position: relative; background: var(--bg);
+    }
+    .photo-thumb img { width: 100%; height: 100%; object-fit: cover; }
+    .photo-del {
+      position: absolute; top: 3px; right: 3px;
+      background: rgba(0,0,0,0.55); color: #fff;
+      border: none; border-radius: 50%;
+      width: 20px; height: 20px; font-size: 13px;
+      cursor: pointer; display: flex; align-items: center; justify-content: center;
+    }
+    .photo-add {
+      aspect-ratio: 1; border: 2px dashed var(--border);
+      border-radius: 8px; display: flex;
+      flex-direction: column; align-items: center;
+      justify-content: center; cursor: pointer;
+      color: var(--text-light); font-size: 22px;
+      background: var(--bg); gap: 4px;
+    }
+    .photo-add span.lbl { font-size: 10px; font-weight: 600; }
+
+    /* Sticky footer */
+    .s-footer {
+      position: sticky; bottom: 0;
+      background: var(--card);
+      padding: 10px 16px calc(var(--safe-bottom) + 10px);
+      box-shadow: 0 -2px 10px rgba(0,0,0,0.09);
+      display: flex; gap: 10px;
+    }
+    .s-footer .btn { flex: 1; }
+
+    /* Badge */
+    .badge {
+      display: inline-block; border-radius: 10px;
+      padding: 2px 8px; font-size: 12px; font-weight: 700;
+    }
+    .badge-green { background: rgba(46,204,113,.15); color: var(--accent-dk); }
+    .badge-gray  { background: rgba(110,110,115,.12); color: var(--text-light); }
+
+    /* FAB */
+    .fab {
+      position: fixed; bottom: calc(var(--safe-bottom) + 22px); right: 20px;
+      width: 58px; height: 58px; border-radius: 29px;
+      background: var(--accent); color: #fff;
+      font-size: 30px; border: none; cursor: pointer;
+      box-shadow: 0 4px 18px rgba(46,204,113,.45);
+      display: flex; align-items: center; justify-content: center;
+      z-index: 100; transition: transform .12s;
+    }
+    .fab:active { transform: scale(.92); }
+
+    /* Empty state */
+    .empty { text-align: center; padding: 60px 20px; color: var(--text-light); }
+    .empty .icon { font-size: 48px; margin-bottom: 12px; }
+    .empty p { font-size: 15px; line-height: 1.5; }
+
+    /* Modal overlay */
+    .overlay {
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,.48);
+      display: flex; align-items: flex-end;
+      z-index: 200;
+      opacity: 0; pointer-events: none; transition: opacity .2s;
+    }
+    .overlay.open { opacity: 1; pointer-events: all; }
+    .modal-sheet {
+      background: var(--card);
+      border-radius: 20px 20px 0 0;
+      padding: 20px 20px calc(var(--safe-bottom) + 20px);
+      width: 100%;
+    }
+    .modal-sheet h3 { font-size: 18px; font-weight: 700; margin-bottom: 16px; }
+    .modal-sheet .field-wrap {
+      border: 1px solid var(--border); border-radius: 10px;
+      padding: 10px 14px; margin-bottom: 12px;
+    }
+    .modal-sheet .field-wrap label {
+      display: block; font-size: 11px; font-weight: 700;
+      color: var(--text-light); text-transform: uppercase;
+      letter-spacing: 0.4px; margin-bottom: 3px;
+    }
+    .modal-sheet .field-wrap input,
+    .modal-sheet .field-wrap textarea {
+      width: 100%; border: none; outline: none;
+      font-size: 16px; font-family: inherit; background: transparent;
+    }
+    .modal-sheet .field-wrap textarea { resize: none; min-height: 56px; }
+
+    /* Toast */
+    .toast {
+      position: fixed; bottom: calc(var(--safe-bottom) + 100px);
+      left: 50%; transform: translateX(-50%) translateY(8px);
+      background: #1c1c1e; color: #fff;
+      padding: 10px 22px; border-radius: 20px;
+      font-size: 14px; font-weight: 600;
+      z-index: 400; white-space: nowrap;
+      opacity: 0; transition: opacity .2s, transform .2s;
+      pointer-events: none;
+    }
+    .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+    /* Follow-up pill */
+    .followup-yes { color: var(--warn); font-weight: 700; font-size: 12px; }
+
+    /* Divider */
+    .divider { height: 1px; background: var(--border); margin: 4px 0; }
+
+    /* Inline pill selectors */
+    .pill-row { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 6px; }
+    .pill {
+      padding: 5px 12px; border-radius: 16px; font-size: 14px; font-weight: 600;
+      border: 1.5px solid var(--border); background: transparent;
+      color: var(--text-light); cursor: pointer; font-family: inherit;
+      transition: all .12s;
+    }
+    .pill.selected { background: var(--primary); color: #fff; border-color: var(--primary); }
+
+    /* Supply chips */
+    .chip-row { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+    .chip-btn {
+      padding: 5px 11px; border-radius: 14px; font-size: 13px; font-weight: 600;
+      border: 1.5px solid var(--border); background: transparent;
+      color: var(--text-light); cursor: pointer; font-family: inherit;
+      transition: all .12s;
+    }
+    .chip-btn.on { background: var(--accent-dk); color: #fff; border-color: var(--accent-dk); }
+
+    /* ── MAPS ── */
+    .leaflet-container { font-family: -apple-system, sans-serif; }
+    #round-map, #home-map { background: #e0e8f0; }
+
+    /* ── ADDRESS AUTOCOMPLETE ── */
+    .loc-wrap { position: relative; }
+    .loc-drop {
+      display: none; position: absolute; top: calc(100% + 2px); left: 0; right: 0;
+      background: #fff; border: 1px solid var(--border); border-radius: 10px;
+      z-index: 9999; overflow: hidden;
+      box-shadow: 0 4px 20px rgba(0,0,0,.13);
+    }
+    .loc-drop.open { display: block; }
+    .loc-drop-item {
+      padding: 10px 14px; font-size: 14px; cursor: pointer;
+      border-bottom: 1px solid var(--border); color: var(--text);
+      transition: background .1s;
+    }
+    .loc-drop-item:last-child { border-bottom: none; }
+    .loc-drop-item:active, .loc-drop-item.hover { background: var(--bg); }
+
+    /* Referral photos */
+    .ref-photo-mini { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+    .ref-thumb {
+      width: 64px; height: 64px; border-radius: 8px; overflow: hidden;
+      position: relative; background: var(--bg); flex-shrink: 0;
+    }
+    .ref-thumb img { width: 100%; height: 100%; object-fit: cover; }
+    .ref-thumb .photo-del { width: 18px; height: 18px; font-size: 11px; }
+  </style>
+</head>
+<body>
+
+<!-- ═══════════════════════════ HOME ═══════════════════════════ -->
+<div id="pg-home" class="page active">
+  <div class="hdr">
+    <h1>🏥 Street Medicine</h1>
+    <div style="display:flex;gap:4px;align-items:center;">
+      <button class="hdr-btn-text" onclick="navToStats()">📊 Stats</button>
+      <button class="hdr-btn-text" onclick="showAbout()">•••</button>
+    </div>
+  </div>
+  <div class="content">
+    <!-- Rounds list (JS-rendered) -->
+    <div id="home-content"></div>
+  </div>
+  <button class="fab" onclick="openModal('modal-new-round')" title="New round">+</button>
+</div>
+
+<!-- ═══════════════════════════ STATS ═══════════════════════════ -->
+<div id="pg-stats" class="page">
+  <div class="hdr">
+    <button class="hdr-btn" onclick="showPage('pg-home')" style="font-size:22px;">‹</button>
+    <h1>📊 Stats</h1>
+  </div>
+  <div class="content">
+    <!-- Month filter -->
+    <div class="card" style="display:flex;align-items:center;justify-content:space-between;padding:10px 14px;margin-bottom:4px;">
+      <button onclick="changeStatsMonth(-1)" style="background:none;border:none;font-size:22px;cursor:pointer;color:var(--primary);padding:2px 6px;line-height:1;">‹</button>
+      <span id="stats-month-label" style="font-size:15px;font-weight:600;flex:1;text-align:center;"></span>
+      <button onclick="changeStatsMonth(1)" style="background:none;border:none;font-size:22px;cursor:pointer;color:var(--primary);padding:2px 6px;line-height:1;">›</button>
+      <button onclick="setStatsAll()" id="stats-all-btn" style="background:none;border:1px solid var(--border);border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;color:var(--text-light);padding:4px 10px;margin-left:8px;">All</button>
+    </div>
+    <div id="home-stats">
+      <div class="form-section">
+        <div class="form-section-title">📦 Supplies — <span id="stats-sup-label">All Rounds</span></div>
+        <div id="home-supplies-text" style="font-size:14px;line-height:1.9;"></div>
+      </div>
+      <div class="form-section" id="home-map-section" style="margin-top:10px;">
+        <div class="form-section-title">🗺️ All Encounters</div>
+        <div id="home-map" style="height:260px;border-radius:10px;overflow:hidden;background:#e0e8f0;position:relative;"></div>
+        <div id="home-map-loading" style="font-size:12px;color:var(--text-light);text-align:center;padding-top:4px;display:none;">📡 Geocoding locations…</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════ ROUND ═══════════════════════════ -->
+<div id="pg-round" class="page">
+  <div class="hdr">
+    <button class="hdr-btn" onclick="navBack('pg-home')" style="font-size:22px;">‹</button>
+    <h1 id="round-hdr-title">Round</h1>
+    <button class="hdr-btn" onclick="confirmDeleteRound()" title="Delete">🗑</button>
+  </div>
+  <div class="content">
+
+    <!-- Round info -->
+    <div class="form-section">
+      <div class="form-section-title">📋 Round Info</div>
+      <div class="form-field">
+        <label>Date</label>
+        <input type="date" id="r-date" onchange="autoSaveRound()">
+      </div>
+      <div class="form-field">
+        <label>Area / General location</label>
+        <input type="text" id="r-location" placeholder="e.g. Central Station area" oninput="autoSaveRound()">
+      </div>
+      <div class="form-field">
+        <label>Volunteer(s)</label>
+        <input type="text" id="r-volunteers" placeholder="Names" oninput="autoSaveRound()">
+      </div>
+    </div>
+
+    <!-- Encounters -->
+    <div class="section-hdr">
+      <h2>🩺 Medical Encounters</h2>
+      <button class="btn btn-accent btn-sm" onclick="openModal('modal-new-enc')">+ Add</button>
+    </div>
+    <div id="enc-list"></div>
+
+    <!-- Non-medical contacts -->
+    <div class="section-hdr">
+      <h2>🤝 Non-Medical Contacts</h2>
+      <button class="btn btn-gray btn-sm" onclick="openNewContactModal()">+ Add</button>
+    </div>
+    <div id="contact-list"></div>
+
+    <!-- Round summary -->
+    <div class="form-section" style="margin-top:18px;">
+      <div class="form-section-title">📊 Round Summary</div>
+      <div class="form-field">
+        <label>Total contacts (incl. non-medical)</label>
+        <input type="number" id="r-total" placeholder="auto or manual" oninput="autoSaveRound()">
+      </div>
+      <div class="form-field">
+        <label>Medical encounters</label>
+        <input type="number" id="r-medical" oninput="autoSaveRound()">
+      </div>
+      <div class="form-field">
+        <label>Referrals generated</label>
+        <input type="number" id="r-referrals" oninput="autoSaveRound()">
+      </div>
+      <div class="form-field">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;">
+          <label style="margin:0;">Supplies distributed</label>
+          <button class="btn btn-gray btn-sm" onclick="autoCalcSupplies()" style="font-size:12px;padding:4px 10px;">⟳ Auto-fill</button>
+        </div>
+        <textarea id="r-supplies" placeholder="e.g. 20 socks, 10 condoms, 5 dressings…" oninput="autoSaveRound()"></textarea>
+      </div>
+      <div class="form-field">
+        <label>Notable / follow-up for next round</label>
+        <textarea id="r-notable" placeholder="Key observations, things to track…" oninput="autoSaveRound()"></textarea>
+      </div>
+    </div>
+
+    <!-- Round Map -->
+    <div class="form-section" id="round-map-section" style="margin-top:10px;">
+      <div class="form-section-title">🗺️ Encounter Map</div>
+      <div id="round-map" style="height:260px;border-radius:10px;overflow:hidden;background:#e0e8f0;display:flex;align-items:center;justify-content:center;">
+        <span id="round-map-placeholder" style="color:#8aa0b4;font-size:13px;text-align:center;padding:16px;">Add a location to encounters<br>to see them on the map</span>
+      </div>
+      <div id="round-map-loading" style="font-size:12px;color:var(--text-light);text-align:center;padding-top:4px;display:none;">📡 Geocoding locations…</div>
+    </div>
+  </div>
+
+  <div class="s-footer">
+    <button class="btn btn-primary" onclick="saveRound(); toast('Saved ✓')">Save</button>
+    <button class="btn btn-accent" onclick="saveRound(); openModal('modal-export')">📤 Export</button>
+  </div>
+</div>
+
+<!-- ═══════════════════════════ ENCOUNTER ═══════════════════════════ -->
+<div id="pg-enc" class="page">
+  <div class="hdr">
+    <button class="hdr-btn" onclick="navBack('pg-round')" style="font-size:22px;">‹</button>
+    <h1 id="enc-hdr-title">Encounter</h1>
+    <button class="hdr-btn" onclick="confirmDeleteEnc()" title="Delete">🗑</button>
+  </div>
+  <div class="content">
+
+    <!-- Location -->
+    <div class="form-section">
+      <div class="form-section-title">📍 Encounter Location</div>
+      <div class="form-field">
+        <label style="display:flex;justify-content:space-between;align-items:center;">
+          Street address
+          <button id="geo-enc-btn" onclick="geolocateToField('e-location','geo-enc-btn',()=>autoSaveEnc())"
+                  style="background:none;border:1px solid var(--border);border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;color:var(--text-light);padding:3px 9px;">📍 Current</button>
+        </label>
+        <div class="loc-wrap">
+          <input type="text" id="e-location" placeholder="e.g. Allenby 48" autocomplete="off"
+                 oninput="autoSaveEnc(); onLocInput(this,'enc-loc-drop')">
+          <div class="loc-drop" id="enc-loc-drop"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Patient -->
+    <div class="form-section">
+      <div class="form-section-title">👤 Patient</div>
+      <div class="form-field">
+        <label>Name / Alias</label>
+        <input type="text" id="e-name" placeholder="Name or alias"
+               oninput="autoSaveEnc(); updateEncHdr()"
+               onblur="nameBlur()">
+      </div>
+      <div class="form-field">
+        <label>Age / Sex</label>
+        <div style="display:flex;align-items:center;gap:10px;">
+          <input type="text" id="e-age" placeholder="e.g. ~50s" oninput="autoSaveEnc()" style="flex:1;border:none;outline:none;font-size:16px;font-family:inherit;background:transparent;">
+          <div style="display:flex;gap:6px;flex-shrink:0;">
+            <button id="sex-btn-M" class="pill" onclick="setSex('M')">M</button>
+            <button id="sex-btn-F" class="pill" onclick="setSex('F')">F</button>
+          </div>
+        </div>
+      </div>
+      <div class="form-field">
+        <label>Insurance (Kupat Cholim)</label>
+        <select id="e-insurance" onchange="autoSaveEnc()">
+          <option value="">Unknown / not asked</option>
+          <option value="Clalit">✓ Clalit</option>
+          <option value="Maccabi">✓ Maccabi</option>
+          <option value="Meuhedet">✓ Meuhedet</option>
+          <option value="Leumit">✓ Leumit</option>
+          <option value="No insurance">✗ No insurance</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Clinical -->
+    <div class="form-section">
+      <div class="form-section-title">🩺 Clinical</div>
+      <div class="form-field">
+        <label>Chief Complaint</label>
+        <input type="text" id="e-cc" placeholder="Main complaint" oninput="autoSaveEnc()">
+      </div>
+      <div class="vitals-grid">
+        <div class="vc"><label>BP (mmHg)</label><input type="text" id="e-bp" placeholder="120/80" oninput="autoSaveEnc()"></div>
+        <div class="vc"><label>HR (bpm)</label><input type="number" id="e-hr" placeholder="72" oninput="autoSaveEnc()"></div>
+        <div class="vc"><label>SpO₂ (%)</label><input type="number" id="e-spo2" placeholder="98" oninput="autoSaveEnc()"></div>
+        <div class="vc"><label>Temp (°C)</label><input type="number" step="0.1" id="e-temp" placeholder="36.5" oninput="autoSaveEnc()"></div>
+      </div>
+      <div class="form-field">
+        <label>Focused Exam Findings</label>
+        <textarea id="e-exam" placeholder="Relevant physical exam findings" oninput="autoSaveEnc()"></textarea>
+      </div>
+      <div class="form-field">
+        <label>Assessment</label>
+        <textarea id="e-assessment" placeholder="Impression / working diagnosis" oninput="autoSaveEnc()"></textarea>
+      </div>
+    </div>
+
+    <!-- Intervention -->
+    <div class="form-section">
+      <div class="form-section-title">💊 Intervention</div>
+      <div class="chk-row" onclick="event.stopPropagation()">
+        <input type="checkbox" id="e-wound" onchange="toggleSub('e-wound-sub',this.checked); autoSaveEnc()">
+        <div style="flex:1">
+          <span class="chk-label" onclick="toggleChk('e-wound'); toggleSub('e-wound-sub', document.getElementById('e-wound').checked); autoSaveEnc()">Wound care / dressing</span>
+          <div id="e-wound-sub" class="sub-input-wrap" style="display:none">
+            <input class="sub-input" type="text" id="e-wound-detail" placeholder="Location, type, dressing used…" oninput="autoSaveEnc()">
+          </div>
+        </div>
+      </div>
+      <div class="chk-row" onclick="event.stopPropagation()">
+        <input type="checkbox" id="e-med-chk" onchange="toggleSub('e-med-sub',this.checked); autoSaveEnc()">
+        <div style="flex:1">
+          <span class="chk-label" onclick="toggleChk('e-med-chk'); toggleSub('e-med-sub', document.getElementById('e-med-chk').checked); autoSaveEnc()">Medication given</span>
+          <div id="e-med-sub" class="sub-input-wrap" style="display:none">
+            <input class="sub-input" type="text" id="e-med" placeholder="Drug · dose · route" oninput="autoSaveEnc()">
+          </div>
+        </div>
+      </div>
+      <div class="chk-row" onclick="event.stopPropagation()">
+        <input type="checkbox" id="e-sup-chk" onchange="toggleSub('e-sup-sub',this.checked); autoSaveEnc()">
+        <div style="flex:1">
+          <span class="chk-label" onclick="toggleChk('e-sup-chk'); toggleSub('e-sup-sub', document.getElementById('e-sup-chk').checked); autoSaveEnc()">Supplies given</span>
+          <div id="e-sup-sub" class="sub-input-wrap" style="display:none">
+            <div class="chip-row" id="sup-chips-container"></div>
+            <input class="sub-input" type="text" id="e-sup" placeholder="Additional / other…" oninput="autoSaveEnc()" style="margin-top:8px;">
+          </div>
+        </div>
+      </div>
+      <div class="chk-row" onclick="event.stopPropagation()">
+        <input type="checkbox" id="e-ref-chk" onchange="toggleSub('e-ref-sub',this.checked); autoSaveEnc()">
+        <div style="flex:1">
+          <span class="chk-label" onclick="toggleChk('e-ref-chk'); toggleSub('e-ref-sub', document.getElementById('e-ref-chk').checked); autoSaveEnc()">Referral</span>
+          <div id="e-ref-sub" class="sub-input-wrap" style="display:none">
+            <input class="sub-input" type="text" id="e-ref" placeholder="Where → ER / clinic / social services" oninput="autoSaveEnc()">
+            <div class="ref-photo-mini" id="ref-photos-grid"></div>
+            <div style="display:flex;gap:14px;margin-top:7px;">
+              <label style="display:flex;align-items:center;gap:5px;font-size:13px;color:var(--primary);cursor:pointer;font-weight:600;">
+                📷 Camera
+                <input type="file" accept="image/*" capture="environment" style="display:none" onchange="addRefPhoto(event)">
+              </label>
+              <label style="display:flex;align-items:center;gap:5px;font-size:13px;color:var(--primary);cursor:pointer;font-weight:600;">
+                🖼️ Library
+                <input type="file" accept="image/*" style="display:none" onchange="addRefPhoto(event)">
+              </label>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="chk-row" onclick="event.stopPropagation()">
+        <input type="checkbox" id="e-welfare" onchange="toggleSub('e-welfare-sub',this.checked); autoSaveEnc()">
+        <div style="flex:1">
+          <span class="chk-label" onclick="toggleChk('e-welfare'); toggleSub('e-welfare-sub', document.getElementById('e-welfare').checked); autoSaveEnc()">No medical intervention — welfare contact only</span>
+          <div id="e-welfare-sub" class="sub-input-wrap" style="display:none">
+            <div class="chip-row" id="welfare-chips-container"></div>
+            <input class="sub-input" type="text" id="e-welfare-text" placeholder="Additional supplies / notes…" oninput="autoSaveEnc()" style="margin-top:8px;">
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Follow-up -->
+    <div class="form-section">
+      <div class="form-section-title">📌 Follow-up</div>
+      <div class="form-field">
+        <label>Follow-up needed?</label>
+        <div class="pill-row">
+          <button class="pill selected" id="pill-no"  onclick="setFollowup('No')">No</button>
+          <button class="pill"          id="pill-yes" onclick="setFollowup('Yes')">⚠️ Yes</button>
+        </div>
+      </div>
+      <div class="form-field">
+        <label>Notes for next round</label>
+        <textarea id="e-notes" placeholder="Anything the next team should know" oninput="autoSaveEnc()"></textarea>
+      </div>
+    </div>
+
+    <!-- Photos -->
+    <div class="form-section">
+      <div class="form-section-title">📷 Photos</div>
+      <div class="photos-grid" id="photos-grid"></div>
+    </div>
+
+  </div>
+  <div class="s-footer">
+    <button class="btn btn-accent" onclick="saveEnc(); navBack('pg-round')">Save & Back</button>
+  </div>
+</div>
+
+<!-- ═══════════════════════════ MODALS ═══════════════════════════ -->
+
+<!-- New Round -->
+<div class="overlay" id="modal-new-round" onclick="closeModal('modal-new-round')">
+  <div class="modal-sheet" onclick="event.stopPropagation()">
+    <h3>New Round</h3>
+    <div class="field-wrap">
+      <label>Date</label>
+      <input type="date" id="m-round-date">
+    </div>
+    <div class="field-wrap">
+      <label>General location</label>
+      <input type="text" id="m-round-loc" placeholder="e.g. Tel Aviv Central, Florentin…">
+    </div>
+    <div class="field-wrap">
+      <label>Volunteer(s)</label>
+      <input type="text" id="m-round-vol" placeholder="Names">
+    </div>
+    <button class="btn btn-primary" onclick="createRound()">Create Round</button>
+    <div style="height:10px;"></div>
+    <button class="btn btn-gray" onclick="closeModal('modal-new-round')">Cancel</button>
+  </div>
+</div>
+
+<!-- New Encounter -->
+<div class="overlay" id="modal-new-enc" onclick="closeModal('modal-new-enc')">
+  <div class="modal-sheet" onclick="event.stopPropagation()">
+    <h3>New Encounter</h3>
+    <div class="field-wrap">
+      <label>Patient name / alias</label>
+      <input type="text" id="m-enc-name" placeholder="Name, alias, or description">
+    </div>
+    <button class="btn btn-accent" onclick="createEnc()">Start Encounter</button>
+    <div style="height:10px;"></div>
+    <button class="btn btn-gray" onclick="closeModal('modal-new-enc')">Cancel</button>
+  </div>
+</div>
+
+<!-- New / Edit Non-Medical Contact -->
+<div class="overlay" id="modal-new-contact" onclick="closeModal('modal-new-contact')">
+  <div class="modal-sheet" onclick="event.stopPropagation()">
+    <h3 id="contact-modal-title">Non-Medical Contact</h3>
+    <div class="field-wrap">
+      <label style="display:flex;justify-content:space-between;align-items:center;">
+        Location
+        <button id="geo-con-btn" onclick="geolocateToField('m-con-loc','geo-con-btn',null)"
+                style="background:none;border:1px solid var(--border);border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;color:var(--text-light);padding:3px 9px;">📍 Current</button>
+      </label>
+      <div class="loc-wrap">
+        <input type="text" id="m-con-loc" placeholder="Street address" autocomplete="off"
+               oninput="onLocInput(this,'con-loc-drop')">
+        <div class="loc-drop" id="con-loc-drop"></div>
+      </div>
+    </div>
+    <div class="field-wrap">
+      <label>Name / Alias (optional)</label>
+      <div style="display:flex;align-items:center;gap:10px;">
+        <input type="text" id="m-con-name" placeholder="Optional"
+               style="flex:1;border:none;outline:none;font-size:16px;font-family:inherit;background:transparent;">
+        <div style="display:flex;gap:6px;flex-shrink:0;">
+          <button id="con-sex-btn-M" class="pill" onclick="setContactSex('M')">M</button>
+          <button id="con-sex-btn-F" class="pill" onclick="setContactSex('F')">F</button>
+        </div>
+      </div>
+    </div>
+    <div class="field-wrap">
+      <label>Supplies given</label>
+      <div class="chip-row" id="contact-chips-container" style="margin-bottom:8px;"></div>
+      <input type="text" id="m-con-sup-text" placeholder="Additional / other…"
+             style="width:100%;border:none;outline:none;font-size:16px;font-family:inherit;background:transparent;">
+    </div>
+    <button class="btn btn-outline" id="contact-save-btn" onclick="saveContact()">Add Contact</button>
+    <div style="height:10px;"></div>
+    <button class="btn btn-gray" onclick="closeModal('modal-new-contact')">Cancel</button>
+    <div id="contact-delete-wrap" style="display:none;">
+      <div style="height:10px;"></div>
+      <button class="btn btn-danger" onclick="deleteCurrentContact()">Delete Contact</button>
+    </div>
+  </div>
+</div>
+
+<!-- Export -->
+<div class="overlay" id="modal-export" onclick="closeModal('modal-export')">
+  <div class="modal-sheet" onclick="event.stopPropagation()">
+    <h3>Export Round</h3>
+    <p style="color:var(--text-light);font-size:14px;margin-bottom:18px;">
+      Choose how to export the full round report.
+    </p>
+    <button class="btn btn-primary" style="margin-bottom:10px;" onclick="doShare()">
+      📤 Share Sheet (iOS)
+    </button>
+    <button class="btn btn-accent" style="margin-bottom:10px;" onclick="doNotesExport()">
+      📋 Copy → Apple Notes
+    </button>
+    <button class="btn btn-outline" style="margin-bottom:10px;" onclick="doPDF()">
+      📄 Download PDF
+    </button>
+    <button class="btn btn-gray" onclick="closeModal('modal-export')">Cancel</button>
+  </div>
+</div>
+
+<!-- Text preview / copy modal (fallback / plain text) -->
+<div class="overlay" id="modal-text-preview" onclick="closeModal('modal-text-preview')">
+  <div class="modal-sheet" style="height:85vh;display:flex;flex-direction:column;" onclick="event.stopPropagation()">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+      <h3 style="margin:0;">Round Report</h3>
+      <button class="btn btn-accent btn-sm" onclick="selectAllAndCopy()" id="copy-btn">Copy All</button>
+    </div>
+    <p style="font-size:13px;color:var(--text-light);margin-bottom:10px;">
+      Tap <strong>Copy All</strong>, then open Apple Notes and paste.
+    </p>
+    <textarea id="text-preview-area"
+      readonly
+      style="flex:1;width:100%;border:1px solid var(--border);border-radius:10px;
+             padding:12px;font-size:13px;font-family:monospace;line-height:1.55;
+             resize:none;background:var(--bg);color:var(--text);outline:none;
+             -webkit-user-select:text;user-select:text;">
+    </textarea>
+    <div style="height:12px;"></div>
+    <button class="btn btn-gray" onclick="closeModal('modal-text-preview')">Done</button>
+  </div>
+</div>
+
+<!-- Rich HTML preview modal — Notes export with inline photos -->
+<div class="overlay" id="modal-rich-preview" onclick="closeModal('modal-rich-preview')">
+  <div class="modal-sheet" style="height:90vh;display:flex;flex-direction:column;" onclick="event.stopPropagation()">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
+      <h3 style="margin:0;">Round Report</h3>
+      <button class="btn btn-accent btn-sm" onclick="copyRichReport()" id="rich-copy-btn">Copy for Notes</button>
+    </div>
+    <p style="font-size:12px;color:var(--text-light);margin-bottom:10px;line-height:1.4;">
+      Tap <strong>Copy for Notes</strong>, then open Apple Notes and paste — text and photos will appear inline.
+    </p>
+    <div id="rich-preview-scroll"
+      style="flex:1;overflow-y:auto;border:1px solid var(--border);border-radius:10px;
+             padding:14px;background:#fff;-webkit-overflow-scrolling:touch;">
+      <!-- contenteditable required so execCommand('copy') transfers rendered images to clipboard -->
+      <div id="rich-preview-content" contenteditable="true"
+           style="-webkit-user-select:text;user-select:text;outline:none;"></div>
+    </div>
+    <div style="height:10px;"></div>
+    <button class="btn btn-gray" onclick="closeModal('modal-rich-preview')">Done</button>
+  </div>
+</div>
+
+<!-- About / Settings -->
+<div class="overlay" id="modal-about" onclick="closeModal('modal-about')">
+  <div class="modal-sheet" onclick="event.stopPropagation()">
+    <h3>Street Medicine App</h3>
+    <p style="font-size:14px;color:var(--text-light);margin-bottom:18px;line-height:1.6;">
+      All data is stored locally on this device. Nothing is sent to any server.<br><br>
+      <strong>Tip:</strong> In Safari, tap Share → "Add to Home Screen" to install as an app.
+    </p>
+    <button class="btn btn-danger" style="margin-bottom:10px;" onclick="confirmClearAll()">
+      🗑 Clear ALL data
+    </button>
+    <button class="btn btn-gray" onclick="closeModal('modal-about')">Close</button>
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast-el"></div>
+
+<!-- jsPDF -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<!-- html2canvas — renders HTML (including Hebrew) to a canvas for PDF export -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<!-- Leaflet -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/leaflet.heat@0.2.0/dist/leaflet-heat.js"></script>
+<script>
+// ══════════════════════════════════════════════
+// STORAGE
+// ══════════════════════════════════════════════
+const KEY = 'sm_data_v1';
+function load() { try { return JSON.parse(localStorage.getItem(KEY) || '{"rounds":[]}'); } catch { return {rounds:[]}; } }
+function persist(d) { localStorage.setItem(KEY, JSON.stringify(d)); }
+let DB = load();
+
+function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2); }
+
+// ══════════════════════════════════════════════
+// STATE
+// ══════════════════════════════════════════════
+let curRoundId = null;
+let curEncId   = null;
+let curPhotos  = [];  // [{id, url}]
+let followupState = 'No';
+let saveRoundTimer = null;
+let saveEncTimer   = null;
+let curSex         = '';
+let curWelfareChips = [];
+let curRefPhotos   = [];  // [{id, url}]
+let curContactChips = [];
+let curContactSex   = '';
+let curSupChips    = [];  // medical encounter supply chips
+// ⚠️ SINGLE SOURCE OF TRUTH — add new items here and they appear in ALL
+// three supply fields: medical > supplies given, welfare, and non-medical contact.
+const SUPPLY_CHIPS = ['סוכריות','קונדומים','מים','מיץ','תה חם','גרביים','חמצוואר/כובע','חבישות הביתה'];
+
+// ══════════════════════════════════════════════
+// NAVIGATION
+// ══════════════════════════════════════════════
+function showPage(id) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  window.scrollTo(0,0);
+}
+
+function navBack(target) {
+  if (target === 'pg-home') { saveRound(); renderHome(); showPage('pg-home'); }
+  if (target === 'pg-round') { saveEnc(); renderRound(curRoundId); showPage('pg-round'); }
+}
+
+// ══════════════════════════════════════════════
+// STATS PAGE NAVIGATION + MONTH FILTER
+// ══════════════════════════════════════════════
+let statsFilterMonth = undefined; // undefined = first open (→ defaults to current month), null = all time, "YYYY-MM" = specific month
+
+function navToStats() {
+  showPage('pg-stats');
+  // Default to current month only on very first open
+  if (statsFilterMonth === undefined) {
+    const now = new Date();
+    statsFilterMonth = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
+  }
+  updateStatsMonthLabel();
+  setTimeout(() => renderHomeMap(statsFilterMonth), 100);
+}
+
+function changeStatsMonth(delta) {
+  let y, m;
+  if (statsFilterMonth) {
+    [y, m] = statsFilterMonth.split('-').map(Number);
+  } else {
+    const now = new Date(); y = now.getFullYear(); m = now.getMonth()+1;
+  }
+  const d = new Date(y, m - 1 + delta, 1);
+  statsFilterMonth = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
+  updateStatsMonthLabel();
+  renderHomeMap(statsFilterMonth);
+}
+
+function setStatsAll() {
+  statsFilterMonth = null;
+  updateStatsMonthLabel();
+  renderHomeMap(null);
+}
+
+function updateStatsMonthLabel() {
+  const el  = document.getElementById('stats-month-label');
+  const btn = document.getElementById('stats-all-btn');
+  const sup = document.getElementById('stats-sup-label');
+  if (!el) return;
+  if (!statsFilterMonth && statsFilterMonth !== undefined) {
+    // null = All Time
+    el.textContent = 'All Time';
+    if (btn) btn.style.fontWeight = '700';
+    if (sup) sup.textContent = 'All Rounds';
+  } else {
+    const [y, m] = statsFilterMonth.split('-').map(Number);
+    const label = new Date(y, m-1, 1).toLocaleDateString('he-IL', {year:'numeric', month:'long'});
+    el.textContent = label;
+    if (btn) btn.style.fontWeight = '400';
+    if (sup) sup.textContent = label;
+  }
+}
+
+// ══════════════════════════════════════════════
+// HOME
+// ══════════════════════════════════════════════
+function renderHome() {
+  DB = load();
+  const el = document.getElementById('home-content');
+  if (!DB.rounds.length) {
+    el.innerHTML = `<div class="empty"><div class="icon">🏥</div><p>No rounds yet.<br>Tap <strong>+</strong> to start a new round.</p></div>`;
+    return;
+  }
+  el.innerHTML = [...DB.rounds].reverse().map(r => {
+    const encCount = (r.encounters||[]).length;
+    const conCount = (r.contacts||[]).length;
+    const followups = (r.encounters||[]).filter(e => e.followup === 'Yes').length;
+    return `
+    <div class="card">
+      <div class="card-row" onclick="openRound('${r.id}')">
+        <div>
+          <div class="card-title">${fmtDate(r.date)}</div>
+          <div class="card-sub">${r.location||'—'} &bull; ${r.volunteers||'—'}</div>
+          <div style="margin-top:6px;display:flex;gap:6px;flex-wrap:wrap;">
+            <span class="badge badge-green">${encCount} encounter${encCount!==1?'s':''}</span>
+            ${conCount ? `<span class="badge badge-gray">${conCount} contact${conCount!==1?'s':''}</span>` : ''}
+            ${followups ? `<span class="badge" style="background:rgba(243,156,18,.15);color:#d68910;">⚠️ ${followups} follow-up${followups!==1?'s':''}</span>` : ''}
+          </div>
+        </div>
+        <div class="card-arrow">›</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function fmtDate(s) {
+  if (!s) return 'Unknown date';
+  try { return new Date(s+'T12:00:00').toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'long',year:'numeric'}); }
+  catch { return s; }
+}
+
+// ══════════════════════════════════════════════
+// ROUND
+// ══════════════════════════════════════════════
+function openModal_newRound() {
+  const today = new Date().toISOString().slice(0,10);
+  document.getElementById('m-round-date').value = today;
+  document.getElementById('m-round-loc').value = '';
+  document.getElementById('m-round-vol').value = '';
+  openModal('modal-new-round');
+}
+
+function createRound() {
+  const r = {
+    id: uid(),
+    date: document.getElementById('m-round-date').value,
+    location: document.getElementById('m-round-loc').value,
+    volunteers: document.getElementById('m-round-vol').value,
+    encounters: [], contacts: [], summary: {}
+  };
+  DB.rounds.push(r); persist(DB);
+  closeModal('modal-new-round');
+  openRound(r.id);
+}
+
+function openRound(id) {
+  curRoundId = id;
+  renderRound(id);
+  showPage('pg-round');
+}
+
+function renderRound(id) {
+  const r = DB.rounds.find(x=>x.id===id); if(!r) return;
+  document.getElementById('round-hdr-title').textContent = fmtDate(r.date);
+  document.getElementById('r-date').value = r.date||'';
+  document.getElementById('r-location').value = r.location||'';
+  document.getElementById('r-volunteers').value = r.volunteers||'';
+  const s = r.summary||{};
+  document.getElementById('r-total').value = s.total||'';
+  document.getElementById('r-medical').value = s.medical !== undefined ? s.medical : (r.encounters||[]).length;
+  document.getElementById('r-referrals').value = s.referrals||'';
+  document.getElementById('r-supplies').value = s.supplies||'';
+  document.getElementById('r-notable').value = s.notable||'';
+
+  // Encounters
+  const el = document.getElementById('enc-list');
+  if (!(r.encounters||[]).length) {
+    el.innerHTML = `<div style="color:var(--text-light);text-align:center;padding:18px 0;font-size:14px;">No encounters yet — tap + Add</div>`;
+  } else {
+    el.innerHTML = r.encounters.map(e => {
+      const vitals = [e.bp&&`BP ${e.bp}`, e.hr&&`HR ${e.hr}`, e.spo2&&`SpO₂ ${e.spo2}%`].filter(Boolean).join(' · ');
+      return `
+      <div class="card">
+        <div class="card-row" onclick="openEnc('${r.id}','${e.id}')">
+          <div>
+            <div class="card-title">${e.name||'Unknown patient'} ${e.followup==='Yes'?'<span class="followup-yes">⚠️ Follow-up</span>':''}</div>
+            <div class="card-sub">${[e.location, [e.age, e.sex].filter(Boolean).join(' / ') || e.age_sex, e.cc].filter(Boolean).join(' · ')}</div>
+            ${vitals?`<div class="card-sub" style="margin-top:2px;font-family:monospace;font-size:12px;">${vitals}</div>`:''}
+            ${(e.photos||[]).length?`<div class="card-sub" style="margin-top:2px;">📷 ${e.photos.length} photo${e.photos.length!==1?'s':''}</div>`:''}
+          </div>
+          <div class="card-arrow">›</div>
+        </div>
+      </div>`;
+    }).join('');
+  }
+
+  // Contacts
+  const cl = document.getElementById('contact-list');
+  if (!(r.contacts||[]).length) {
+    cl.innerHTML = `<div style="color:var(--text-light);text-align:center;padding:10px 0;font-size:14px;">None</div>`;
+  } else {
+    cl.innerHTML = r.contacts.map((c,i) => `
+      <div class="card" style="cursor:pointer;" onclick="openEditContact(${i})">
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;">
+          <div style="flex:1;min-width:0;">
+            <div style="font-size:14px;font-weight:600;">${c.location||'—'}</div>
+            <div class="card-sub">${c.name||'Anonymous'} · ${fmtSupplies(c.chips||[], c.sup_text||'') || c.supplies || 'No supplies noted'}</div>
+          </div>
+          <span style="color:var(--text-light);font-size:18px;flex-shrink:0;">›</span>
+        </div>
+      </div>`).join('');
+  }
+
+  // Render map (async — geocodes locations)
+  setTimeout(() => renderRoundMap(id), 100);
+}
+
+function saveRound() {
+  const r = DB.rounds.find(x=>x.id===curRoundId); if(!r) return;
+  r.date = document.getElementById('r-date').value;
+  r.location = document.getElementById('r-location').value;
+  r.volunteers = document.getElementById('r-volunteers').value;
+  r.summary = {
+    total:     document.getElementById('r-total').value,
+    medical:   document.getElementById('r-medical').value,
+    referrals: document.getElementById('r-referrals').value,
+    supplies:  document.getElementById('r-supplies').value,
+    notable:   document.getElementById('r-notable').value,
+  };
+  persist(DB);
+}
+
+function autoSaveRound() {
+  clearTimeout(saveRoundTimer);
+  saveRoundTimer = setTimeout(saveRound, 600);
+}
+
+function confirmDeleteRound() {
+  if (!confirm('Delete this entire round and all its encounters?')) return;
+  DB.rounds = DB.rounds.filter(x=>x.id!==curRoundId);
+  persist(DB); renderHome(); showPage('pg-home');
+}
+
+// ══════════════════════════════════════════════
+// ENCOUNTERS
+// ══════════════════════════════════════════════
+function createEnc() {
+  saveRound();
+  const r = DB.rounds.find(x=>x.id===curRoundId); if(!r) return;
+  const name = document.getElementById('m-enc-name').value.trim();
+  const e = {
+    id:uid(), name, location:'', age:'', sex:'', insurance:'',
+    cc:'', bp:'', hr:'', spo2:'', temp:'',
+    exam:'', assessment:'',
+    wound:false, wound_detail:'',
+    med_chk:false, med:'', sup_chk:false, sup:'',
+    ref_chk:false, ref:'', ref_photos:[],
+    welfare:false, welfare_chips:[], welfare_text:'',
+    followup:'No', notes:'', photos:[]
+  };
+  r.encounters.push(e); persist(DB);
+  closeModal('modal-new-enc');
+  openEnc(curRoundId, e.id);
+}
+
+function openEnc(roundId, encId) {
+  curRoundId = roundId; curEncId = encId;
+  const r = DB.rounds.find(x=>x.id===roundId);
+  const e = (r.encounters||[]).find(x=>x.id===encId); if(!e) return;
+
+  document.getElementById('enc-hdr-title').textContent = e.name||'Encounter';
+  document.getElementById('e-location').value = e.location||'';
+  document.getElementById('e-name').value = e.name||'';
+  // Backwards-compat: old records stored age_sex as a combined string
+  document.getElementById('e-age').value = e.age || e.age_sex || '';
+  curSex = e.sex || '';
+  document.getElementById('sex-btn-M').classList.toggle('selected', curSex==='M');
+  document.getElementById('sex-btn-F').classList.toggle('selected', curSex==='F');
+  document.getElementById('e-insurance').value = e.insurance||'';
+  document.getElementById('e-cc').value = e.cc||'';
+  document.getElementById('e-bp').value = e.bp||'';
+  document.getElementById('e-hr').value = e.hr||'';
+  document.getElementById('e-spo2').value = e.spo2||'';
+  document.getElementById('e-temp').value = e.temp||'';
+  document.getElementById('e-exam').value = e.exam||'';
+  document.getElementById('e-assessment').value = e.assessment||'';
+
+  // Wound care
+  document.getElementById('e-wound').checked = !!e.wound;
+  toggleSub('e-wound-sub', !!e.wound);
+  document.getElementById('e-wound-detail').value = e.wound_detail||'';
+
+  // Medication
+  document.getElementById('e-med-chk').checked = !!e.med_chk;
+  toggleSub('e-med-sub', !!e.med_chk);
+  document.getElementById('e-med').value = e.med||'';
+
+  // Supplies
+  document.getElementById('e-sup-chk').checked = !!e.sup_chk;
+  toggleSub('e-sup-sub', !!e.sup_chk);
+  curSupChips = [...(e.sup_chips||[])];
+  renderSupChips();
+  document.getElementById('e-sup').value = e.sup||'';
+
+  // Referral
+  document.getElementById('e-ref-chk').checked = !!e.ref_chk;
+  toggleSub('e-ref-sub', !!e.ref_chk);
+  document.getElementById('e-ref').value = e.ref||'';
+  curRefPhotos = (e.ref_photos||[]).map(url=>({id:uid(),url}));
+  renderRefPhotos();
+
+  // Welfare
+  document.getElementById('e-welfare').checked = !!e.welfare;
+  toggleSub('e-welfare-sub', !!e.welfare);
+  curWelfareChips = [...(e.welfare_chips||[])];
+  renderWelfareChips();
+  document.getElementById('e-welfare-text').value = e.welfare_text||'';
+
+  setFollowup(e.followup||'No', true);
+  document.getElementById('e-notes').value = e.notes||'';
+
+  curPhotos = (e.photos||[]).map(url=>({id:uid(),url}));
+  renderPhotos();
+  showPage('pg-enc');
+}
+
+function readEnc() {
+  return {
+    location:      document.getElementById('e-location').value,
+    name:          document.getElementById('e-name').value,
+    age:           document.getElementById('e-age').value,
+    sex:           curSex,
+    insurance:     document.getElementById('e-insurance').value,
+    cc:            document.getElementById('e-cc').value,
+    bp:            document.getElementById('e-bp').value,
+    hr:            document.getElementById('e-hr').value,
+    spo2:          document.getElementById('e-spo2').value,
+    temp:          document.getElementById('e-temp').value,
+    exam:          document.getElementById('e-exam').value,
+    assessment:    document.getElementById('e-assessment').value,
+    wound:         document.getElementById('e-wound').checked,
+    wound_detail:  document.getElementById('e-wound-detail').value,
+    med_chk:       document.getElementById('e-med-chk').checked,
+    med:           document.getElementById('e-med').value,
+    sup_chk:       document.getElementById('e-sup-chk').checked,
+    sup_chips:     [...curSupChips],
+    sup:           document.getElementById('e-sup').value,
+    ref_chk:       document.getElementById('e-ref-chk').checked,
+    ref:           document.getElementById('e-ref').value,
+    ref_photos:    curRefPhotos.map(p=>p.url),
+    welfare:       document.getElementById('e-welfare').checked,
+    welfare_chips: [...curWelfareChips],
+    welfare_text:  document.getElementById('e-welfare-text').value,
+    followup:      followupState,
+    notes:         document.getElementById('e-notes').value,
+    photos:        curPhotos.map(p=>p.url),
+  };
+}
+
+function saveEnc() {
+  const r = DB.rounds.find(x=>x.id===curRoundId); if(!r) return;
+  const idx = r.encounters.findIndex(x=>x.id===curEncId); if(idx<0) return;
+  r.encounters[idx] = { ...r.encounters[idx], ...readEnc() };
+  persist(DB);
+}
+
+function autoSaveEnc() {
+  clearTimeout(saveEncTimer);
+  saveEncTimer = setTimeout(saveEnc, 600);
+}
+
+function updateEncHdr() {
+  const v = document.getElementById('e-name').value;
+  document.getElementById('enc-hdr-title').textContent = v||'Encounter';
+}
+
+function confirmDeleteEnc() {
+  if (!confirm('Delete this encounter?')) return;
+  const r = DB.rounds.find(x=>x.id===curRoundId);
+  r.encounters = r.encounters.filter(x=>x.id!==curEncId);
+  persist(DB); renderRound(curRoundId); showPage('pg-round');
+}
+
+// ══════════════════════════════════════════════
+// CONTACTS
+// ══════════════════════════════════════════════
+function saveContact() {
+  saveRound();
+  const r = DB.rounds.find(x=>x.id===curRoundId); if(!r) return;
+  if (!r.contacts) r.contacts = [];
+  const data = readContact();
+  if (curContactIdx < 0) {
+    r.contacts.push(data);
+    toast('Contact added ✓');
+  } else {
+    r.contacts[curContactIdx] = data;
+    toast('Contact saved ✓');
+  }
+  persist(DB);
+  closeModal('modal-new-contact');
+  renderRound(curRoundId);
+}
+
+function deleteCurrentContact() {
+  if (!confirm('Delete this contact?')) return;
+  const r = DB.rounds.find(x=>x.id===curRoundId); if(!r) return;
+  r.contacts.splice(curContactIdx, 1);
+  persist(DB);
+  closeModal('modal-new-contact');
+  renderRound(curRoundId);
+  toast('Contact deleted');
+}
+
+function deleteContact(i) {
+  const r = DB.rounds.find(x=>x.id===curRoundId);
+  r.contacts.splice(i,1); persist(DB); renderRound(curRoundId);
+}
+
+// ══════════════════════════════════════════════
+// PHOTOS
+// ══════════════════════════════════════════════
+function renderPhotos() {
+  const grid = document.getElementById('photos-grid');
+  grid.innerHTML = curPhotos.map((p,i) => `
+    <div class="photo-thumb">
+      <img src="${p.url}" alt="">
+      <button class="photo-del" onclick="delPhoto(${i})">×</button>
+    </div>`).join('') +
+  `<label class="photo-add" title="Take photo">
+    <span>📷</span><span class="lbl">Camera</span>
+    <input type="file" accept="image/*" capture="environment" style="display:none" onchange="addPhoto(event)">
+  </label>
+  <label class="photo-add" title="Choose from library">
+    <span>🖼️</span><span class="lbl">Library</span>
+    <input type="file" accept="image/*" style="display:none" onchange="addPhoto(event)">
+  </label>`;
+}
+
+function addPhoto(ev) {
+  const file = ev.target.files[0]; if(!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    const img = new Image();
+    img.onload = () => {
+      const MAX=900, c=document.createElement('canvas');
+      let w=img.width, h=img.height;
+      if(w>h&&w>MAX){h=h*MAX/w;w=MAX;}else if(h>MAX){w=w*MAX/h;h=MAX;}
+      c.width=w; c.height=h;
+      c.getContext('2d').drawImage(img,0,0,w,h);
+      curPhotos.push({id:uid(), url:c.toDataURL('image/jpeg',0.78)});
+      saveEnc(); renderPhotos();
+    };
+    img.src = e.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+
+function delPhoto(i) { curPhotos.splice(i,1); saveEnc(); renderPhotos(); }
+
+// ══════════════════════════════════════════════
+// FOLLOW-UP PILLS
+// ══════════════════════════════════════════════
+function setFollowup(val, silent) {
+  followupState = val;
+  document.getElementById('pill-no').classList.toggle('selected',  val==='No');
+  document.getElementById('pill-yes').classList.toggle('selected', val==='Yes');
+  if(!silent) autoSaveEnc();
+}
+
+// ══════════════════════════════════════════════
+// EXPORT
+// ══════════════════════════════════════════════
+function buildText(r) {
+  const D = '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━';
+  let t = `${D}\n📋 STREET MEDICINE ROUND REPORT\n${D}\n\n`;
+  t += `📅 Date: ${fmtDate(r.date)}\n`;
+  t += `📍 Location: ${r.location||'—'}\n`;
+  t += `👤 Volunteer(s): ${r.volunteers||'—'}\n\n`;
+
+  if ((r.encounters||[]).length) {
+    t += `${D}\nMEDICAL ENCOUNTERS (${r.encounters.length})\n${D}\n\n`;
+    r.encounters.forEach((e,i) => {
+      t += `━━━ ENCOUNTER ${i+1} ━━━\n`;
+      if(e.location) t += `📍 ${e.location}\n`;
+      t += `\nName / Alias: ${e.name||'—'}\n`;
+      const ageSex = [e.age || e.age_sex, e.sex].filter(Boolean).join(' / ');
+      if(ageSex) t += `Age / Sex: ${ageSex}\n`;
+      t += `Insurance: ${e.insurance||'—'}\n`;
+      t += `\nChief complaint: ${e.cc||'—'}\n`;
+
+      const v=[e.bp&&`BP ${e.bp}`,e.hr&&`HR ${e.hr}`,e.spo2&&`SpO₂ ${e.spo2}%`,e.temp&&`T ${e.temp}°C`].filter(Boolean);
+      if(v.length) t += `Vitals: ${v.join(' | ')}\n`;
+      if(e.exam)        t += `Exam: ${e.exam}\n`;
+      if(e.assessment)  t += `Assessment: ${e.assessment}\n`;
+
+      t += `\nIntervention:\n`;
+      if(e.wound) {
+        t += `  ✓ Wound care / dressing`;
+        if(e.wound_detail) t += ` — ${e.wound_detail}`;
+        t += `\n`;
+      }
+      if(e.med_chk) t += `  ✓ Medication: ${e.med||'—'}\n`;
+      if(e.sup_chk) {
+        const medSup = fmtSupplies(e.sup_chips||[], e.sup||'');
+        t += `  ✓ Supplies: ${medSup||'—'}\n`;
+      }
+      if(e.ref_chk) {
+        t += `  ✓ Referral → ${e.ref||'—'}\n`;
+        if((e.ref_photos||[]).length) t += `    📷 ${e.ref_photos.length} referral photo${e.ref_photos.length!==1?'s':''}\n`;
+      }
+      if(e.welfare) {
+        const wSup = fmtSupplies(e.welfare_chips||[], e.welfare_text||'');
+        t += `  ✓ Welfare contact only`;
+        if(wSup) t += ` — Supplies: ${wSup}`;
+        t += `\n`;
+      }
+      if(!e.wound&&!e.med_chk&&!e.sup_chk&&!e.ref_chk&&!e.welfare) t += `  — None\n`;
+
+      t += `\nFollow-up needed: ${e.followup||'No'}\n`;
+      if(e.notes) t += `Notes for next round: ${e.notes}\n`;
+      if((e.photos||[]).length) t += `Photos: ${e.photos.length} attached\n`;
+      t += '\n';
+    });
+  }
+
+  if((r.contacts||[]).length) {
+    t += `${D}\nNON-MEDICAL CONTACTS (${r.contacts.length})\n${D}\n\n`;
+    t += `Location              | Name/Alias    | Supplies given\n`;
+    t += `──────────────────────┼───────────────┼───────────────\n`;
+    r.contacts.forEach(c => {
+      const sup = fmtSupplies(c.chips||[], c.sup_text||'') || c.supplies || '—';
+      t += `${(c.location||'—').padEnd(21)}| ${(c.name||'Anon').padEnd(13)} | ${sup}\n`;
+    });
+    t += '\n';
+  }
+
+  const s = r.summary||{};
+  t += `${D}\nROUND SUMMARY\n${D}\n`;
+  t += `Total contacts:       ${s.total||'—'}\n`;
+  t += `Medical encounters:   ${s.medical!==undefined&&s.medical!==''?s.medical:(r.encounters||[]).length}\n`;
+  t += `Referrals generated:  ${s.referrals||'—'}\n`;
+  if(s.supplies) t += `Supplies distributed: ${s.supplies}\n`;
+  if(s.notable)  t += `\nNotable / follow-up:\n${s.notable}\n`;
+  return t;
+}
+
+// ── RICH HTML REPORT (for PDF + Notes export) ────────────────────────────────
+function buildHTMLReport(r) {
+  const esc = s => (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+
+  let h = `<div style="font-family:-apple-system,Heebo,'Arial Hebrew',Arial,sans-serif;
+    font-size:14px;padding:20px;max-width:680px;color:#111;line-height:1.6;background:#fff;">`;
+
+  // Header
+  h += `<h2 style="margin:0 0 4px;font-size:18px;border-bottom:2px solid #222;padding-bottom:8px;">
+    🏥 Street Medicine — ${esc(fmtDate(r.date))}</h2>`;
+  h += `<p style="margin:6px 0 18px;color:#444;">👤 Volunteers: ${esc(r.volunteers||'—')}</p>`;
+
+  // ── Medical Encounters ──
+  if ((r.encounters||[]).length) {
+    h += `<h3 style="font-size:15px;margin:0 0 12px;color:#222;">
+      MEDICAL ENCOUNTERS (${r.encounters.length})</h3>`;
+
+    r.encounters.forEach((e, i) => {
+      h += `<div style="border:1px solid #ccc;border-radius:10px;padding:14px;margin-bottom:14px;">`;
+      h += `<div style="font-weight:700;font-size:15px;margin-bottom:10px;">
+        Encounter ${i+1}${e.location ? ' — ' + esc(e.location) : ''}</div>`;
+
+      const ageParts = [e.name, e.age||e.age_sex, e.sex].filter(Boolean);
+      if(ageParts.length) h += `<p style="margin:3px 0;">${ageParts.map(esc).join(' · ')}</p>`;
+      if(e.insurance) h += `<p style="margin:3px 0;">Insurance: ${esc(e.insurance)}</p>`;
+      if(e.cc) h += `<p style="margin:8px 0 3px;"><strong>Chief complaint:</strong> ${esc(e.cc)}</p>`;
+
+      const v = [e.bp&&`BP ${e.bp}`,e.hr&&`HR ${e.hr}`,e.spo2&&`SpO₂ ${e.spo2}%`,e.temp&&`T ${e.temp}°C`].filter(Boolean);
+      if(v.length) h += `<p style="margin:3px 0;">Vitals: ${v.map(esc).join(' | ')}</p>`;
+      if(e.exam)       h += `<p style="margin:3px 0;">Exam: ${esc(e.exam)}</p>`;
+      if(e.assessment) h += `<p style="margin:3px 0;">Assessment: ${esc(e.assessment)}</p>`;
+
+      // Interventions
+      h += `<p style="margin:10px 0 4px;font-weight:600;">Intervention:</p>`;
+      let any = false;
+      if(e.wound) {
+        h += `<p style="margin:2px 0 2px 14px;">✓ Wound care${e.wound_detail?' — '+esc(e.wound_detail):''}</p>`;
+        any = true;
+      }
+      if(e.med_chk) {
+        h += `<p style="margin:2px 0 2px 14px;">✓ Medication: ${esc(e.med||'—')}</p>`;
+        any = true;
+      }
+      if(e.sup_chk) {
+        h += `<p style="margin:2px 0 2px 14px;">✓ Supplies: ${esc(fmtSupplies(e.sup_chips||[], e.sup||'')||'—')}</p>`;
+        any = true;
+      }
+      if(e.ref_chk) {
+        h += `<p style="margin:2px 0 2px 14px;">✓ Referral → ${esc(e.ref||'—')}</p>`;
+        // Referral photos immediately below the referral line
+        if((e.ref_photos||[]).length) {
+          h += `<div style="display:flex;flex-wrap:wrap;gap:8px;margin:8px 0 8px 14px;">`;
+          e.ref_photos.forEach(p => {
+            h += `<img src="${p}" style="width:160px;height:120px;object-fit:cover;border-radius:8px;border:1px solid #ddd;">`;
+          });
+          h += `</div>`;
+        }
+        any = true;
+      }
+      if(e.welfare) {
+        const wSup = fmtSupplies(e.welfare_chips||[], e.welfare_text||'');
+        h += `<p style="margin:2px 0 2px 14px;">✓ Welfare contact${wSup?' — Supplies: '+esc(wSup):''}</p>`;
+        any = true;
+      }
+      if(!any) h += `<p style="margin:2px 0 2px 14px;color:#888;">None</p>`;
+
+      h += `<p style="margin:8px 0 3px;">Follow-up needed: ${esc(e.followup||'No')}</p>`;
+      if(e.notes) h += `<p style="margin:3px 0;">Notes: ${esc(e.notes)}</p>`;
+
+      // Regular encounter photos at end of encounter block
+      if((e.photos||[]).length) {
+        h += `<div style="margin-top:10px;">`;
+        h += `<div style="font-size:12px;color:#666;font-weight:600;margin-bottom:6px;">📷 Photos</div>`;
+        h += `<div style="display:flex;flex-wrap:wrap;gap:8px;">`;
+        e.photos.forEach(p => {
+          h += `<img src="${p}" style="width:160px;height:120px;object-fit:cover;border-radius:8px;border:1px solid #ddd;">`;
+        });
+        h += `</div></div>`;
+      }
+      h += `</div>`; // end encounter card
+    });
+  }
+
+  // ── Non-medical contacts ──
+  if((r.contacts||[]).length) {
+    h += `<h3 style="font-size:15px;margin:16px 0 10px;color:#222;border-top:1px solid #ccc;padding-top:12px;">
+      NON-MEDICAL CONTACTS (${r.contacts.length})</h3>`;
+    h += `<table style="width:100%;border-collapse:collapse;font-size:13px;margin-bottom:16px;">`;
+    h += `<tr style="background:#f0f0f0;font-weight:600;">
+      <th style="text-align:left;padding:6px 8px;border:1px solid #ccc;">Location</th>
+      <th style="text-align:left;padding:6px 8px;border:1px solid #ccc;">Name</th>
+      <th style="text-align:left;padding:6px 8px;border:1px solid #ccc;">Supplies</th></tr>`;
+    r.contacts.forEach(c => {
+      const sup = fmtSupplies(c.chips||[], c.sup_text||'') || c.supplies || '—';
+      h += `<tr>
+        <td style="padding:6px 8px;border:1px solid #ccc;">${esc(c.location||'—')}</td>
+        <td style="padding:6px 8px;border:1px solid #ccc;">${esc(c.name||'Anon')}</td>
+        <td style="padding:6px 8px;border:1px solid #ccc;">${esc(sup)}</td></tr>`;
+    });
+    h += `</table>`;
+  }
+
+  // ── Round Summary ──
+  const s = r.summary||{};
+  h += `<div style="border-top:2px solid #222;margin-top:8px;padding-top:12px;">`;
+  h += `<h3 style="font-size:15px;margin:0 0 10px;color:#222;">ROUND SUMMARY</h3>`;
+  h += `<p style="margin:3px 0;">Total contacts: ${esc(String(s.total||'—'))}</p>`;
+  h += `<p style="margin:3px 0;">Medical encounters: ${s.medical!==undefined&&s.medical!==''?esc(String(s.medical)):(r.encounters||[]).length}</p>`;
+  h += `<p style="margin:3px 0;">Referrals generated: ${esc(String(s.referrals||'—'))}</p>`;
+  if(s.supplies) h += `<p style="margin:3px 0;">Supplies distributed: ${esc(s.supplies)}</p>`;
+  if(s.notable)  h += `<p style="margin:8px 0;">Notable / follow-up:<br>${esc(s.notable)}</p>`;
+  h += `</div>`;
+
+  h += `</div>`; // end wrapper
+  return h;
+}
+// ─────────────────────────────────────────────────────────────────────────────
+
+// ── NOTES EXPORT (rich HTML with inline photos) ───────────────────────────────
+function doNotesExport() {
+  closeModal('modal-export');
+  const r = DB.rounds.find(x=>x.id===curRoundId); if(!r) return;
+  const html = buildHTMLReport(r);
+  document.getElementById('rich-preview-content').innerHTML = html;
+  document.getElementById('rich-copy-btn').textContent = 'Copy for Notes';
+  openModal('modal-rich-preview');
+}
+
+function copyRichReport() {
+  const btn = document.getElementById('rich-copy-btn');
+  const contentEl = document.getElementById('rich-preview-content');
+
+  // NOTE: We intentionally skip navigator.clipboard.write / ClipboardItem here.
+  // WebKit (Safari/iOS) strips data: URLs from HTML blobs written via ClipboardItem,
+  // so images would be lost. execCommand('copy') on a rendered contenteditable div
+  // transfers the actual decoded image pixels, which Apple Notes receives correctly.
+  try {
+    const range = document.createRange();
+    range.selectNodeContents(contentEl);
+    const sel = window.getSelection();
+    sel.removeAllRanges();
+    sel.addRange(range);
+    const ok = document.execCommand('copy');
+    sel.removeAllRanges();
+    if (ok) {
+      btn.textContent = '✓ Copied!';
+      setTimeout(() => { btn.textContent = 'Copy for Notes'; }, 2500);
+    } else {
+      toast('Could not copy — long-press the report and choose Select All → Copy');
+    }
+  } catch(e) {
+    toast('Long-press the report → Select All → Copy');
+  }
+}
+// ─────────────────────────────────────────────────────────────────────────────
+
+async function doShare() {
+  closeModal('modal-export');
+  const r = DB.rounds.find(x=>x.id===curRoundId); if(!r) return;
+  const text = buildText(r);
+  if(navigator.share) {
+    try {
+      await navigator.share({ title:`Street Medicine — ${fmtDate(r.date)}`, text });
+      return;
+    } catch(e) { /* user cancelled or API unavailable — fall through */ }
+  }
+  // Always fall back to the text preview modal (works without HTTPS / clipboard)
+  openTextPreview(text);
+}
+
+function showTextPreview() {
+  closeModal('modal-export');
+  const r = DB.rounds.find(x=>x.id===curRoundId); if(!r) return;
+  openTextPreview(buildText(r));
+}
+
+function openTextPreview(text) {
+  document.getElementById('text-preview-area').value = text;
+  document.getElementById('copy-btn').textContent = 'Copy All';
+  openModal('modal-text-preview');
+  // Auto-select after a tick so the modal is visible
+  setTimeout(() => {
+    const ta = document.getElementById('text-preview-area');
+    ta.focus(); ta.select();
+  }, 120);
+}
+
+function selectAllAndCopy() {
+  const ta = document.getElementById('text-preview-area');
+  ta.focus(); ta.select();
+  // Try modern clipboard API first
+  if(navigator.clipboard) {
+    navigator.clipboard.writeText(ta.value)
+      .then(() => { document.getElementById('copy-btn').textContent = '✓ Copied!'; })
+      .catch(() => execCopy(ta));
+  } else {
+    execCopy(ta);
+  }
+}
+
+function execCopy(ta) {
+  // Legacy fallback — works on file:// and older iOS
+  try {
+    document.execCommand('copy');
+    document.getElementById('copy-btn').textContent = '✓ Copied!';
+  } catch {
+    toast('Long-press the text → Select All → Copy');
+  }
+}
+
+async function doPDF() {
+  closeModal('modal-export');
+  const r = DB.rounds.find(x=>x.id===curRoundId); if(!r) return;
+  if(!window.jspdf)      { toast('PDF library not loaded'); return; }
+  if(!window.html2canvas){ toast('html2canvas not loaded'); return; }
+
+  toast('Generating PDF…');
+
+  // Build a render div positioned far off-screen.
+  // IMPORTANT: must NOT use visibility:hidden or opacity:0 — html2canvas
+  // treats those as "render nothing" and produces a blank canvas.
+  // Off-screen via top:-9999px is invisible to the user but fully rendered.
+  let renderDiv = document.getElementById('_pdf_render');
+  if(!renderDiv) {
+    renderDiv = document.createElement('div');
+    renderDiv.id = '_pdf_render';
+    renderDiv.style.cssText = [
+      'position:fixed','top:-9999px','left:0',
+      'width:680px','background:#fff',
+      'pointer-events:none','z-index:-1'
+    ].join(';');
+    document.body.appendChild(renderDiv);
+  }
+  renderDiv.innerHTML = buildHTMLReport(r);
+
+  // Give images a tick to paint before capturing
+  await new Promise(res => setTimeout(res, 200));
+
+  try {
+    const canvas = await html2canvas(renderDiv, {
+      scale: 1.8,
+      useCORS: true,
+      allowTaint: true,
+      backgroundColor: '#ffffff',
+      logging: false,
+      windowWidth: 720,
+    });
+
+    const imgData = canvas.toDataURL('image/jpeg', 0.88);
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF({ orientation: 'p', unit: 'mm', format: 'a4' });
+
+    const pageW  = doc.internal.pageSize.getWidth();   // 210 mm
+    const pageH  = doc.internal.pageSize.getHeight();  // 297 mm
+    const margin = 10; // mm
+    const printW = pageW - margin * 2;
+    const imgH   = (canvas.height * printW) / canvas.width; // proportional height
+
+    // Slice the tall image across multiple A4 pages
+    let printed = 0;
+    while (printed < imgH) {
+      if (printed > 0) doc.addPage();
+      // Source slice in PDF units: how much of imgH is on this page
+      const sliceH = Math.min(pageH - margin * 2, imgH - printed);
+      // y-offset for addImage: negative so the correct slice sits in the top-left
+      const yOffset = margin - printed;
+      doc.addImage(imgData, 'JPEG', margin, yOffset, printW, imgH, '', 'FAST');
+      // Clip to page — add a white rectangle over the overflow at top and bottom
+      doc.setFillColor(255, 255, 255);
+      if (printed > 0) doc.rect(0, 0, pageW, margin, 'F');
+      doc.rect(0, margin + sliceH, pageW, pageH, 'F');
+      printed += pageH - margin * 2;
+    }
+
+    doc.save(`street-medicine-${r.date||'round'}.pdf`);
+    toast('PDF downloaded ✓');
+  } catch(e) {
+    console.error('PDF error', e);
+    toast('PDF error — try again');
+  } finally {
+    renderDiv.innerHTML = '';
+  }
+}
+
+// ══════════════════════════════════════════════
+// SEX BUTTONS
+// ══════════════════════════════════════════════
+function setSex(val, silent) {
+  curSex = (curSex === val) ? '' : val;  // tap again = deselect
+  document.getElementById('sex-btn-M').classList.toggle('selected', curSex==='M');
+  document.getElementById('sex-btn-F').classList.toggle('selected', curSex==='F');
+  // Auto-update name if it's still an auto-name or empty
+  const nameEl = document.getElementById('e-name');
+  const n = nameEl.value.trim();
+  if (!n || n === 'אלמוני' || n === 'אלמונית') {
+    nameEl.value = curSex === 'F' ? 'אלמונית' : 'אלמוני';
+    updateEncHdr();
+  }
+  if (!silent) autoSaveEnc();
+}
+
+function nameBlur() {
+  const nameEl = document.getElementById('e-name');
+  if (!nameEl.value.trim()) {
+    nameEl.value = curSex === 'F' ? 'אלמונית' : 'אלמוני';
+    updateEncHdr();
+    autoSaveEnc();
+  }
+}
+
+// ══════════════════════════════════════════════
+// SUPPLY CHIPS (welfare + contacts)
+// ══════════════════════════════════════════════
+function fmtSupplies(chips, text) {
+  const parts = [...(chips||[])];
+  if (text && text.trim()) parts.push(text.trim());
+  return parts.join(', ');
+}
+
+function renderWelfareChips() {
+  const c = document.getElementById('welfare-chips-container'); if(!c) return;
+  c.innerHTML = SUPPLY_CHIPS.map(chip =>
+    `<button class="chip-btn${curWelfareChips.includes(chip)?' on':''}" onclick="toggleWelfareChip('${chip}')">${chip}</button>`
+  ).join('');
+}
+
+function toggleWelfareChip(chip) {
+  const idx = curWelfareChips.indexOf(chip);
+  if (idx>=0) curWelfareChips.splice(idx,1); else curWelfareChips.push(chip);
+  renderWelfareChips();
+  autoSaveEnc();
+}
+
+function renderContactChips() {
+  const c = document.getElementById('contact-chips-container'); if(!c) return;
+  c.innerHTML = SUPPLY_CHIPS.map(chip =>
+    `<button class="chip-btn${curContactChips.includes(chip)?' on':''}" onclick="toggleContactChip('${chip}')">${chip}</button>`
+  ).join('');
+}
+
+function toggleContactChip(chip) {
+  const idx = curContactChips.indexOf(chip);
+  if (idx>=0) curContactChips.splice(idx,1); else curContactChips.push(chip);
+  renderContactChips();
+}
+
+function renderSupChips() {
+  const c = document.getElementById('sup-chips-container'); if(!c) return;
+  c.innerHTML = SUPPLY_CHIPS.map(chip =>
+    `<button class="chip-btn${curSupChips.includes(chip)?' on':''}" onclick="toggleSupChip('${chip}')">${chip}</button>`
+  ).join('');
+}
+
+function toggleSupChip(chip) {
+  const idx = curSupChips.indexOf(chip);
+  if (idx>=0) curSupChips.splice(idx,1); else curSupChips.push(chip);
+  renderSupChips();
+  autoSaveEnc();
+}
+
+function setContactSex(val) {
+  curContactSex = (curContactSex === val) ? '' : val;
+  document.getElementById('con-sex-btn-M').classList.toggle('selected', curContactSex==='M');
+  document.getElementById('con-sex-btn-F').classList.toggle('selected', curContactSex==='F');
+  const nameEl = document.getElementById('m-con-name');
+  const n = nameEl.value.trim();
+  if (!n || n === 'אלמוני' || n === 'אלמונית') {
+    nameEl.value = curContactSex === 'F' ? 'אלמונית' : curContactSex === 'M' ? 'אלמוני' : '';
+  }
+}
+
+let curContactIdx = -1; // -1 = new contact, ≥0 = editing existing
+
+// ── Geolocation auto-fill ──────────────────────
+function geolocateToField(fieldId, btnId, onDone) {
+  if (!navigator.geolocation) { toast('Geolocation not supported'); return; }
+  const btn = document.getElementById(btnId);
+  if (btn) { btn.textContent = '⏳'; btn.disabled = true; }
+  navigator.geolocation.getCurrentPosition(
+    async pos => {
+      const { latitude: lat, longitude: lon } = pos.coords;
+      let addr = `${lat.toFixed(5)}, ${lon.toFixed(5)}`;
+      try {
+        const res = await fetch(
+          `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}&accept-language=he`
+        );
+        const d = await res.json();
+        if (d && d.address) {
+          const a = d.address;
+          const parts = [a.road, a.house_number].filter(Boolean);
+          if (a.suburb || a.neighbourhood) parts.push(a.suburb || a.neighbourhood);
+          if (parts.length) addr = parts.join(' ');
+        }
+      } catch {}
+      const el = document.getElementById(fieldId);
+      if (el) { el.value = addr; el.dispatchEvent(new Event('input')); }
+      if (onDone) onDone();
+      if (btn) { btn.textContent = '📍 Current'; btn.disabled = false; }
+      toast('Location filled ✓');
+    },
+    () => {
+      toast('Could not get location');
+      if (btn) { btn.textContent = '📍 Current'; btn.disabled = false; }
+    },
+    { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+  );
+}
+
+// ── ADDRESS AUTOCOMPLETE ──────────────────────────────────────────────────────
+let _locTimer = null;
+
+function onLocInput(el, dropId) {
+  const val = el.value;
+  clearTimeout(_locTimer);
+  hideLocDrop(dropId);
+  if (!val || val.trim().length < 2) return;
+  _locTimer = setTimeout(() => fetchLocSuggestions(val.trim(), dropId, el), 420);
+}
+
+async function fetchLocSuggestions(q, dropId, inputEl) {
+  try {
+    const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(q + ' תל אביב')}&countrycodes=il&viewbox=${TLV_VIEWBOX}&bounded=0&limit=5&addressdetails=1`;
+    const res = await fetch(url, { headers: {'User-Agent':'StreetMedicineApp/1.0'} });
+    const data = await res.json();
+    showLocDrop(data, dropId, inputEl);
+  } catch { hideLocDrop(dropId); }
+}
+
+function showLocDrop(results, dropId, inputEl) {
+  const drop = document.getElementById(dropId);
+  if (!drop) return;
+  if (!results || !results.length) { hideLocDrop(dropId); return; }
+  drop.innerHTML = results.map((r, i) => {
+    const a = r.address || {};
+    const parts = [a.road, a.house_number].filter(Boolean);
+    const hood = a.suburb || a.neighbourhood || a.city_district || '';
+    if (hood) parts.push(hood);
+    const display = parts.length ? parts.join(' ') : (r.display_name||'').split(',')[0];
+    const escaped = display.replace(/'/g, '&#39;');
+    return `<div class="loc-drop-item" onclick="selectLocSuggestion('${escaped}',${r.lat},${r.lon},'${dropId}','${inputEl.id}')">${display}</div>`;
+  }).join('');
+  drop.classList.add('open');
+  drop.style.display = 'block';
+}
+
+function selectLocSuggestion(display, lat, lon, dropId, inputId) {
+  const inputEl = document.getElementById(inputId);
+  if (inputEl) {
+    inputEl.value = display;
+    // Dispatch input so autosave triggers (for encounter) or just stores value (for contact)
+    inputEl.dispatchEvent(new Event('input', {bubbles: true}));
+  }
+  // Immediately cache the geocode result so the map can use it
+  setGeoCache(display.trim().toLowerCase(), [parseFloat(lat), parseFloat(lon)]);
+  hideLocDrop(dropId);
+}
+
+function hideLocDrop(dropId) {
+  const drop = document.getElementById(dropId);
+  if (drop) { drop.style.display = 'none'; drop.classList.remove('open'); drop.innerHTML = ''; }
+}
+
+// Close autocomplete dropdowns when clicking outside
+document.addEventListener('click', (e) => {
+  if (!e.target.closest('.loc-wrap')) {
+    hideLocDrop('enc-loc-drop');
+    hideLocDrop('con-loc-drop');
+  }
+});
+// ─────────────────────────────────────────────────────────────────────────────
+
+function openNewContactModal() {
+  curContactIdx = -1;
+  document.getElementById('contact-modal-title').textContent = 'New Contact';
+  document.getElementById('contact-save-btn').textContent = 'Add Contact';
+  document.getElementById('contact-delete-wrap').style.display = 'none';
+  document.getElementById('m-con-loc').value = '';
+  document.getElementById('m-con-name').value = '';
+  document.getElementById('m-con-sup-text').value = '';
+  curContactChips = [];
+  curContactSex = '';
+  document.getElementById('con-sex-btn-M').classList.remove('selected');
+  document.getElementById('con-sex-btn-F').classList.remove('selected');
+  renderContactChips();
+  openModal('modal-new-contact');
+}
+
+function openEditContact(i) {
+  const r = DB.rounds.find(x => x.id === curRoundId); if (!r) return;
+  const c = (r.contacts||[])[i]; if (!c) return;
+  curContactIdx = i;
+  document.getElementById('contact-modal-title').textContent = 'Edit Contact';
+  document.getElementById('contact-save-btn').textContent = 'Save Changes';
+  document.getElementById('contact-delete-wrap').style.display = '';
+
+  document.getElementById('m-con-loc').value  = c.location || '';
+  document.getElementById('m-con-name').value = c.name || '';
+  document.getElementById('m-con-sup-text').value = c.sup_text || c.supplies || '';
+
+  curContactChips = [...(c.chips||[])];
+
+  // Infer sex from stored name
+  const stored = (c.name||'').trim();
+  curContactSex = stored === 'אלמונית' ? 'F' : stored === 'אלמוני' ? 'M' : '';
+  document.getElementById('con-sex-btn-M').classList.toggle('selected', curContactSex === 'M');
+  document.getElementById('con-sex-btn-F').classList.toggle('selected', curContactSex === 'F');
+
+  renderContactChips();
+  openModal('modal-new-contact');
+}
+
+function readContact() {
+  return {
+    location: document.getElementById('m-con-loc').value,
+    name:     document.getElementById('m-con-name').value,
+    chips:    [...curContactChips],
+    sup_text: document.getElementById('m-con-sup-text').value,
+  };
+}
+
+// ══════════════════════════════════════════════
+// REFERRAL PHOTOS
+// ══════════════════════════════════════════════
+function renderRefPhotos() {
+  const grid = document.getElementById('ref-photos-grid'); if(!grid) return;
+  grid.innerHTML = curRefPhotos.map((p,i) => `
+    <div class="ref-thumb">
+      <img src="${p.url}" alt="">
+      <button class="photo-del" onclick="delRefPhoto(${i})">×</button>
+    </div>`).join('');
+}
+
+function addRefPhoto(ev) {
+  const file = ev.target.files[0]; if(!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    const img = new Image();
+    img.onload = () => {
+      const MAX=900, c=document.createElement('canvas');
+      let w=img.width, h=img.height;
+      if(w>h&&w>MAX){h=h*MAX/w;w=MAX;}else if(h>MAX){w=w*MAX/h;h=MAX;}
+      c.width=w; c.height=h;
+      c.getContext('2d').drawImage(img,0,0,w,h);
+      curRefPhotos.push({id:uid(), url:c.toDataURL('image/jpeg',0.78)});
+      saveEnc(); renderRefPhotos();
+    };
+    img.src = e.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+
+function delRefPhoto(i) { curRefPhotos.splice(i,1); saveEnc(); renderRefPhotos(); }
+
+// ══════════════════════════════════════════════
+// GEOCODING + MAPS
+// ══════════════════════════════════════════════
+const GEO_CACHE_KEY = 'geo_cache_v1';
+function getGeoCache() { try { return JSON.parse(localStorage.getItem(GEO_CACHE_KEY)||'{}'); } catch { return {}; } }
+function setGeoCache(key, ll) { const c=getGeoCache(); c[key]=ll; localStorage.setItem(GEO_CACHE_KEY, JSON.stringify(c)); }
+
+const TLV_VIEWBOX = '34.73,32.12,34.83,31.98'; // W,N,E,S bounding box for Tel Aviv
+
+async function geocode(addr) {
+  if (!addr || !addr.trim()) return null;
+  const key = addr.trim().toLowerCase();
+  const cache = getGeoCache();
+  // Only skip if we have a REAL cached result (not null/undefined from old failed attempts)
+  if (cache[key]) return cache[key];
+  // Append TLV context unless the address already has a city/country marker
+  const q = /israel|ישראל|tel aviv|תל אביב|haifa|חיפה|jerusalem|ירושלים/i.test(addr)
+    ? addr : addr + ', תל אביב יפו, ישראל';
+  try {
+    const res = await fetch(
+      `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(q)}&limit=1&countrycodes=il&viewbox=${TLV_VIEWBOX}&bounded=0`,
+      { headers: {'User-Agent':'StreetMedicineApp/1.0'} }
+    );
+    const data = await res.json();
+    if (data.length) {
+      const ll = [parseFloat(data[0].lat), parseFloat(data[0].lon)];
+      setGeoCache(key, ll); return ll;
+    }
+  } catch {}
+  // Do NOT cache null — allow retry on next load
+  return null;
+}
+
+async function geocodeBatch(addrs) {
+  const cache = getGeoCache();
+  const unique = [...new Set(addrs.filter(Boolean).map(a=>a.trim().toLowerCase()))];
+  // Only skip addresses that have a SUCCESSFUL cached result (not null)
+  const uncached = unique.filter(k => !cache[k]);
+  for (let i = 0; i < uncached.length; i++) {
+    if (i > 0) await new Promise(r => setTimeout(r, 1200));
+    await geocode(uncached[i]);
+  }
+  const fresh = getGeoCache();
+  return addrs.map(a => (a ? fresh[a.trim().toLowerCase()] || null : null));
+}
+
+function setMapPlaceholder(mapEl, placeholderEl, msg) {
+  if (placeholderEl) { placeholderEl.textContent = msg; placeholderEl.style.display = ''; }
+  mapEl.style.display = 'flex';
+}
+function clearMapPlaceholder(mapEl, placeholderEl) {
+  if (placeholderEl) placeholderEl.style.display = 'none';
+  mapEl.style.display = '';
+}
+// Southern Tel Aviv (Neve Sha'anan / Levinsky) default centre
+const TLV_CENTER = [32.053, 34.770];
+const TLV_ZOOM   = 14;
+
+function initMap(mapEl, showZoom) {
+  const m = L.map(mapEl, {zoomControl: showZoom, attributionControl: false});
+  // CartoDB Positron — clean, Google Maps-like light style
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+    attribution: '© CartoDB',
+    subdomains: 'abcd',
+    maxZoom: 19
+  }).addTo(m);
+  return m;
+}
+
+function addDot(map, ll, color, label, addr) {
+  const icon = L.divIcon({
+    html: `<div style="background:${color};border:2px solid #fff;border-radius:50%;width:13px;height:13px;box-shadow:0 1px 4px rgba(0,0,0,.45);"></div>`,
+    className: '', iconSize: [13,13], iconAnchor: [6,6]
+  });
+  L.marker(ll, {icon}).addTo(map)
+    .bindPopup(`<b>${label}</b>${addr ? `<br><small>${addr}</small>` : ''}`);
+}
+
+let roundMapInst = null;
+async function renderRoundMap(roundId) {
+  const mapEl       = document.getElementById('round-map');
+  const loading     = document.getElementById('round-map-loading');
+  const placeholder = document.getElementById('round-map-placeholder');
+  if (!mapEl) return;
+
+  if (roundMapInst) { try { roundMapInst.remove(); } catch {} roundMapInst = null; }
+
+  const r = DB.rounds.find(x => x.id === roundId); if (!r) return;
+
+  if (typeof L === 'undefined') {
+    setMapPlaceholder(mapEl, placeholder, 'Map unavailable — check internet connection');
+    return;
+  }
+
+  const items = [];
+  (r.encounters||[]).forEach(e => { if (e.location) items.push({addr:e.location, label:e.name||'Encounter', type:'enc'}); });
+  (r.contacts||[]).forEach(c => { if (c.location) items.push({addr:c.location, label:c.name||'Contact', type:'contact'}); });
+
+  clearMapPlaceholder(mapEl, placeholder);
+  roundMapInst = initMap(mapEl, true);
+
+  if (!items.length) {
+    roundMapInst.setView(TLV_CENTER, TLV_ZOOM);
+    setMapPlaceholder(mapEl, placeholder, 'Add a location to encounters to see them on the map');
+    return;
+  }
+
+  if (loading) loading.style.display = '';
+  const lls = await geocodeBatch(items.map(x => x.addr));
+  if (loading) loading.style.display = 'none';
+
+  const points = items.map((it, i) => ({...it, ll: lls[i]})).filter(x => x.ll);
+
+  if (!points.length) {
+    roundMapInst.setView(TLV_CENTER, TLV_ZOOM);
+    setMapPlaceholder(mapEl, placeholder, 'Could not locate the recorded addresses');
+    return;
+  }
+
+  points.forEach(p => addDot(roundMapInst, p.ll, p.type==='enc' ? '#27ae60' : '#2980b9', p.label, p.addr));
+
+  const latlngs = points.map(p => p.ll);
+  if (latlngs.length === 1) roundMapInst.setView(latlngs[0], 16);
+  else roundMapInst.fitBounds(L.latLngBounds(latlngs).pad(0.25));
+}
+
+let homeMapInst = null;
+async function renderHomeMap(filterMonth) {
+  // filterMonth: null = all time, "YYYY-MM" = specific month
+  if (typeof L === 'undefined') return;
+  const suppliesEl= document.getElementById('home-supplies-text');
+  const mapEl     = document.getElementById('home-map');
+  const mapSection= document.getElementById('home-map-section');
+  const loading   = document.getElementById('home-map-loading');
+  if (!suppliesEl || !mapEl) return;
+
+  DB = load();
+
+  // ── Filter rounds by month if requested ──
+  const rounds = filterMonth
+    ? DB.rounds.filter(r => r.date && r.date.startsWith(filterMonth))
+    : DB.rounds;
+
+  // ── Tally supplies ──
+  const chipCounts = {};
+  const freeMap    = {};   // free-text → count (deduped)
+  rounds.forEach(r => {
+    (r.encounters||[]).forEach(e => {
+      if (e.welfare) {
+        (e.welfare_chips||[]).forEach(c => { chipCounts[c]=(chipCounts[c]||0)+1; });
+        const t = (e.welfare_text||'').trim();
+        if (t) freeMap[t] = (freeMap[t]||0)+1;
+      }
+      if (e.sup_chk) {
+        (e.sup_chips||[]).forEach(c => { chipCounts[c]=(chipCounts[c]||0)+1; });
+        const t = (e.sup||'').trim();
+        if (t) freeMap[t] = (freeMap[t]||0)+1;
+      }
+    });
+    (r.contacts||[]).forEach(c => {
+      (c.chips||[]).forEach(chip => { chipCounts[chip]=(chipCounts[chip]||0)+1; });
+      const t = (c.sup_text||'').trim();
+      if (t) freeMap[t] = (freeMap[t]||0)+1;
+    });
+  });
+
+  const freeParts = Object.entries(freeMap).map(([t,n]) => n>1 ? `${t} ×${n}` : t);
+  const chipHtml = SUPPLY_CHIPS.filter(c=>chipCounts[c])
+    .map(c=>`<button class="chip-btn on" style="pointer-events:none;font-size:12px;">${c} ×${chipCounts[c]}</button>`)
+    .join('');
+  const freeHtml = freeParts.length
+    ? `<div style="margin-top:6px;font-size:13px;color:var(--text-light);">${freeParts.join(' · ')}</div>` : '';
+  suppliesEl.innerHTML = chipHtml
+    ? `<div class="chip-row" style="margin-bottom:4px;">${chipHtml}</div>${freeHtml}`
+    : `<span style="color:var(--text-light);font-size:14px;">No supplies recorded yet.</span>`;
+
+  // ── Collect encounter / contact locations from filtered rounds ──
+  const allAddrs = [];
+  rounds.forEach(r => {
+    (r.encounters||[]).forEach(e => { if(e.location) allAddrs.push(e.location); });
+    (r.contacts||[]).forEach(c => { if(c.location) allAddrs.push(c.location); });
+  });
+
+  // Destroy old map instance
+  if (homeMapInst) { try { homeMapInst.remove(); } catch {} homeMapInst = null; }
+
+  if (typeof L === 'undefined') {
+    if (mapSection) mapSection.innerHTML += `<p style="color:var(--text-light);font-size:13px;text-align:center;margin-top:8px;">Map unavailable — check internet connection</p>`;
+    return;
+  }
+
+  homeMapInst = initMap(mapEl, false);
+
+  if (!allAddrs.length) {
+    homeMapInst.setView(TLV_CENTER, TLV_ZOOM);
+    return;
+  }
+
+  if (loading) loading.style.display = '';
+  const lls = await geocodeBatch(allAddrs);
+  if (loading) loading.style.display = 'none';
+
+  // pair each address back with its round's data (all encounters = green, contacts = blue)
+  let addrIdx = 0;
+  rounds.forEach(r => {
+    (r.encounters||[]).forEach(e => {
+      if (e.location && lls[addrIdx]) addDot(homeMapInst, lls[addrIdx], '#27ae60', e.name||'Encounter', e.location);
+      if (e.location) addrIdx++;
+    });
+    (r.contacts||[]).forEach(c => {
+      if (c.location && lls[addrIdx]) addDot(homeMapInst, lls[addrIdx], '#2980b9', c.name||'Contact', c.location);
+      if (c.location) addrIdx++;
+    });
+  });
+
+  const points = lls.filter(Boolean);
+  if (!points.length) { homeMapInst.setView(TLV_CENTER, TLV_ZOOM); return; }
+  if (points.length === 1) homeMapInst.setView(points[0], 16);
+  else homeMapInst.fitBounds(L.latLngBounds(points).pad(0.3));
+}
+
+// ══════════════════════════════════════════════
+// AUTO-CALCULATE SUPPLIES
+// ══════════════════════════════════════════════
+function autoCalcSupplies() {
+  const r = DB.rounds.find(x=>x.id===curRoundId); if(!r) return;
+  const counts  = {};   // chip → count
+  const freeMap = {};   // free-text entry → count (deduped with ×N)
+
+  // From encounters – welfare + medical supply chips + free text
+  (r.encounters||[]).forEach(e => {
+    if (e.welfare) {
+      (e.welfare_chips||[]).forEach(chip => { counts[chip] = (counts[chip]||0) + 1; });
+      const t = (e.welfare_text||'').trim();
+      if (t) freeMap[t] = (freeMap[t]||0) + 1;
+    }
+    if (e.sup_chk) {
+      (e.sup_chips||[]).forEach(chip => { counts[chip] = (counts[chip]||0) + 1; });
+      const t = (e.sup||'').trim();
+      if (t) freeMap[t] = (freeMap[t]||0) + 1;
+    }
+  });
+
+  // From non-medical contacts
+  (r.contacts||[]).forEach(c => {
+    (c.chips||[]).forEach(chip => { counts[chip] = (counts[chip]||0) + 1; });
+    const t = (c.sup_text||'').trim();
+    if (t) freeMap[t] = (freeMap[t]||0) + 1;
+    // Backwards-compat: old plain-text supplies field
+    if (!c.chips && c.supplies && c.supplies.trim()) {
+      const bt = c.supplies.trim();
+      freeMap[bt] = (freeMap[bt]||0) + 1;
+    }
+  });
+
+  const chipStr = SUPPLY_CHIPS.filter(c=>counts[c])
+    .map(c => counts[c]>1 ? `${c} ×${counts[c]}` : c)
+    .join(', ');
+
+  const freeParts = Object.entries(freeMap)
+    .map(([t, n]) => n > 1 ? `${t} ×${n}` : t);
+
+  const all = [chipStr, ...freeParts].filter(Boolean).join('; ');
+  document.getElementById('r-supplies').value = all || '—';
+  autoSaveRound();
+  toast('Supplies calculated ✓');
+}
+
+// ══════════════════════════════════════════════
+// MODAL HELPERS
+// ══════════════════════════════════════════════
+function openModal(id) { document.getElementById(id).classList.add('open'); }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+
+// ══════════════════════════════════════════════
+// UI HELPERS
+// ══════════════════════════════════════════════
+function toggleChk(id) {
+  const el = document.getElementById(id); el.checked = !el.checked;
+  el.dispatchEvent(new Event('change'));
+}
+function toggleSub(id, show) { document.getElementById(id).style.display = show?'block':'none'; }
+
+function toast(msg) {
+  const el = document.getElementById('toast-el');
+  el.textContent = msg; el.classList.add('show');
+  setTimeout(()=>el.classList.remove('show'), 2200);
+}
+
+function showAbout() { openModal('modal-about'); }
+
+function confirmClearAll() {
+  if(confirm('⚠️ Delete ALL rounds and encounters? This cannot be undone.')) {
+    localStorage.removeItem(KEY); DB={rounds:[]}; renderHome(); closeModal('modal-about'); toast('All data cleared');
+  }
+}
+
+// Wire the FAB click to the modal
+document.querySelector('.fab').onclick = () => {
+  const today = new Date().toISOString().slice(0,10);
+  document.getElementById('m-round-date').value = today;
+  document.getElementById('m-round-loc').value = '';
+  document.getElementById('m-round-vol').value = '';
+  openModal('modal-new-round');
+};
+
+// ══════════════════════════════════════════════
+// SERVICE WORKER
+// ══════════════════════════════════════════════
+if('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('./sw.js').catch(()=>{});
+}
+
+// ══════════════════════════════════════════════
+// INIT
+// ══════════════════════════════════════════════
+renderHome();
+</script>
+</body>
+</html>
