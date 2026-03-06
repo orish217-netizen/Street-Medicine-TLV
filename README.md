@@ -1,78 +1,39 @@
-# Street Medicine App â€” Deployment Guide
+# 🏥 Street Medicine App
 
-A Progressive Web App (PWA) for documenting street medicine encounters.
-Works offline. Installable on iPhone from Safari.
-
----
-
-## Deploy to iPhone in 5 minutes (GitHub Pages)
-
-### Step 1 â€” Create a GitHub repo
-
-1. Go to https://github.com/new
-2. Name it `street-medicine-app` (or anything you like)
-3. Set it to **Public**
-4. Click **Create repository**
-
-### Step 2 â€” Upload the files
-
-Upload all files from this folder to the repo:
-- `index.html`
-- `manifest.json`
-- `sw.js`
-- `icon-192.png`
-- `icon-512.png`
-- `apple-touch-icon.png`
-
-(Drag-and-drop them directly in the GitHub web interface, or use GitHub Desktop.)
-
-### Step 3 â€” Enable GitHub Pages
-
-1. In your repo, go to **Settings â†’ Pages**
-2. Under *Source*, select **Deploy from a branch**
-3. Branch: `main` / folder: `/ (root)`
-4. Click **Save**
-5. Wait ~1 minute â€” your app URL will appear (e.g. `https://yourusername.github.io/street-medicine-app/`)
-
-### Step 4 â€” Add to iPhone Home Screen
-
-1. Open the URL in **Safari** on your iPhone
-2. Tap the **Share** button (box with arrow)
-3. Scroll down â†’ tap **"Add to Home Screen"**
-4. Tap **Add**
-
-The app now appears as a full-screen app on your home screen with the medical cross icon.
-
----
+A mobile-first progressive web app (PWA) for documenting street medicine rounds. Built as a single HTML file — no server, no database, no installation required.
 
 ## Features
 
-| Feature | Details |
-|---|---|
-| **Rounds** | Create a round per shift (date, area, volunteers) |
-| **Encounters** | Full structured form per patient (demographics, vitals, exam, assessment, interventions, follow-up) |
-| **Non-medical contacts** | Quick logging of supplies-only contacts |
-| **Round summary** | Auto-counts + free-text summary |
-| **Photos** | Camera + library, auto-resized for storage |
-| **Export** | iOS Share Sheet (â†’ Apple Notes) + PDF download |
-| **Offline** | Works with no internet after first load |
-| **Storage** | All data stored locally on device only |
+- **Medical encounters** — chief complaint, vitals, exam, assessment, interventions (wound care, medication, supplies, referrals), follow-up notes
+- **Non-medical contacts** — location, name/alias, supplies given
+- **Photos** — attach photos to encounters and referrals
+- **Maps** — encounter locations plotted on a map per round and across all rounds
+- **Address autocomplete** — Tel Aviv street names with live suggestions
+- **Stats** — supplies summary and map filtered by month or all-time
+- **Export** — copy rich report (with inline photos) to Apple Notes, or download as PDF
+- **Offline** — all data stored locally on the device, works without internet after first load
 
----
+## Installing on iPhone
+
+1. Open the app URL in **Safari**
+2. Tap the **Share** button (box with arrow)
+3. Tap **"Add to Home Screen"**
+4. The app appears as an icon on your home screen and launches full-screen
+
+> First open requires an internet connection to load map and PDF libraries. After that, core functionality works offline.
+
+## Updating
+
+The app is a single file. When a new version is uploaded to GitHub, everyone gets the update automatically the next time they open the app with an internet connection — no re-installing needed.
 
 ## Data & Privacy
 
-All data is stored in `localStorage` on your device. Nothing is sent to any server.
-To back up your data, use the Export function regularly.
+All data is stored **locally on your device** using the browser's localStorage. Nothing is sent to any server. Clearing your browser data or deleting the app will erase all records — export important rounds before doing so.
 
----
+## Tech
 
-## Export Format
-
-The Share Sheet exports a plain-text report matching your existing Apple Notes template format, including:
-- Round header (date, location, volunteers)
-- Each encounter (address, demographics, vitals, exam, assessment, interventions, follow-up)
-- Non-medical contacts table
-- Round summary
-
-The PDF export mirrors the same format with photos appended at the end.
+- Vanilla HTML / CSS / JavaScript — no framework, no build step
+- [Leaflet.js](https://leafletjs.com/) for maps
+- [CartoDB Positron](https://carto.com/basemaps/) tiles
+- [Nominatim](https://nominatim.org/) (OpenStreetMap) for geocoding
+- [jsPDF](https://github.com/parallax/jsPDF) + [html2canvas](https://html2canvas.hertzen.com/) for PDF export
