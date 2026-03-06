@@ -323,10 +323,10 @@
     /* ── ADDRESS AUTOCOMPLETE ── */
     .loc-wrap { position: relative; }
     .loc-drop {
-      display: none; position: absolute; top: calc(100% + 2px); left: 0; right: 0;
+      display: none; position: fixed;
       background: #fff; border: 1px solid var(--border); border-radius: 10px;
-      z-index: 9999; overflow: hidden;
-      box-shadow: 0 4px 20px rgba(0,0,0,.13);
+      z-index: 99999; overflow-y: auto; max-height: 220px;
+      box-shadow: 0 4px 24px rgba(0,0,0,.18);
     }
     .loc-drop.open { display: block; }
     .loc-drop-item {
@@ -435,7 +435,10 @@
 
     <!-- Round summary -->
     <div class="form-section" style="margin-top:18px;">
-      <div class="form-section-title">📊 Round Summary</div>
+      <div class="form-section-title" style="display:flex;align-items:center;justify-content:space-between;">
+        <span>📊 Round Summary</span>
+        <button class="btn btn-gray btn-sm" onclick="autoCalcAll()" style="font-size:12px;padding:4px 10px;">⟳ Auto-fill all</button>
+      </div>
       <div class="form-field">
         <label>Total contacts (incl. non-medical)</label>
         <input type="number" id="r-total" placeholder="auto or manual" oninput="autoSaveRound()">
@@ -449,10 +452,7 @@
         <input type="number" id="r-referrals" oninput="autoSaveRound()">
       </div>
       <div class="form-field">
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;">
-          <label style="margin:0;">Supplies distributed</label>
-          <button class="btn btn-gray btn-sm" onclick="autoCalcSupplies()" style="font-size:12px;padding:4px 10px;">⟳ Auto-fill</button>
-        </div>
+        <label>Supplies distributed</label>
         <textarea id="r-supplies" placeholder="e.g. 20 socks, 10 condoms, 5 dressings…" oninput="autoSaveRound()"></textarea>
       </div>
       <div class="form-field">
@@ -1811,6 +1811,11 @@ function showLocDrop(results, dropId, inputEl) {
     const escaped = display.replace(/'/g, '&#39;');
     return `<div class="loc-drop-item" onclick="selectLocSuggestion('${escaped}',${r.lat},${r.lon},'${dropId}','${inputEl.id}')">${display}</div>`;
   }).join('');
+  // Use fixed positioning so the dropdown escapes any overflow:hidden parent (modal sheets, scroll containers)
+  const rect = inputEl.getBoundingClientRect();
+  drop.style.top   = (rect.bottom + 2) + 'px';
+  drop.style.left  = rect.left + 'px';
+  drop.style.width = rect.width + 'px';
   drop.classList.add('open');
   drop.style.display = 'block';
 }
@@ -1832,13 +1837,17 @@ function hideLocDrop(dropId) {
   if (drop) { drop.style.display = 'none'; drop.classList.remove('open'); drop.innerHTML = ''; }
 }
 
-// Close autocomplete dropdowns when clicking outside
+// Close autocomplete dropdowns when clicking outside or scrolling
 document.addEventListener('click', (e) => {
-  if (!e.target.closest('.loc-wrap')) {
+  if (!e.target.closest('.loc-wrap') && !e.target.closest('.loc-drop')) {
     hideLocDrop('enc-loc-drop');
     hideLocDrop('con-loc-drop');
   }
 });
+document.addEventListener('scroll', () => {
+  hideLocDrop('enc-loc-drop');
+  hideLocDrop('con-loc-drop');
+}, true); // capture phase catches scroll on any nested container
 // ─────────────────────────────────────────────────────────────────────────────
 
 function openNewContactModal() {
@@ -2147,7 +2156,28 @@ async function renderHomeMap(filterMonth) {
 // ══════════════════════════════════════════════
 // AUTO-CALCULATE SUPPLIES
 // ══════════════════════════════════════════════
-function autoCalcSupplies() {
+function autoCalcAll() {
+  const r = DB.rounds.find(x=>x.id===curRoundId); if(!r) return;
+
+  // Total contacts = medical encounters + non-medical contacts
+  const totalContacts = (r.encounters||[]).length + (r.contacts||[]).length;
+  document.getElementById('r-total').value = totalContacts;
+
+  // Medical encounters
+  document.getElementById('r-medical').value = (r.encounters||[]).length;
+
+  // Referrals = encounters where referral checkbox was ticked
+  const refCount = (r.encounters||[]).filter(e => e.ref_chk).length;
+  document.getElementById('r-referrals').value = refCount;
+
+  // Supplies (reuse existing logic)
+  autoCalcSupplies(true);
+
+  autoSaveRound();
+  toast('Summary updated ✓');
+}
+
+function autoCalcSupplies(silent) {
   const r = DB.rounds.find(x=>x.id===curRoundId); if(!r) return;
   const counts  = {};   // chip → count
   const freeMap = {};   // free-text entry → count (deduped with ×N)
@@ -2187,8 +2217,7 @@ function autoCalcSupplies() {
 
   const all = [chipStr, ...freeParts].filter(Boolean).join('; ');
   document.getElementById('r-supplies').value = all || '—';
-  autoSaveRound();
-  toast('Supplies calculated ✓');
+  if (!silent) { autoSaveRound(); toast('Supplies calculated ✓'); }
 }
 
 // ══════════════════════════════════════════════
