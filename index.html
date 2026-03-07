@@ -6,7 +6,9 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="Street Med">
-  <meta name="theme-color" content="#1a3a5c">
+  <meta name="theme-color" content="#1a3a5c" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#1c1c1e" media="(prefers-color-scheme: dark)">
+  <meta name="color-scheme" content="light dark">
   <title>Street Medicine</title>
   <link rel="manifest" href="manifest.json">
   <link rel="apple-touch-icon" href="apple-touch-icon.png">
@@ -26,7 +28,37 @@
       --radius:     13px;
       --safe-top:    env(safe-area-inset-top, 0px);
       --safe-bottom: env(safe-area-inset-bottom, 0px);
+      color-scheme: light dark;
     }
+
+    /* ── DARK MODE ── */
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg:         #1c1c1e;
+        --card:       #2c2c2e;
+        --text:       #f2f2f7;
+        --text-light: #8e8e93;
+        --border:     #3a3a3c;
+        --primary:    #1e4976;
+        --accent:     #30d158;
+        --accent-dk:  #28b84a;
+      }
+      /* Map placeholder bg */
+      #round-map, #home-map { background: #2c3542 !important; }
+      /* Toast needs contrast against dark bg */
+      .toast { background: #48484a; }
+      /* Rich-preview scroll area (inline background:#fff override) */
+      #rich-preview-scroll { background: var(--card) !important; }
+      /* Leaflet map UI */
+      .leaflet-popup-content-wrapper,
+      .leaflet-popup-tip { background: var(--card); color: var(--text); }
+      .leaflet-bar a { background: var(--card); color: var(--text); border-color: var(--border); }
+      .leaflet-bar a:hover { background: var(--bg); }
+      /* Badge tints */
+      .badge-green { background: rgba(48,209,88,.18); }
+      .badge-gray  { background: rgba(142,142,147,.18); }
+    }
+
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
 
     body {
@@ -324,7 +356,7 @@
     .loc-wrap { position: relative; }
     .loc-drop {
       display: none; position: fixed;
-      background: #fff; border: 1px solid var(--border); border-radius: 10px;
+      background: var(--card); border: 1px solid var(--border); border-radius: 10px;
       z-index: 99999; overflow-y: auto; max-height: 220px;
       box-shadow: 0 4px 24px rgba(0,0,0,.18);
     }
