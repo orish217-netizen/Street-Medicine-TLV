@@ -1,15 +1,15 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="he" dir="rtl">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <meta name="apple-mobile-web-app-title" content="Street Med">
+  <meta name="apple-mobile-web-app-title" content="רפואת רחוב">
   <meta name="theme-color" content="#1a3a5c" media="(prefers-color-scheme: light)">
   <meta name="theme-color" content="#1c1c1e" media="(prefers-color-scheme: dark)">
   <meta name="color-scheme" content="light dark">
-  <title>Street Medicine</title>
+  <title>רפואת רחוב</title>
   <link rel="manifest" href="manifest.json">
   <link rel="apple-touch-icon" href="apple-touch-icon.png">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
@@ -58,6 +58,26 @@
       .badge-green { background: rgba(48,209,88,.18); }
       .badge-gray  { background: rgba(142,142,147,.18); }
     }
+
+
+    /* ── RTL / HEBREW OVERRIDES ── */
+    body { font-family: -apple-system, 'Heebo', 'Arial Hebrew', BlinkMacSystemFont, sans-serif; }
+    /* Stats "All" button margin */
+    #stats-all-btn { margin-left: 0 !important; margin-right: 8px; }
+    /* Table headers align right */
+    th { text-align: right !important; }
+    /* Vitals grid labels */
+    .vc label { text-align: right; }
+    /* sub-inputs and chip rows keep natural RTL flow */
+    .sub-input-wrap, .chip-row { direction: rtl; }
+    /* Form field labels flex justify */
+    .form-field label { text-align: right; }
+    /* section-hdr keep row but RTL */
+    .section-hdr { direction: rtl; }
+    /* modal h3 right-align */
+    .modal-sheet h3 { text-align: right; }
+    /* loc-wrap for autocomplete */
+    .loc-wrap input { text-align: right; }
 
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
 
@@ -384,9 +404,9 @@
 <!-- ═══════════════════════════ HOME ═══════════════════════════ -->
 <div id="pg-home" class="page active">
   <div class="hdr">
-    <h1>🏥 Street Medicine</h1>
+    <h1>🏥 רפואת רחוב</h1>
     <div style="display:flex;gap:4px;align-items:center;">
-      <button class="hdr-btn-text" onclick="navToStats()">📊 Stats</button>
+      <button class="hdr-btn-text" onclick="navToStats()">📊 סטטיסטיקות</button>
       <button class="hdr-btn-text" onclick="showAbout()">•••</button>
     </div>
   </div>
@@ -394,13 +414,13 @@
     <!-- Rounds list (JS-rendered) -->
     <div id="home-content"></div>
   </div>
-  <button class="fab" onclick="openModal('modal-new-round')" title="New round">+</button>
+  <button class="fab" onclick="openModal('modal-new-round')" title="סיור חדש">+</button>
 </div>
 
 <!-- ═══════════════════════════ STATS ═══════════════════════════ -->
 <div id="pg-stats" class="page">
   <div class="hdr">
-    <button class="hdr-btn" onclick="showPage('pg-home')" style="font-size:22px;">‹</button>
+    <button class="hdr-btn" onclick="showPage('pg-home')" style="font-size:22px;">›</button>
     <h1>📊 Stats</h1>
   </div>
   <div class="content">
@@ -409,17 +429,17 @@
       <button onclick="changeStatsMonth(-1)" style="background:none;border:none;font-size:22px;cursor:pointer;color:var(--primary);padding:2px 6px;line-height:1;">‹</button>
       <span id="stats-month-label" style="font-size:15px;font-weight:600;flex:1;text-align:center;"></span>
       <button onclick="changeStatsMonth(1)" style="background:none;border:none;font-size:22px;cursor:pointer;color:var(--primary);padding:2px 6px;line-height:1;">›</button>
-      <button onclick="setStatsAll()" id="stats-all-btn" style="background:none;border:1px solid var(--border);border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;color:var(--text-light);padding:4px 10px;margin-left:8px;">All</button>
+      <button onclick="setStatsAll()" id="stats-all-btn" style="background:none;border:1px solid var(--border);border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;color:var(--text-light);padding:4px 10px;margin-left:8px;">הכל</button>
     </div>
     <div id="home-stats">
       <div class="form-section">
-        <div class="form-section-title">📦 Supplies — <span id="stats-sup-label">All Rounds</span></div>
+        <div class="form-section-title">📦 ציוד — <span id="stats-sup-label">כל הסיורים</span></div>
         <div id="home-supplies-text" style="font-size:14px;line-height:1.9;"></div>
       </div>
       <div class="form-section" id="home-map-section" style="margin-top:10px;">
-        <div class="form-section-title">🗺️ All Encounters</div>
+        <div class="form-section-title">🗺️ כל המפגשים</div>
         <div id="home-map" style="height:260px;border-radius:10px;overflow:hidden;background:#e0e8f0;position:relative;"></div>
-        <div id="home-map-loading" style="font-size:12px;color:var(--text-light);text-align:center;padding-top:4px;display:none;">📡 Geocoding locations…</div>
+        <div id="home-map-loading" style="font-size:12px;color:var(--text-light);text-align:center;padding-top:4px;display:none;">📡 מאתר מיקומים...</div>
       </div>
     </div>
   </div>
@@ -428,7 +448,7 @@
 <!-- ═══════════════════════════ ROUND ═══════════════════════════ -->
 <div id="pg-round" class="page">
   <div class="hdr">
-    <button class="hdr-btn" onclick="navBack('pg-home')" style="font-size:22px;">‹</button>
+    <button class="hdr-btn" onclick="navBack('pg-home')" style="font-size:22px;">›</button>
     <h1 id="round-hdr-title">Round</h1>
     <button class="hdr-btn" onclick="confirmDeleteRound()" title="Delete">🗑</button>
   </div>
@@ -436,83 +456,83 @@
 
     <!-- Round info -->
     <div class="form-section">
-      <div class="form-section-title">📋 Round Info</div>
+      <div class="form-section-title">📋 פרטי הסיור</div>
       <div class="form-field">
-        <label>Date</label>
+        <label>תאריך</label>
         <input type="date" id="r-date" onchange="autoSaveRound()">
       </div>
       <div class="form-field">
-        <label>Area / General location</label>
-        <input type="text" id="r-location" placeholder="e.g. Central Station area" oninput="autoSaveRound()">
+        <label>אזור / מיקום כללי</label>
+        <input type="text" id="r-location" placeholder="לדוג': התחנה הישנה..." oninput="autoSaveRound()">
       </div>
       <div class="form-field">
-        <label>Volunteer(s)</label>
-        <input type="text" id="r-volunteers" placeholder="Names" oninput="autoSaveRound()">
+        <label>מתנדבים</label>
+        <input type="text" id="r-volunteers" placeholder="שמות" oninput="autoSaveRound()">
       </div>
     </div>
 
     <!-- Encounters -->
     <div class="section-hdr">
-      <h2>🩺 Medical Encounters</h2>
-      <button class="btn btn-accent btn-sm" onclick="openModal('modal-new-enc')">+ Add</button>
+      <h2>🩺 מפגשים רפואיים</h2>
+      <button class="btn btn-accent btn-sm" onclick="openModal('modal-new-enc')">+ הוספה</button>
     </div>
     <div id="enc-list"></div>
 
     <!-- Non-medical contacts -->
     <div class="section-hdr">
-      <h2>🤝 Non-Medical Contacts</h2>
-      <button class="btn btn-gray btn-sm" onclick="openNewContactModal()">+ Add</button>
+      <h2>🤝 מפגשים לא-רפואיים</h2>
+      <button class="btn btn-gray btn-sm" onclick="openNewContactModal()">+ הוספה</button>
     </div>
     <div id="contact-list"></div>
 
     <!-- Round summary -->
     <div class="form-section" style="margin-top:18px;">
       <div class="form-section-title" style="display:flex;align-items:center;justify-content:space-between;">
-        <span>📊 Round Summary</span>
-        <button class="btn btn-gray btn-sm" onclick="autoCalcAll()" style="font-size:12px;padding:4px 10px;">⟳ Auto-fill all</button>
+        <span>📊 סיכום הסיור</span>
+        <button class="btn btn-gray btn-sm" onclick="autoCalcAll()" style="font-size:12px;padding:4px 10px;">עדכן אוטומטית</button>
       </div>
       <div class="form-field">
-        <label>Total contacts (incl. non-medical)</label>
-        <input type="number" id="r-total" placeholder="auto or manual" oninput="autoSaveRound()">
+        <label>סה"כ מפגשים (כולל לא-רפואיים)</label>
+        <input type="number" id="r-total" placeholder="אוטומטית או ידנית" oninput="autoSaveRound()">
       </div>
       <div class="form-field">
-        <label>Medical encounters</label>
+        <label>מפגשים רפואיים</label>
         <input type="number" id="r-medical" oninput="autoSaveRound()">
       </div>
       <div class="form-field">
-        <label>Referrals generated</label>
+        <label>הפניות שניתנו</label>
         <input type="number" id="r-referrals" oninput="autoSaveRound()">
       </div>
       <div class="form-field">
-        <label>Supplies distributed</label>
-        <textarea id="r-supplies" placeholder="e.g. 20 socks, 10 condoms, 5 dressings…" oninput="autoSaveRound()"></textarea>
+        <label>ציוד שחולק</label>
+        <textarea id="r-supplies" placeholder="לדוג': 20 גרביים, 10 קונדומים, 5 חבישות..." oninput="autoSaveRound()"></textarea>
       </div>
       <div class="form-field">
-        <label>Notable / follow-up for next round</label>
-        <textarea id="r-notable" placeholder="Key observations, things to track…" oninput="autoSaveRound()"></textarea>
+        <label>פולו-אפים ונקודות לסיורים הבאים</label>
+        <textarea id="r-notable" placeholder="נקודות חשובות, דברים למעקב..." oninput="autoSaveRound()"></textarea>
       </div>
     </div>
 
     <!-- Round Map -->
     <div class="form-section" id="round-map-section" style="margin-top:10px;">
-      <div class="form-section-title">🗺️ Encounter Map</div>
+      <div class="form-section-title">🗺️ מפת מפגשים</div>
       <div id="round-map" style="height:260px;border-radius:10px;overflow:hidden;background:#e0e8f0;display:flex;align-items:center;justify-content:center;">
-        <span id="round-map-placeholder" style="color:#8aa0b4;font-size:13px;text-align:center;padding:16px;">Add a location to encounters<br>to see them on the map</span>
+        <span id="round-map-placeholder" style="color:#8aa0b4;font-size:13px;text-align:center;padding:16px;">הוסיפו מיקום למפגשים<br>כדי לראותם על המפה</span>
       </div>
-      <div id="round-map-loading" style="font-size:12px;color:var(--text-light);text-align:center;padding-top:4px;display:none;">📡 Geocoding locations…</div>
+      <div id="round-map-loading" style="font-size:12px;color:var(--text-light);text-align:center;padding-top:4px;display:none;">📡 מאתר מיקומים...</div>
     </div>
   </div>
 
   <div class="s-footer">
-    <button class="btn btn-primary" onclick="saveRound(); toast('Saved ✓')">Save</button>
-    <button class="btn btn-accent" onclick="saveRound(); openModal('modal-export')">📤 Export</button>
+    <button class="btn btn-primary" onclick="saveRound(); toast('נשמר ✓')">שמירה</button>
+    <button class="btn btn-accent" onclick="saveRound(); openModal('modal-export')">📤 ייצוא</button>
   </div>
 </div>
 
 <!-- ═══════════════════════════ ENCOUNTER ═══════════════════════════ -->
 <div id="pg-enc" class="page">
   <div class="hdr">
-    <button class="hdr-btn" onclick="navBack('pg-round')" style="font-size:22px;">‹</button>
+    <button class="hdr-btn" onclick="navBack('pg-round')" style="font-size:22px;">›</button>
     <h1 id="enc-hdr-title">Encounter</h1>
     <button class="hdr-btn" onclick="confirmDeleteEnc()" title="Delete">🗑</button>
   </div>
@@ -520,15 +540,15 @@
 
     <!-- Location -->
     <div class="form-section">
-      <div class="form-section-title">📍 Encounter Location</div>
+      <div class="form-section-title">📍 מיקום המפגש</div>
       <div class="form-field">
         <label style="display:flex;justify-content:space-between;align-items:center;">
-          Street address
+          כתובת
           <button id="geo-enc-btn" onclick="geolocateToField('e-location','geo-enc-btn',()=>autoSaveEnc())"
-                  style="background:none;border:1px solid var(--border);border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;color:var(--text-light);padding:3px 9px;">📍 Current</button>
+                  style="background:none;border:1px solid var(--border);border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;color:var(--text-light);padding:3px 9px;">📍 נוכחי</button>
         </label>
         <div class="loc-wrap">
-          <input type="text" id="e-location" placeholder="e.g. Allenby 48" autocomplete="off"
+          <input type="text" id="e-location" placeholder="לדוג': אלנבי 48" autocomplete="off"
                  oninput="autoSaveEnc(); onLocInput(this,'enc-loc-drop')">
           <div class="loc-drop" id="enc-loc-drop"></div>
         </div>
@@ -537,96 +557,96 @@
 
     <!-- Patient -->
     <div class="form-section">
-      <div class="form-section-title">👤 Patient</div>
+      <div class="form-section-title">👤 מטופל/ת</div>
       <div class="form-field">
-        <label>Name / Alias</label>
-        <input type="text" id="e-name" placeholder="Name or alias"
+        <label>שם / כינוי</label>
+        <input type="text" id="e-name" placeholder="שם או כינוי"
                oninput="autoSaveEnc(); updateEncHdr()"
                onblur="nameBlur()">
       </div>
       <div class="form-field">
-        <label>Age / Sex</label>
+        <label>גיל ומין</label>
         <div style="display:flex;align-items:center;gap:10px;">
-          <input type="text" id="e-age" placeholder="e.g. ~50s" oninput="autoSaveEnc()" style="flex:1;border:none;outline:none;font-size:16px;font-family:inherit;background:transparent;">
+          <input type="text" id="e-age" placeholder="לדוג': בשנות ה-50" oninput="autoSaveEnc()" style="flex:1;border:none;outline:none;font-size:16px;font-family:inherit;background:transparent;">
           <div style="display:flex;gap:6px;flex-shrink:0;">
-            <button id="sex-btn-M" class="pill" onclick="setSex('M')">M</button>
-            <button id="sex-btn-F" class="pill" onclick="setSex('F')">F</button>
+            <button id="sex-btn-M" class="pill" onclick="setSex('M')">גבר</button>
+            <button id="sex-btn-F" class="pill" onclick="setSex('F')">אשה</button>
           </div>
         </div>
       </div>
       <div class="form-field">
-        <label>Insurance (Kupat Cholim)</label>
+        <label>קופ"ח</label>
         <select id="e-insurance" onchange="autoSaveEnc()">
-          <option value="">Unknown / not asked</option>
-          <option value="Clalit">✓ Clalit</option>
-          <option value="Maccabi">✓ Maccabi</option>
-          <option value="Meuhedet">✓ Meuhedet</option>
-          <option value="Leumit">✓ Leumit</option>
-          <option value="No insurance">✗ No insurance</option>
+          <option value="">לא ידוע / לא שאלנו</option>
+          <option value="Clalit">✓ כללית</option>
+          <option value="Maccabi">✓ מכבי</option>
+          <option value="Meuhedet">✓ מאוחדת</option>
+          <option value="Leumit">✓ לאומית</option>
+          <option value="No insurance">✗ אין קופ"ח</option>
         </select>
       </div>
     </div>
 
     <!-- Clinical -->
     <div class="form-section">
-      <div class="form-section-title">🩺 Clinical</div>
+      <div class="form-section-title">🩺 מידע רפואי</div>
       <div class="form-field">
-        <label>Chief Complaint</label>
-        <input type="text" id="e-cc" placeholder="Main complaint" oninput="autoSaveEnc()">
+        <label>תלונה עיקרית</label>
+        <input type="text" id="e-cc" placeholder="תלונה עיקרית" oninput="autoSaveEnc()">
       </div>
       <div class="vitals-grid">
-        <div class="vc"><label>BP (mmHg)</label><input type="text" id="e-bp" placeholder="120/80" oninput="autoSaveEnc()"></div>
-        <div class="vc"><label>HR (bpm)</label><input type="number" id="e-hr" placeholder="72" oninput="autoSaveEnc()"></div>
-        <div class="vc"><label>SpO₂ (%)</label><input type="number" id="e-spo2" placeholder="98" oninput="autoSaveEnc()"></div>
-        <div class="vc"><label>Temp (°C)</label><input type="number" step="0.1" id="e-temp" placeholder="36.5" oninput="autoSaveEnc()"></div>
+        <div class="vc"><label>ל"ד (ממ"כ)</label><input type="text" id="e-bp" placeholder="120/80" oninput="autoSaveEnc()"></div>
+        <div class="vc"><label>דופק</label><input type="number" id="e-hr" placeholder="72" oninput="autoSaveEnc()"></div>
+        <div class="vc"><label>סטורציה</label><input type="number" id="e-spo2" placeholder="98" oninput="autoSaveEnc()"></div>
+        <div class="vc"><label>טמפ'</label><input type="number" step="0.1" id="e-temp" placeholder="36.5" oninput="autoSaveEnc()"></div>
       </div>
       <div class="form-field">
-        <label>Focused Exam Findings</label>
-        <textarea id="e-exam" placeholder="Relevant physical exam findings" oninput="autoSaveEnc()"></textarea>
+        <label>ממצאים בבדיקה</label>
+        <textarea id="e-exam" placeholder="ממצאים רלוונטיים" oninput="autoSaveEnc()"></textarea>
       </div>
       <div class="form-field">
-        <label>Assessment</label>
-        <textarea id="e-assessment" placeholder="Impression / working diagnosis" oninput="autoSaveEnc()"></textarea>
+        <label>הערכה קלינית</label>
+        <textarea id="e-assessment" placeholder="אבחנת עבודה והתרשמות" oninput="autoSaveEnc()"></textarea>
       </div>
     </div>
 
     <!-- Intervention -->
     <div class="form-section">
-      <div class="form-section-title">💊 Intervention</div>
+      <div class="form-section-title">💊 התערבות</div>
       <div class="chk-row" onclick="event.stopPropagation()">
         <input type="checkbox" id="e-wound" onchange="toggleSub('e-wound-sub',this.checked); autoSaveEnc()">
         <div style="flex:1">
-          <span class="chk-label" onclick="toggleChk('e-wound'); toggleSub('e-wound-sub', document.getElementById('e-wound').checked); autoSaveEnc()">Wound care / dressing</span>
+          <span class="chk-label" onclick="toggleChk('e-wound'); toggleSub('e-wound-sub', document.getElementById('e-wound').checked); autoSaveEnc()">חבישה / טיפול בפצע</span>
           <div id="e-wound-sub" class="sub-input-wrap" style="display:none">
-            <input class="sub-input" type="text" id="e-wound-detail" placeholder="Location, type, dressing used…" oninput="autoSaveEnc()">
+            <input class="sub-input" type="text" id="e-wound-detail" placeholder="מיקום, אפיון הפצע, סוג החבישה..." oninput="autoSaveEnc()">
           </div>
         </div>
       </div>
       <div class="chk-row" onclick="event.stopPropagation()">
         <input type="checkbox" id="e-med-chk" onchange="toggleSub('e-med-sub',this.checked); autoSaveEnc()">
         <div style="flex:1">
-          <span class="chk-label" onclick="toggleChk('e-med-chk'); toggleSub('e-med-sub', document.getElementById('e-med-chk').checked); autoSaveEnc()">Medication given</span>
+          <span class="chk-label" onclick="toggleChk('e-med-chk'); toggleSub('e-med-sub', document.getElementById('e-med-chk').checked); autoSaveEnc()">מתן תרופה</span>
           <div id="e-med-sub" class="sub-input-wrap" style="display:none">
-            <input class="sub-input" type="text" id="e-med" placeholder="Drug · dose · route" oninput="autoSaveEnc()">
+            <input class="sub-input" type="text" id="e-med" placeholder="תרופה, מינון, דרך מתן" oninput="autoSaveEnc()">
           </div>
         </div>
       </div>
       <div class="chk-row" onclick="event.stopPropagation()">
         <input type="checkbox" id="e-sup-chk" onchange="toggleSub('e-sup-sub',this.checked); autoSaveEnc()">
         <div style="flex:1">
-          <span class="chk-label" onclick="toggleChk('e-sup-chk'); toggleSub('e-sup-sub', document.getElementById('e-sup-chk').checked); autoSaveEnc()">Supplies given</span>
+          <span class="chk-label" onclick="toggleChk('e-sup-chk'); toggleSub('e-sup-sub', document.getElementById('e-sup-chk').checked); autoSaveEnc()">מתן ציוד</span>
           <div id="e-sup-sub" class="sub-input-wrap" style="display:none">
             <div class="chip-row" id="sup-chips-container"></div>
-            <input class="sub-input" type="text" id="e-sup" placeholder="Additional / other…" oninput="autoSaveEnc()" style="margin-top:8px;">
+            <input class="sub-input" type="text" id="e-sup" placeholder="עוד / אחר..." oninput="autoSaveEnc()" style="margin-top:8px;">
           </div>
         </div>
       </div>
       <div class="chk-row" onclick="event.stopPropagation()">
         <input type="checkbox" id="e-ref-chk" onchange="toggleSub('e-ref-sub',this.checked); autoSaveEnc()">
         <div style="flex:1">
-          <span class="chk-label" onclick="toggleChk('e-ref-chk'); toggleSub('e-ref-sub', document.getElementById('e-ref-chk').checked); autoSaveEnc()">Referral</span>
+          <span class="chk-label" onclick="toggleChk('e-ref-chk'); toggleSub('e-ref-sub', document.getElementById('e-ref-chk').checked); autoSaveEnc()">הפניה</span>
           <div id="e-ref-sub" class="sub-input-wrap" style="display:none">
-            <input class="sub-input" type="text" id="e-ref" placeholder="Where → ER / clinic / social services" oninput="autoSaveEnc()">
+            <input class="sub-input" type="text" id="e-ref" placeholder="לאן — מיון / מרפאה / שירותים סוציאליים..." oninput="autoSaveEnc()">
             <div class="ref-photo-mini" id="ref-photos-grid"></div>
             <div style="display:flex;gap:14px;margin-top:7px;">
               <label style="display:flex;align-items:center;gap:5px;font-size:13px;color:var(--primary);cursor:pointer;font-weight:600;">
@@ -644,10 +664,10 @@
       <div class="chk-row" onclick="event.stopPropagation()">
         <input type="checkbox" id="e-welfare" onchange="toggleSub('e-welfare-sub',this.checked); autoSaveEnc()">
         <div style="flex:1">
-          <span class="chk-label" onclick="toggleChk('e-welfare'); toggleSub('e-welfare-sub', document.getElementById('e-welfare').checked); autoSaveEnc()">No medical intervention — welfare contact only</span>
+          <span class="chk-label" onclick="toggleChk('e-welfare'); toggleSub('e-welfare-sub', document.getElementById('e-welfare').checked); autoSaveEnc()">ללא התערבות רפואית — סוציאלי בלבד</span>
           <div id="e-welfare-sub" class="sub-input-wrap" style="display:none">
             <div class="chip-row" id="welfare-chips-container"></div>
-            <input class="sub-input" type="text" id="e-welfare-text" placeholder="Additional supplies / notes…" oninput="autoSaveEnc()" style="margin-top:8px;">
+            <input class="sub-input" type="text" id="e-welfare-text" placeholder="ציוד נוסף / הערות..." oninput="autoSaveEnc()" style="margin-top:8px;">
           </div>
         </div>
       </div>
@@ -655,29 +675,29 @@
 
     <!-- Follow-up -->
     <div class="form-section">
-      <div class="form-section-title">📌 Follow-up</div>
+      <div class="form-section-title">📌 פולו-אפ</div>
       <div class="form-field">
-        <label>Follow-up needed?</label>
+        <label>צורך בפולו-אפ?</label>
         <div class="pill-row">
-          <button class="pill selected" id="pill-no"  onclick="setFollowup('No')">No</button>
-          <button class="pill"          id="pill-yes" onclick="setFollowup('Yes')">⚠️ Yes</button>
+          <button class="pill selected" id="pill-no"  onclick="setFollowup('No')">לא</button>
+          <button class="pill"          id="pill-yes" onclick="setFollowup('Yes')">⚠️ כן</button>
         </div>
       </div>
       <div class="form-field">
-        <label>Notes for next round</label>
-        <textarea id="e-notes" placeholder="Anything the next team should know" oninput="autoSaveEnc()"></textarea>
+        <label>נקודות לסיור הבא</label>
+        <textarea id="e-notes" placeholder="הערות לצוות בסיור הבא" oninput="autoSaveEnc()"></textarea>
       </div>
     </div>
 
     <!-- Photos -->
     <div class="form-section">
-      <div class="form-section-title">📷 Photos</div>
+      <div class="form-section-title">📷 תמונות</div>
       <div class="photos-grid" id="photos-grid"></div>
     </div>
 
   </div>
   <div class="s-footer">
-    <button class="btn btn-accent" onclick="saveEnc(); navBack('pg-round')">Save & Back</button>
+    <button class="btn btn-accent" onclick="saveEnc(); navBack('pg-round')">שמור ✓</button>
   </div>
 </div>
 
@@ -686,78 +706,78 @@
 <!-- New Round -->
 <div class="overlay" id="modal-new-round" onclick="closeModal('modal-new-round')">
   <div class="modal-sheet" onclick="event.stopPropagation()">
-    <h3>New Round</h3>
+    <h3>סיור חדש</h3>
     <div class="field-wrap">
-      <label>Date</label>
+      <label>תאריך</label>
       <input type="date" id="m-round-date">
     </div>
     <div class="field-wrap">
-      <label>General location</label>
-      <input type="text" id="m-round-loc" placeholder="e.g. Tel Aviv Central, Florentin…">
+      <label>מיקום כללי</label>
+      <input type="text" id="m-round-loc" placeholder="לדוג': התחנה הישנה, פלורנטין...">
     </div>
     <div class="field-wrap">
-      <label>Volunteer(s)</label>
-      <input type="text" id="m-round-vol" placeholder="Names">
+      <label>מתנדבים</label>
+      <input type="text" id="m-round-vol" placeholder="שמות">
     </div>
-    <button class="btn btn-primary" onclick="createRound()">Create Round</button>
+    <button class="btn btn-primary" onclick="createRound()">צור סיור</button>
     <div style="height:10px;"></div>
-    <button class="btn btn-gray" onclick="closeModal('modal-new-round')">Cancel</button>
+    <button class="btn btn-gray" onclick="closeModal('modal-new-round')">ביטול</button>
   </div>
 </div>
 
 <!-- New Encounter -->
 <div class="overlay" id="modal-new-enc" onclick="closeModal('modal-new-enc')">
   <div class="modal-sheet" onclick="event.stopPropagation()">
-    <h3>New Encounter</h3>
+    <h3>מפגש חדש</h3>
     <div class="field-wrap">
-      <label>Patient name / alias</label>
-      <input type="text" id="m-enc-name" placeholder="Name, alias, or description">
+      <label>שם / כינוי</label>
+      <input type="text" id="m-enc-name" placeholder="שם, כינוי או תיאור">
     </div>
-    <button class="btn btn-accent" onclick="createEnc()">Start Encounter</button>
+    <button class="btn btn-accent" onclick="createEnc()">התחלת מפגש</button>
     <div style="height:10px;"></div>
-    <button class="btn btn-gray" onclick="closeModal('modal-new-enc')">Cancel</button>
+    <button class="btn btn-gray" onclick="closeModal('modal-new-enc')">ביטול</button>
   </div>
 </div>
 
 <!-- New / Edit Non-Medical Contact -->
 <div class="overlay" id="modal-new-contact" onclick="closeModal('modal-new-contact')">
   <div class="modal-sheet" onclick="event.stopPropagation()">
-    <h3 id="contact-modal-title">Non-Medical Contact</h3>
+    <h3 id="contact-modal-title">מפגש לא-רפואי</h3>
     <div class="field-wrap">
       <label style="display:flex;justify-content:space-between;align-items:center;">
-        Location
+        מיקום
         <button id="geo-con-btn" onclick="geolocateToField('m-con-loc','geo-con-btn',null)"
-                style="background:none;border:1px solid var(--border);border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;color:var(--text-light);padding:3px 9px;">📍 Current</button>
+                style="background:none;border:1px solid var(--border);border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;color:var(--text-light);padding:3px 9px;">📍 נוכחי</button>
       </label>
       <div class="loc-wrap">
-        <input type="text" id="m-con-loc" placeholder="Street address" autocomplete="off"
+        <input type="text" id="m-con-loc" placeholder="כתובת" autocomplete="off"
                oninput="onLocInput(this,'con-loc-drop')">
         <div class="loc-drop" id="con-loc-drop"></div>
       </div>
     </div>
     <div class="field-wrap">
-      <label>Name / Alias (optional)</label>
+      <label>שם / כינוי (אופציונלי)</label>
       <div style="display:flex;align-items:center;gap:10px;">
-        <input type="text" id="m-con-name" placeholder="Optional"
+        <input type="text" id="m-con-name" placeholder="אופציונלי"
                style="flex:1;border:none;outline:none;font-size:16px;font-family:inherit;background:transparent;">
         <div style="display:flex;gap:6px;flex-shrink:0;">
-          <button id="con-sex-btn-M" class="pill" onclick="setContactSex('M')">M</button>
-          <button id="con-sex-btn-F" class="pill" onclick="setContactSex('F')">F</button>
+          <button id="con-sex-btn-M" class="pill" onclick="setContactSex('M')">גבר</button>
+          <button id="con-sex-btn-F" class="pill" onclick="setContactSex('F')">אשה</button>
         </div>
       </div>
     </div>
     <div class="field-wrap">
-      <label>Supplies given</label>
+      <label>ציוד שניתן</label>
       <div class="chip-row" id="contact-chips-container" style="margin-bottom:8px;"></div>
-      <input type="text" id="m-con-sup-text" placeholder="Additional / other…"
+      <input type="text" id="m-con-sup-text" placeholder="עוד / אחר..."
              style="width:100%;border:none;outline:none;font-size:16px;font-family:inherit;background:transparent;">
     </div>
-    <button class="btn btn-outline" id="contact-save-btn" onclick="saveContact()">Add Contact</button>
+    <button class="btn btn-outline" id="contact-save-btn" onclick="saveContact()">הוספת מפגש</button>
     <div style="height:10px;"></div>
-    <button class="btn btn-gray" onclick="closeModal('modal-new-contact')">Cancel</button>
+    <button class="btn btn-gray" onclick="closeModal('modal-new-contact')">ביטול</button>
     <div id="contact-delete-wrap" style="display:none;">
       <div style="height:10px;"></div>
-      <button class="btn btn-danger" onclick="deleteCurrentContact()">Delete Contact</button>
+      <button class="btn btn-danger" onclick="deleteCurrentContact()">מחק מפגש</button>
     </div>
   </div>
 </div>
@@ -765,9 +785,9 @@
 <!-- Export -->
 <div class="overlay" id="modal-export" onclick="closeModal('modal-export')">
   <div class="modal-sheet" onclick="event.stopPropagation()">
-    <h3>Export Round</h3>
+    <h3>ייצוא הסיור</h3>
     <p style="color:var(--text-light);font-size:14px;margin-bottom:18px;">
-      Choose how to export the full round report.
+      בחרו כיצד לייצא את דוח הסיור.
     </p>
     <button class="btn btn-primary" style="margin-bottom:10px;" onclick="doShare()">
       📤 Share Sheet (iOS)
@@ -778,7 +798,7 @@
     <button class="btn btn-outline" style="margin-bottom:10px;" onclick="doPDF()">
       📄 Download PDF
     </button>
-    <button class="btn btn-gray" onclick="closeModal('modal-export')">Cancel</button>
+    <button class="btn btn-gray" onclick="closeModal('modal-export')">ביטול</button>
   </div>
 </div>
 
@@ -786,11 +806,11 @@
 <div class="overlay" id="modal-text-preview" onclick="closeModal('modal-text-preview')">
   <div class="modal-sheet" style="height:85vh;display:flex;flex-direction:column;" onclick="event.stopPropagation()">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
-      <h3 style="margin:0;">Round Report</h3>
-      <button class="btn btn-accent btn-sm" onclick="selectAllAndCopy()" id="copy-btn">Copy All</button>
+      <h3 style="margin:0;">דוח הסיור</h3>
+      <button class="btn btn-accent btn-sm" onclick="selectAllAndCopy()" id="copy-btn">העתקה</button>
     </div>
     <p style="font-size:13px;color:var(--text-light);margin-bottom:10px;">
-      Tap <strong>Copy All</strong>, then open Apple Notes and paste.
+      לחצו <strong>העתקה</strong>, פתחו Apple Notes והדביקו.
     </p>
     <textarea id="text-preview-area"
       readonly
@@ -800,7 +820,7 @@
              -webkit-user-select:text;user-select:text;">
     </textarea>
     <div style="height:12px;"></div>
-    <button class="btn btn-gray" onclick="closeModal('modal-text-preview')">Done</button>
+    <button class="btn btn-gray" onclick="closeModal('modal-text-preview')">סגירה</button>
   </div>
 </div>
 
@@ -808,11 +828,11 @@
 <div class="overlay" id="modal-rich-preview" onclick="closeModal('modal-rich-preview')">
   <div class="modal-sheet" style="height:90vh;display:flex;flex-direction:column;" onclick="event.stopPropagation()">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
-      <h3 style="margin:0;">Round Report</h3>
-      <button class="btn btn-accent btn-sm" onclick="copyRichReport()" id="rich-copy-btn">Copy for Notes</button>
+      <h3 style="margin:0;">דוח הסיור</h3>
+      <button class="btn btn-accent btn-sm" onclick="copyRichReport()" id="rich-copy-btn">העתקה לנוטס</button>
     </div>
     <p style="font-size:12px;color:var(--text-light);margin-bottom:10px;line-height:1.4;">
-      Tap <strong>Copy for Notes</strong>, then open Apple Notes and paste — text and photos will appear inline.
+      לחצו <strong>העתקה לנוטס</strong>, פתחו Apple Notes והדביקו — טקסט ותמונות יופיעו יחד.
     </p>
     <div id="rich-preview-scroll"
       style="flex:1;overflow-y:auto;border:1px solid var(--border);border-radius:10px;
@@ -822,22 +842,22 @@
            style="-webkit-user-select:text;user-select:text;outline:none;"></div>
     </div>
     <div style="height:10px;"></div>
-    <button class="btn btn-gray" onclick="closeModal('modal-rich-preview')">Done</button>
+    <button class="btn btn-gray" onclick="closeModal('modal-rich-preview')">סגירה</button>
   </div>
 </div>
 
 <!-- About / Settings -->
 <div class="overlay" id="modal-about" onclick="closeModal('modal-about')">
   <div class="modal-sheet" onclick="event.stopPropagation()">
-    <h3>Street Medicine App</h3>
+    <h3>אפליקציית רפואת רחוב</h3>
     <p style="font-size:14px;color:var(--text-light);margin-bottom:18px;line-height:1.6;">
-      All data is stored locally on this device. Nothing is sent to any server.<br><br>
-      <strong>Tip:</strong> In Safari, tap Share → "Add to Home Screen" to install as an app.
+      כל הנתונים מאוחסנים על המכשיר בלבד. שום דבר לא נשלח לשרת חיצוני.<br><br>
+      <strong>טיפ:</strong> בספארי, לחצו Share ← "Add to Home Screen" להתקנה כאפליקציה.
     </p>
     <button class="btn btn-danger" style="margin-bottom:10px;" onclick="confirmClearAll()">
       🗑 Clear ALL data
     </button>
-    <button class="btn btn-gray" onclick="closeModal('modal-about')">Close</button>
+    <button class="btn btn-gray" onclick="closeModal('modal-about')">סגירה</button>
   </div>
 </div>
 
@@ -937,9 +957,9 @@ function updateStatsMonthLabel() {
   if (!el) return;
   if (!statsFilterMonth && statsFilterMonth !== undefined) {
     // null = All Time
-    el.textContent = 'All Time';
+    el.textContent = 'כל הזמנים';
     if (btn) btn.style.fontWeight = '700';
-    if (sup) sup.textContent = 'All Rounds';
+    if (sup) sup.textContent = 'כל הסיורים';
   } else {
     const [y, m] = statsFilterMonth.split('-').map(Number);
     const label = new Date(y, m-1, 1).toLocaleDateString('he-IL', {year:'numeric', month:'long'});
@@ -956,7 +976,7 @@ function renderHome() {
   DB = load();
   const el = document.getElementById('home-content');
   if (!DB.rounds.length) {
-    el.innerHTML = `<div class="empty"><div class="icon">🏥</div><p>No rounds yet.<br>Tap <strong>+</strong> to start a new round.</p></div>`;
+    el.innerHTML = `<div class="empty"><div class="icon">🏥</div><p>אין סיורים עדיין.<br>לחצו <strong>+</strong> להוספת סיור חדש.</p></div>`;
     return;
   }
   el.innerHTML = [...DB.rounds].reverse().map(r => {
@@ -982,8 +1002,8 @@ function renderHome() {
 }
 
 function fmtDate(s) {
-  if (!s) return 'Unknown date';
-  try { return new Date(s+'T12:00:00').toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'long',year:'numeric'}); }
+  if (!s) return 'תאריך לא ידוע';
+  try { return new Date(s+'T12:00:00').toLocaleDateString('he-IL',{weekday:'long',day:'numeric',month:'long',year:'numeric'}); }
   catch { return s; }
 }
 
@@ -1033,7 +1053,7 @@ function renderRound(id) {
   // Encounters
   const el = document.getElementById('enc-list');
   if (!(r.encounters||[]).length) {
-    el.innerHTML = `<div style="color:var(--text-light);text-align:center;padding:18px 0;font-size:14px;">No encounters yet — tap + Add</div>`;
+    el.innerHTML = `<div style="color:var(--text-light);text-align:center;padding:18px 0;font-size:14px;">עדיין אין מפגשים — לחצו + כדי להוסיף</div>`;
   } else {
     el.innerHTML = r.encounters.map(e => {
       const vitals = [e.bp&&`BP ${e.bp}`, e.hr&&`HR ${e.hr}`, e.spo2&&`SpO₂ ${e.spo2}%`].filter(Boolean).join(' · ');
@@ -1041,7 +1061,7 @@ function renderRound(id) {
       <div class="card">
         <div class="card-row" onclick="openEnc('${r.id}','${e.id}')">
           <div>
-            <div class="card-title">${e.name||'Unknown patient'} ${e.followup==='Yes'?'<span class="followup-yes">⚠️ Follow-up</span>':''}</div>
+            <div class="card-title">${e.name||'מטופל/ת לא ידוע/ה'} ${e.followup==='Yes'?'<span class="followup-yes">⚠️ פולו-אפ</span>':''}</div>
             <div class="card-sub">${[e.location, [e.age, e.sex].filter(Boolean).join(' / ') || e.age_sex, e.cc].filter(Boolean).join(' · ')}</div>
             ${vitals?`<div class="card-sub" style="margin-top:2px;font-family:monospace;font-size:12px;">${vitals}</div>`:''}
             ${(e.photos||[]).length?`<div class="card-sub" style="margin-top:2px;">📷 ${e.photos.length} photo${e.photos.length!==1?'s':''}</div>`:''}
@@ -1055,14 +1075,14 @@ function renderRound(id) {
   // Contacts
   const cl = document.getElementById('contact-list');
   if (!(r.contacts||[]).length) {
-    cl.innerHTML = `<div style="color:var(--text-light);text-align:center;padding:10px 0;font-size:14px;">None</div>`;
+    cl.innerHTML = `<div style="color:var(--text-light);text-align:center;padding:10px 0;font-size:14px;">אין</div>`;
   } else {
     cl.innerHTML = r.contacts.map((c,i) => `
       <div class="card" style="cursor:pointer;" onclick="openEditContact(${i})">
         <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;">
           <div style="flex:1;min-width:0;">
             <div style="font-size:14px;font-weight:600;">${c.location||'—'}</div>
-            <div class="card-sub">${c.name||'Anonymous'} · ${fmtSupplies(c.chips||[], c.sup_text||'') || c.supplies || 'No supplies noted'}</div>
+            <div class="card-sub">${c.name||'אנונימי'} · ${fmtSupplies(c.chips||[], c.sup_text||'') || c.supplies || 'ללא ציוד'}</div>
           </div>
           <span style="color:var(--text-light);font-size:18px;flex-shrink:0;">›</span>
         </div>
@@ -1094,7 +1114,7 @@ function autoSaveRound() {
 }
 
 function confirmDeleteRound() {
-  if (!confirm('Delete this entire round and all its encounters?')) return;
+  if (!confirm('למחוק את הסיור כולו ואת כל המפגשים שבו?')) return;
   DB.rounds = DB.rounds.filter(x=>x.id!==curRoundId);
   persist(DB); renderHome(); showPage('pg-home');
 }
@@ -1229,11 +1249,11 @@ function autoSaveEnc() {
 
 function updateEncHdr() {
   const v = document.getElementById('e-name').value;
-  document.getElementById('enc-hdr-title').textContent = v||'Encounter';
+  document.getElementById('enc-hdr-title').textContent = v||'מפגש';
 }
 
 function confirmDeleteEnc() {
-  if (!confirm('Delete this encounter?')) return;
+  if (!confirm('למחוק את המפגש?')) return;
   const r = DB.rounds.find(x=>x.id===curRoundId);
   r.encounters = r.encounters.filter(x=>x.id!==curEncId);
   persist(DB); renderRound(curRoundId); showPage('pg-round');
@@ -1249,10 +1269,10 @@ function saveContact() {
   const data = readContact();
   if (curContactIdx < 0) {
     r.contacts.push(data);
-    toast('Contact added ✓');
+    toast('מפגש נוסף ✓');
   } else {
     r.contacts[curContactIdx] = data;
-    toast('Contact saved ✓');
+    toast('מפגש נשמר ✓');
   }
   persist(DB);
   closeModal('modal-new-contact');
@@ -1260,13 +1280,13 @@ function saveContact() {
 }
 
 function deleteCurrentContact() {
-  if (!confirm('Delete this contact?')) return;
+  if (!confirm('למחוק את המפגש הלא-רפואי?')) return;
   const r = DB.rounds.find(x=>x.id===curRoundId); if(!r) return;
   r.contacts.splice(curContactIdx, 1);
   persist(DB);
   closeModal('modal-new-contact');
   renderRound(curRoundId);
-  toast('Contact deleted');
+  toast('מפגש נמחק');
 }
 
 function deleteContact(i) {
@@ -1285,11 +1305,11 @@ function renderPhotos() {
       <button class="photo-del" onclick="delPhoto(${i})">×</button>
     </div>`).join('') +
   `<label class="photo-add" title="Take photo">
-    <span>📷</span><span class="lbl">Camera</span>
+    <span>📷</span><span class="lbl">מצלמה</span>
     <input type="file" accept="image/*" capture="environment" style="display:none" onchange="addPhoto(event)">
   </label>
   <label class="photo-add" title="Choose from library">
-    <span>🖼️</span><span class="lbl">Library</span>
+    <span>🖼️</span><span class="lbl">גלריה</span>
     <input type="file" accept="image/*" style="display:none" onchange="addPhoto(event)">
   </label>`;
 }
@@ -1330,75 +1350,75 @@ function setFollowup(val, silent) {
 // ══════════════════════════════════════════════
 function buildText(r) {
   const D = '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━';
-  let t = `${D}\n📋 STREET MEDICINE ROUND REPORT\n${D}\n\n`;
-  t += `📅 Date: ${fmtDate(r.date)}\n`;
-  t += `📍 Location: ${r.location||'—'}\n`;
-  t += `👤 Volunteer(s): ${r.volunteers||'—'}\n\n`;
+  let t = `${D}\n📋 דו"ח סיור רפואת רחוב\n${D}\n\n`;
+  t += `📅 תאריך: ${fmtDate(r.date)}\n`;
+  t += `📍 מיקום: ${r.location||'—'}\n`;
+  t += `👤 מתנדבים: ${r.volunteers||'—'}\n\n`;
 
   if ((r.encounters||[]).length) {
-    t += `${D}\nMEDICAL ENCOUNTERS (${r.encounters.length})\n${D}\n\n`;
+    t += `${D}\nמפגשים רפואיים (${r.encounters.length})\n${D}\n\n`;
     r.encounters.forEach((e,i) => {
-      t += `━━━ ENCOUNTER ${i+1} ━━━\n`;
+      t += `━━━ מפגש ${i+1} ━━━\n`;
       if(e.location) t += `📍 ${e.location}\n`;
-      t += `\nName / Alias: ${e.name||'—'}\n`;
+      t += `\nשם / כינוי: ${e.name||'—'}\n`;
       const ageSex = [e.age || e.age_sex, e.sex].filter(Boolean).join(' / ');
-      if(ageSex) t += `Age / Sex: ${ageSex}\n`;
-      t += `Insurance: ${e.insurance||'—'}\n`;
-      t += `\nChief complaint: ${e.cc||'—'}\n`;
+      if(ageSex) t += `גיל ומין: ${ageSex}\n`;
+      t += `קופ"ח: ${e.insurance||'—'}\n`;
+      t += `\nתלונה עיקרית: ${e.cc||'—'}\n`;
 
       const v=[e.bp&&`BP ${e.bp}`,e.hr&&`HR ${e.hr}`,e.spo2&&`SpO₂ ${e.spo2}%`,e.temp&&`T ${e.temp}°C`].filter(Boolean);
-      if(v.length) t += `Vitals: ${v.join(' | ')}\n`;
-      if(e.exam)        t += `Exam: ${e.exam}\n`;
-      if(e.assessment)  t += `Assessment: ${e.assessment}\n`;
+      if(v.length) t += `סימנים חיוניים: ${v.join(' | ')}\n`;
+      if(e.exam)        t += `בדיקה: ${e.exam}\n`;
+      if(e.assessment)  t += `הערכה: ${e.assessment}\n`;
 
-      t += `\nIntervention:\n`;
+      t += `\nהתערבות:\n`;
       if(e.wound) {
-        t += `  ✓ Wound care / dressing`;
+        t += `  ✓ חבישה / טיפול בפצע`;
         if(e.wound_detail) t += ` — ${e.wound_detail}`;
         t += `\n`;
       }
-      if(e.med_chk) t += `  ✓ Medication: ${e.med||'—'}\n`;
+      if(e.med_chk) t += `  ✓ תרופות: ${e.med||'—'}\n`;
       if(e.sup_chk) {
         const medSup = fmtSupplies(e.sup_chips||[], e.sup||'');
-        t += `  ✓ Supplies: ${medSup||'—'}\n`;
+        t += `  ✓ ציוד: ${medSup||'—'}\n`;
       }
       if(e.ref_chk) {
-        t += `  ✓ Referral → ${e.ref||'—'}\n`;
-        if((e.ref_photos||[]).length) t += `    📷 ${e.ref_photos.length} referral photo${e.ref_photos.length!==1?'s':''}\n`;
+        t += `  ✓ הפניה: ${e.ref||'—'}\n`;
+        if((e.ref_photos||[]).length) t += `    📷 ${e.ref_photos.length} צילומי הפניה\n`;
       }
       if(e.welfare) {
         const wSup = fmtSupplies(e.welfare_chips||[], e.welfare_text||'');
-        t += `  ✓ Welfare contact only`;
-        if(wSup) t += ` — Supplies: ${wSup}`;
+        t += `  ✓ מפגש סוציאלי בלבד`;
+        if(wSup) t += ` — ציוד: ${wSup}`;
         t += `\n`;
       }
-      if(!e.wound&&!e.med_chk&&!e.sup_chk&&!e.ref_chk&&!e.welfare) t += `  — None\n`;
+      if(!e.wound&&!e.med_chk&&!e.sup_chk&&!e.ref_chk&&!e.welfare) t += `  — ללא\n`;
 
-      t += `\nFollow-up needed: ${e.followup||'No'}\n`;
-      if(e.notes) t += `Notes for next round: ${e.notes}\n`;
-      if((e.photos||[]).length) t += `Photos: ${e.photos.length} attached\n`;
+      t += `\nפולו-אפ נדרש: ${e.followup==='Yes'?'כן':'לא'}\n`;
+      if(e.notes) t += `נקודות לסיור הבא: ${e.notes}\n`;
+      if((e.photos||[]).length) t += `תמונות: ${e.photos.length} מצורפות\n`;
       t += '\n';
     });
   }
 
   if((r.contacts||[]).length) {
-    t += `${D}\nNON-MEDICAL CONTACTS (${r.contacts.length})\n${D}\n\n`;
-    t += `Location              | Name/Alias    | Supplies given\n`;
+    t += `${D}\nמפגשים לא-רפואיים (${r.contacts.length})\n${D}\n\n`;
+    t += `מיקום                 | שם / כינוי    | ציוד\n`;
     t += `──────────────────────┼───────────────┼───────────────\n`;
     r.contacts.forEach(c => {
       const sup = fmtSupplies(c.chips||[], c.sup_text||'') || c.supplies || '—';
-      t += `${(c.location||'—').padEnd(21)}| ${(c.name||'Anon').padEnd(13)} | ${sup}\n`;
+      t += `${(c.location||'—').padEnd(21)}| ${(c.name||'אנונימי').padEnd(13)} | ${sup}\n`;
     });
     t += '\n';
   }
 
   const s = r.summary||{};
-  t += `${D}\nROUND SUMMARY\n${D}\n`;
-  t += `Total contacts:       ${s.total||'—'}\n`;
-  t += `Medical encounters:   ${s.medical!==undefined&&s.medical!==''?s.medical:(r.encounters||[]).length}\n`;
-  t += `Referrals generated:  ${s.referrals||'—'}\n`;
-  if(s.supplies) t += `Supplies distributed: ${s.supplies}\n`;
-  if(s.notable)  t += `\nNotable / follow-up:\n${s.notable}\n`;
+  t += `${D}\nסיכום הסיור\n${D}\n`;
+  t += `סה"כ מפגשים:          ${s.total||'—'}\n`;
+  t += `מפגשים רפואיים:       ${s.medical!==undefined&&s.medical!==''?s.medical:(r.encounters||[]).length}\n`;
+  t += `הפניות:               ${s.referrals||'—'}\n`;
+  if(s.supplies) t += `ציוד שחולק: ${s.supplies}\n`;
+  if(s.notable)  t += `\nפולו-אפים ונקודות:\n${s.notable}\n`;
   return t;
 }
 
@@ -1412,45 +1432,45 @@ function buildHTMLReport(r) {
   // Header
   h += `<h2 style="margin:0 0 4px;font-size:18px;border-bottom:2px solid #222;padding-bottom:8px;">
     🏥 Street Medicine — ${esc(fmtDate(r.date))}</h2>`;
-  h += `<p style="margin:6px 0 18px;color:#444;">👤 Volunteers: ${esc(r.volunteers||'—')}</p>`;
+  h += `<p style="margin:6px 0 18px;color:#444;">👤 מתנדבים: ${esc(r.volunteers||'—')}</p>`;
 
   // ── Medical Encounters ──
   if ((r.encounters||[]).length) {
     h += `<h3 style="font-size:15px;margin:0 0 12px;color:#222;">
-      MEDICAL ENCOUNTERS (${r.encounters.length})</h3>`;
+      מפגשים רפואיים (${r.encounters.length})</h3>`;
 
     r.encounters.forEach((e, i) => {
       h += `<div style="border:1px solid #ccc;border-radius:10px;padding:14px;margin-bottom:14px;">`;
       h += `<div style="font-weight:700;font-size:15px;margin-bottom:10px;">
-        Encounter ${i+1}${e.location ? ' — ' + esc(e.location) : ''}</div>`;
+        מפגש ${i+1}${e.location ? ' — ' + esc(e.location) : ''}</div>`;
 
       const ageParts = [e.name, e.age||e.age_sex, e.sex].filter(Boolean);
       if(ageParts.length) h += `<p style="margin:3px 0;">${ageParts.map(esc).join(' · ')}</p>`;
-      if(e.insurance) h += `<p style="margin:3px 0;">Insurance: ${esc(e.insurance)}</p>`;
-      if(e.cc) h += `<p style="margin:8px 0 3px;"><strong>Chief complaint:</strong> ${esc(e.cc)}</p>`;
+      if(e.insurance) h += `<p style="margin:3px 0;">קופ"ח: ${esc(e.insurance)}</p>`;
+      if(e.cc) h += `<p style="margin:8px 0 3px;"><strong>תלונה עיקרית:</strong> ${esc(e.cc)}</p>`;
 
       const v = [e.bp&&`BP ${e.bp}`,e.hr&&`HR ${e.hr}`,e.spo2&&`SpO₂ ${e.spo2}%`,e.temp&&`T ${e.temp}°C`].filter(Boolean);
-      if(v.length) h += `<p style="margin:3px 0;">Vitals: ${v.map(esc).join(' | ')}</p>`;
-      if(e.exam)       h += `<p style="margin:3px 0;">Exam: ${esc(e.exam)}</p>`;
-      if(e.assessment) h += `<p style="margin:3px 0;">Assessment: ${esc(e.assessment)}</p>`;
+      if(v.length) h += `<p style="margin:3px 0;">סימנים חיוניים: ${v.map(esc).join(' | ')}</p>`;
+      if(e.exam)       h += `<p style="margin:3px 0;">בדיקה: ${esc(e.exam)}</p>`;
+      if(e.assessment) h += `<p style="margin:3px 0;">הערכה: ${esc(e.assessment)}</p>`;
 
       // Interventions
-      h += `<p style="margin:10px 0 4px;font-weight:600;">Intervention:</p>`;
+      h += `<p style="margin:10px 0 4px;font-weight:600;">התערבות:</p>`;
       let any = false;
       if(e.wound) {
-        h += `<p style="margin:2px 0 2px 14px;">✓ Wound care${e.wound_detail?' — '+esc(e.wound_detail):''}</p>`;
+        h += `<p style="margin:2px 0 2px 14px;">✓ חבישה / טיפול בפצע${e.wound_detail?' — '+esc(e.wound_detail):''}</p>`;
         any = true;
       }
       if(e.med_chk) {
-        h += `<p style="margin:2px 0 2px 14px;">✓ Medication: ${esc(e.med||'—')}</p>`;
+        h += `<p style="margin:2px 0 2px 14px;">✓ תרופות: ${esc(e.med||'—')}</p>`;
         any = true;
       }
       if(e.sup_chk) {
-        h += `<p style="margin:2px 0 2px 14px;">✓ Supplies: ${esc(fmtSupplies(e.sup_chips||[], e.sup||'')||'—')}</p>`;
+        h += `<p style="margin:2px 0 2px 14px;">✓ ציוד: ${esc(fmtSupplies(e.sup_chips||[], e.sup||'')||'—')}</p>`;
         any = true;
       }
       if(e.ref_chk) {
-        h += `<p style="margin:2px 0 2px 14px;">✓ Referral → ${esc(e.ref||'—')}</p>`;
+        h += `<p style="margin:2px 0 2px 14px;">✓ הפניה: ${esc(e.ref||'—')}</p>`;
         // Referral photos immediately below the referral line
         if((e.ref_photos||[]).length) {
           h += `<div style="display:flex;flex-wrap:wrap;gap:8px;margin:8px 0 8px 14px;">`;
@@ -1463,18 +1483,18 @@ function buildHTMLReport(r) {
       }
       if(e.welfare) {
         const wSup = fmtSupplies(e.welfare_chips||[], e.welfare_text||'');
-        h += `<p style="margin:2px 0 2px 14px;">✓ Welfare contact${wSup?' — Supplies: '+esc(wSup):''}</p>`;
+        h += `<p style="margin:2px 0 2px 14px;">✓ מפגש סוציאלי${wSup?' — ציוד: '+esc(wSup):''}</p>`;
         any = true;
       }
-      if(!any) h += `<p style="margin:2px 0 2px 14px;color:#888;">None</p>`;
+      if(!any) h += `<p style="margin:2px 0 2px 14px;color:#888;">ללא</p>`;
 
-      h += `<p style="margin:8px 0 3px;">Follow-up needed: ${esc(e.followup||'No')}</p>`;
-      if(e.notes) h += `<p style="margin:3px 0;">Notes: ${esc(e.notes)}</p>`;
+      h += `<p style="margin:8px 0 3px;">פולו-אפ נדרש: ${esc(e.followup==='Yes'?'כן':'לא')}</p>`;
+      if(e.notes) h += `<p style="margin:3px 0;">הערות: ${esc(e.notes)}</p>`;
 
       // Regular encounter photos at end of encounter block
       if((e.photos||[]).length) {
         h += `<div style="margin-top:10px;">`;
-        h += `<div style="font-size:12px;color:#666;font-weight:600;margin-bottom:6px;">📷 Photos</div>`;
+        h += `<div style="font-size:12px;color:#666;font-weight:600;margin-bottom:6px;">📷 תמונות</div>`;
         h += `<div style="display:flex;flex-wrap:wrap;gap:8px;">`;
         e.photos.forEach(p => {
           h += `<img src="${p}" style="width:160px;height:120px;object-fit:cover;border-radius:8px;border:1px solid #ddd;">`;
@@ -1488,17 +1508,17 @@ function buildHTMLReport(r) {
   // ── Non-medical contacts ──
   if((r.contacts||[]).length) {
     h += `<h3 style="font-size:15px;margin:16px 0 10px;color:#222;border-top:1px solid #ccc;padding-top:12px;">
-      NON-MEDICAL CONTACTS (${r.contacts.length})</h3>`;
+      מפגשים לא-רפואיים (${r.contacts.length})</h3>`;
     h += `<table style="width:100%;border-collapse:collapse;font-size:13px;margin-bottom:16px;">`;
     h += `<tr style="background:#f0f0f0;font-weight:600;">
-      <th style="text-align:left;padding:6px 8px;border:1px solid #ccc;">Location</th>
-      <th style="text-align:left;padding:6px 8px;border:1px solid #ccc;">Name</th>
-      <th style="text-align:left;padding:6px 8px;border:1px solid #ccc;">Supplies</th></tr>`;
+      <th style="text-align:right;padding:6px 8px;border:1px solid #ccc;">מיקום</th>
+      <th style="text-align:right;padding:6px 8px;border:1px solid #ccc;">שם</th>
+      <th style="text-align:right;padding:6px 8px;border:1px solid #ccc;">ציוד</th></tr>`;
     r.contacts.forEach(c => {
       const sup = fmtSupplies(c.chips||[], c.sup_text||'') || c.supplies || '—';
       h += `<tr>
         <td style="padding:6px 8px;border:1px solid #ccc;">${esc(c.location||'—')}</td>
-        <td style="padding:6px 8px;border:1px solid #ccc;">${esc(c.name||'Anon')}</td>
+        <td style="padding:6px 8px;border:1px solid #ccc;">${esc(c.name||'אנונימי')}</td>
         <td style="padding:6px 8px;border:1px solid #ccc;">${esc(sup)}</td></tr>`;
     });
     h += `</table>`;
@@ -1507,12 +1527,12 @@ function buildHTMLReport(r) {
   // ── Round Summary ──
   const s = r.summary||{};
   h += `<div style="border-top:2px solid #222;margin-top:8px;padding-top:12px;">`;
-  h += `<h3 style="font-size:15px;margin:0 0 10px;color:#222;">ROUND SUMMARY</h3>`;
-  h += `<p style="margin:3px 0;">Total contacts: ${esc(String(s.total||'—'))}</p>`;
-  h += `<p style="margin:3px 0;">Medical encounters: ${s.medical!==undefined&&s.medical!==''?esc(String(s.medical)):(r.encounters||[]).length}</p>`;
-  h += `<p style="margin:3px 0;">Referrals generated: ${esc(String(s.referrals||'—'))}</p>`;
-  if(s.supplies) h += `<p style="margin:3px 0;">Supplies distributed: ${esc(s.supplies)}</p>`;
-  if(s.notable)  h += `<p style="margin:8px 0;">Notable / follow-up:<br>${esc(s.notable)}</p>`;
+  h += `<h3 style="font-size:15px;margin:0 0 10px;color:#222;">סיכום הסיור</h3>`;
+  h += `<p style="margin:3px 0;">סה"כ מפגשים: ${esc(String(s.total||'—'))}</p>`;
+  h += `<p style="margin:3px 0;">מפגשים רפואיים: ${s.medical!==undefined&&s.medical!==''?esc(String(s.medical)):(r.encounters||[]).length}</p>`;
+  h += `<p style="margin:3px 0;">הפניות: ${esc(String(s.referrals||'—'))}</p>`;
+  if(s.supplies) h += `<p style="margin:3px 0;">ציוד שחולק: ${esc(s.supplies)}</p>`;
+  if(s.notable)  h += `<p style="margin:8px 0;">פולו-אפים ונקודות:<br>${esc(s.notable)}</p>`;
   h += `</div>`;
 
   h += `</div>`; // end wrapper
@@ -1526,7 +1546,7 @@ function doNotesExport() {
   const r = DB.rounds.find(x=>x.id===curRoundId); if(!r) return;
   const html = buildHTMLReport(r);
   document.getElementById('rich-preview-content').innerHTML = html;
-  document.getElementById('rich-copy-btn').textContent = 'Copy for Notes';
+  document.getElementById('rich-copy-btn').textContent = 'העתקה לנוטס';
   openModal('modal-rich-preview');
 }
 
@@ -1547,13 +1567,13 @@ function copyRichReport() {
     const ok = document.execCommand('copy');
     sel.removeAllRanges();
     if (ok) {
-      btn.textContent = '✓ Copied!';
-      setTimeout(() => { btn.textContent = 'Copy for Notes'; }, 2500);
+      btn.textContent = '✓ הועתק!';
+      setTimeout(() => { btn.textContent = 'העתקה לנוטס'; }, 2500);
     } else {
-      toast('Could not copy — long-press the report and choose Select All → Copy');
+      toast('לחצו לחיצה ארוכה על הדוח ← בחרו הכל ← העתקה');
     }
   } catch(e) {
-    toast('Long-press the report → Select All → Copy');
+    toast('לחצו לחיצה ארוכה על הדוח ← הכל ← העתקה');
   }
 }
 // ─────────────────────────────────────────────────────────────────────────────
@@ -1595,7 +1615,7 @@ function selectAllAndCopy() {
   // Try modern clipboard API first
   if(navigator.clipboard) {
     navigator.clipboard.writeText(ta.value)
-      .then(() => { document.getElementById('copy-btn').textContent = '✓ Copied!'; })
+      .then(() => { document.getElementById('copy-btn').textContent = '✓ הועתק!'; })
       .catch(() => execCopy(ta));
   } else {
     execCopy(ta);
@@ -1606,19 +1626,19 @@ function execCopy(ta) {
   // Legacy fallback — works on file:// and older iOS
   try {
     document.execCommand('copy');
-    document.getElementById('copy-btn').textContent = '✓ Copied!';
+    document.getElementById('copy-btn').textContent = '✓ הועתק!';
   } catch {
-    toast('Long-press the text → Select All → Copy');
+    toast('לחצו לחיצה ארוכה על הטקסט ← הכל ← העתקה');
   }
 }
 
 async function doPDF() {
   closeModal('modal-export');
   const r = DB.rounds.find(x=>x.id===curRoundId); if(!r) return;
-  if(!window.jspdf)      { toast('PDF library not loaded'); return; }
-  if(!window.html2canvas){ toast('html2canvas not loaded'); return; }
+  if(!window.jspdf)      { toast('ספריית PDF לא נטענה'); return; }
+  if(!window.html2canvas){ toast('html2canvas לא נטען'); return; }
 
-  toast('Generating PDF…');
+  toast('מכין PDF...');
 
   // Build a render div positioned far off-screen.
   // IMPORTANT: must NOT use visibility:hidden or opacity:0 — html2canvas
@@ -1677,10 +1697,10 @@ async function doPDF() {
     }
 
     doc.save(`street-medicine-${r.date||'round'}.pdf`);
-    toast('PDF downloaded ✓');
+    toast('PDF הורד ✓');
   } catch(e) {
     console.error('PDF error', e);
-    toast('PDF error — try again');
+    toast('שגיאה ב-PDF — נסו שוב');
   } finally {
     renderDiv.innerHTML = '';
   }
@@ -1777,7 +1797,7 @@ let curContactIdx = -1; // -1 = new contact, ≥0 = editing existing
 
 // ── Geolocation auto-fill ──────────────────────
 function geolocateToField(fieldId, btnId, onDone) {
-  if (!navigator.geolocation) { toast('Geolocation not supported'); return; }
+  if (!navigator.geolocation) { toast('הדפדפן לא תומך במיקום'); return; }
   const btn = document.getElementById(btnId);
   if (btn) { btn.textContent = '⏳'; btn.disabled = true; }
   navigator.geolocation.getCurrentPosition(
@@ -1800,10 +1820,10 @@ function geolocateToField(fieldId, btnId, onDone) {
       if (el) { el.value = addr; el.dispatchEvent(new Event('input')); }
       if (onDone) onDone();
       if (btn) { btn.textContent = '📍 Current'; btn.disabled = false; }
-      toast('Location filled ✓');
+      toast('מיקום מולא ✓');
     },
     () => {
-      toast('Could not get location');
+      toast('לא הצלחנו לקבל מיקום');
       if (btn) { btn.textContent = '📍 Current'; btn.disabled = false; }
     },
     { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
@@ -1884,8 +1904,8 @@ document.addEventListener('scroll', () => {
 
 function openNewContactModal() {
   curContactIdx = -1;
-  document.getElementById('contact-modal-title').textContent = 'New Contact';
-  document.getElementById('contact-save-btn').textContent = 'Add Contact';
+  document.getElementById('contact-modal-title').textContent = 'מפגש חדש';
+  document.getElementById('contact-save-btn').textContent = 'הוספת מפגש';
   document.getElementById('contact-delete-wrap').style.display = 'none';
   document.getElementById('m-con-loc').value = '';
   document.getElementById('m-con-name').value = '';
@@ -1902,8 +1922,8 @@ function openEditContact(i) {
   const r = DB.rounds.find(x => x.id === curRoundId); if (!r) return;
   const c = (r.contacts||[])[i]; if (!c) return;
   curContactIdx = i;
-  document.getElementById('contact-modal-title').textContent = 'Edit Contact';
-  document.getElementById('contact-save-btn').textContent = 'Save Changes';
+  document.getElementById('contact-modal-title').textContent = 'ערוך מפגש';
+  document.getElementById('contact-save-btn').textContent = 'שמור שינויים';
   document.getElementById('contact-delete-wrap').style.display = '';
 
   document.getElementById('m-con-loc').value  = c.location || '';
@@ -2054,7 +2074,7 @@ async function renderRoundMap(roundId) {
   const r = DB.rounds.find(x => x.id === roundId); if (!r) return;
 
   if (typeof L === 'undefined') {
-    setMapPlaceholder(mapEl, placeholder, 'Map unavailable — check internet connection');
+    setMapPlaceholder(mapEl, placeholder, 'המפה לא זמינה — בדקו חיבור לאינטרנט');
     return;
   }
 
@@ -2079,7 +2099,7 @@ async function renderRoundMap(roundId) {
 
   if (!points.length) {
     roundMapInst.setView(TLV_CENTER, TLV_ZOOM);
-    setMapPlaceholder(mapEl, placeholder, 'Could not locate the recorded addresses');
+    setMapPlaceholder(mapEl, placeholder, 'לא הצלחנו לאתר את הכתובות שנרשמו');
     return;
   }
 
@@ -2206,7 +2226,7 @@ function autoCalcAll() {
   autoCalcSupplies(true);
 
   autoSaveRound();
-  toast('Summary updated ✓');
+  toast('הסיכום עודכן ✓');
 }
 
 function autoCalcSupplies(silent) {
@@ -2277,7 +2297,7 @@ function showAbout() { openModal('modal-about'); }
 
 function confirmClearAll() {
   if(confirm('⚠️ Delete ALL rounds and encounters? This cannot be undone.')) {
-    localStorage.removeItem(KEY); DB={rounds:[]}; renderHome(); closeModal('modal-about'); toast('All data cleared');
+    localStorage.removeItem(KEY); DB={rounds:[]}; renderHome(); closeModal('modal-about'); toast('כל הנתונים נמחקו');
   }
 }
 
