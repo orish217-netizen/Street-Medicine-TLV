@@ -321,10 +321,11 @@
       display: flex; flex-direction: column;
       z-index: 301;
       transform: translateX(100%);
+      pointer-events: none;
       transition: transform .28s cubic-bezier(.4,0,.2,1);
       box-shadow: -4px 0 24px rgba(0,0,0,.18);
     }
-    .zula-drawer.open { transform: translateX(0); }
+    .zula-drawer.open { transform: translateX(0); pointer-events: all; }
     .zula-drawer-hdr {
       display: flex; align-items: center; justify-content: space-between;
       padding: calc(var(--safe-top) + 16px) 16px 14px;
@@ -547,13 +548,13 @@
       </div>
     </div>
 
-    <!-- Sticky action bar: add encounter + zula -->
-    <div style="position:sticky;top:0;z-index:20;margin:0 -16px;padding:10px 16px;
+    <!-- Sticky action bar -->
+    <div style="position:sticky;top:0;z-index:20;
                 background:var(--bg);border-bottom:1px solid var(--border);
-                display:flex;gap:10px;align-items:center;">
-      <button class="btn btn-accent" style="flex:1;font-size:17px;padding:14px;"
+                padding:10px 0 10px;display:flex;flex-direction:column;gap:8px;">
+      <button class="btn btn-accent" style="width:100%;font-size:17px;padding:14px;"
               onclick="openModal('modal-new-enc')">+ הוספת מפגש חדש</button>
-      <button class="btn btn-gray" style="flex:0 0 auto;font-size:14px;padding:10px 14px;white-space:nowrap;"
+      <button class="btn btn-gray" style="width:100%;font-size:14px;padding:10px;"
               onclick="openZulaDrawer()">⛺ הגעתי לזולה</button>
     </div>
 
