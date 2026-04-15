@@ -99,7 +99,7 @@
     }
 
     /* ── PAGES ── */
-    .page { display: none; flex-direction: column; min-height: 100dvh; }
+    .page { display: none; flex-direction: column; height: 100dvh; overflow: hidden; }
     .page.active { display: flex; }
 
     /* ── HEADER ── */
@@ -2489,13 +2489,22 @@ function autoCalcAll() {
 
 function autoCalcSupplies(silent) {
   const r = DB.rounds.find(x=>x.id===curRoundId); if(!r) return;
-  const counts  = {};   // chip → count
-  const freeMap = {};   // free-text entry → count (deduped with ×N)
+  const counts   = {};   // chip → count
+  const freeMap  = {};   // free-text entry → count (deduped with ×N)
+  const drugSets = {};   // chip → Set of drug names (for chips needing drug name)
+  SOCIAL_CHIPS_NEED_DETAIL.forEach(c => { drugSets[c] = new Set(); });
 
   // From encounters – welfare + medical supply chips + free text
   (r.encounters||[]).forEach(e => {
     if (e.welfare) {
-      (e.welfare_chips||[]).forEach(chip => { counts[chip] = (counts[chip]||0) + 1; });
+      (e.welfare_chips||[]).forEach(chip => {
+        counts[chip] = (counts[chip]||0) + 1;
+        // Collect drug names for detail chips (משחה, אנטיביוטיקה)
+        if (SOCIAL_CHIPS_NEED_DETAIL.includes(chip)) {
+          const nm = ((e.welfare_chip_details||{})[chip]||'').trim();
+          if (nm) drugSets[chip].add(nm);
+        }
+      });
       const t = (e.welfare_text||'').trim();
       if (t) freeMap[t] = (freeMap[t]||0) + 1;
     }
@@ -2531,7 +2540,15 @@ function autoCalcSupplies(silent) {
     ...SOCIAL_CHIP_GROUPS.flatMap(g => g.chips)
   ])];
   const chipStr = allKnownChips.filter(c => counts[c])
-    .map(c => counts[c] > 1 ? `${c} ×${counts[c]}` : c)
+    .map(c => {
+      const cnt = counts[c];
+      // For משחה / אנטיביוטיקה: show collected drug names in parentheses
+      if (SOCIAL_CHIPS_NEED_DETAIL.includes(c) && drugSets[c].size > 0) {
+        const names = [...drugSets[c]].join(', ');
+        return cnt > 1 ? `${c} (${names}) ×${cnt}` : `${c} (${names})`;
+      }
+      return cnt > 1 ? `${c} ×${cnt}` : c;
+    })
     .join(', ');
 
   const freeParts = Object.entries(freeMap)
