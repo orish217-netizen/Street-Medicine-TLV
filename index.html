@@ -470,10 +470,15 @@
       </div>
     </div>
 
+    <!-- Add encounter button — sticky so it stays accessible as encounters grow -->
+    <div style="position:sticky;top:0;z-index:20;margin:0 -16px;padding:10px 16px;
+                background:var(--bg);border-bottom:1px solid var(--border);">
+      <button class="btn btn-accent" style="width:100%;font-size:17px;padding:14px;"
+              onclick="openModal('modal-new-enc')">+ הוספת מפגש חדש</button>
+    </div>
+
     <!-- Encounters -->
-    <div id="enc-list"></div>
-    <button class="btn btn-accent" style="margin-bottom:16px;font-size:17px;padding:16px;"
-            onclick="openModal('modal-new-enc')">+ הוספת מפגש חדש</button>
+    <div id="enc-list" style="margin-top:8px;"></div>
 
     <!-- Round summary -->
     <div class="form-section" style="margin-top:18px;">
