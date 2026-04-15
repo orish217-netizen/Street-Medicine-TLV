@@ -769,7 +769,7 @@
 
   </div>
   <div class="s-footer">
-    <button class="btn btn-accent" onclick="saveEnc(); navBack('pg-round')">שמור ✓</button>
+    <button class="btn" style="background:var(--med-green);color:#fff;" onclick="saveEnc(); navBack('pg-round')">שמור ✓</button>
   </div>
 </div>
 
@@ -805,7 +805,7 @@
       <label>שם / כינוי</label>
       <input type="text" id="m-enc-name" placeholder="שם, כינוי או תיאור">
     </div>
-    <button class="btn btn-accent" onclick="createEnc()">התחלת מפגש</button>
+    <button class="btn" style="background:var(--med-green);color:#fff;" onclick="createEnc()">התחלת מפגש</button>
     <div style="height:10px;"></div>
     <button class="btn btn-gray" onclick="closeModal('modal-new-enc')">ביטול</button>
   </div>
@@ -1208,9 +1208,14 @@ function renderRound(id) {
         <div class="zula-card-title">
           ⛺ חלוקת ציוד
           <span style="font-weight:400;font-size:12px;color:#9a7040;">${time}</span>
-          <button onclick="deleteZulaEvent('${z.id}')"
-                  style="margin-right:auto;background:none;border:none;cursor:pointer;font-size:14px;color:#c08030;padding:0 2px;"
-                  title="מחק">🗑</button>
+          <span style="margin-right:auto;display:flex;gap:6px;">
+            <button onclick="editZulaEvent('${z.id}')"
+                    style="background:none;border:none;cursor:pointer;font-size:15px;padding:0 2px;"
+                    title="ערוך">✏️</button>
+            <button onclick="deleteZulaEvent('${z.id}')"
+                    style="background:none;border:none;cursor:pointer;font-size:14px;color:#c08030;padding:0 2px;"
+                    title="מחק">🗑</button>
+          </span>
         </div>
         ${z.location ? `<div style="font-size:12px;color:#9a7040;margin-bottom:4px;">📍 ${z.location}</div>` : ''}
         ${chips ? `<div class="zula-card-chips">${chips}</div>` : ''}
@@ -1855,28 +1860,32 @@ function fmtSupplies(chips, text) {
 function renderWelfareChips() {
   const c = document.getElementById('welfare-chips-container'); if(!c) return;
   c.innerHTML = SOCIAL_CHIP_GROUPS.map(group => {
-    const chipsHtml = group.chips.map(chip => {
+    // Row 1: all chip buttons (never jumps)
+    const chipsRow = group.chips.map(chip => {
       const on = curWelfareChips.includes(chip);
-      const needsDetail = SOCIAL_CHIPS_NEED_DETAIL.includes(chip);
-      const detailVal = curWelfareChipDetails[chip] || '';
-      const detailInput = needsDetail && on
-        ? `<input type="text" value="${detailVal}"
-             placeholder="שם תרופה..."
-             onchange="curWelfareChipDetails['${chip}']=this.value; autoSaveEnc();"
-             oninput="curWelfareChipDetails['${chip}']=this.value; autoSaveEnc();"
-             onclick="event.stopPropagation()"
-             style="margin-right:6px;margin-top:4px;border:1px solid var(--primary);border-radius:8px;
-                    padding:3px 8px;font-size:13px;width:120px;background:var(--bg);color:var(--text);
-                    font-family:inherit;">`
-        : '';
-      return `<div style="display:inline-flex;flex-direction:column;margin:0 4px 6px 0;">
-        <button class="chip-btn${on?' on':''}" onclick="toggleWelfareChip('${chip}')" style="white-space:nowrap;">${chip}</button>
-        ${detailInput}
-      </div>`;
+      return `<button class="chip-btn${on?' on':''}" onclick="toggleWelfareChip('${chip}')"
+                style="white-space:nowrap;margin:0 4px 6px 0;">${chip}</button>`;
     }).join('');
+    // Row 2: detail inputs, only for active chips that need a drug name
+    const detailInputs = group.chips
+      .filter(chip => SOCIAL_CHIPS_NEED_DETAIL.includes(chip) && curWelfareChips.includes(chip))
+      .map(chip => {
+        const v = curWelfareChipDetails[chip] || '';
+        return `<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
+          <span style="font-size:13px;font-weight:600;color:var(--primary);min-width:64px;">${chip}:</span>
+          <input type="text" value="${v}" placeholder="שם תרופה..."
+                 onchange="curWelfareChipDetails['${chip}']=this.value;autoSaveEnc();"
+                 oninput="curWelfareChipDetails['${chip}']=this.value;autoSaveEnc();"
+                 onclick="event.stopPropagation()"
+                 style="flex:1;border:1.5px solid var(--primary);border-radius:8px;
+                        padding:5px 10px;font-size:14px;background:var(--bg);
+                        color:var(--text);font-family:inherit;">
+        </div>`;
+      }).join('');
     return `<div style="margin-bottom:10px;">
       <div style="font-size:12px;font-weight:700;color:var(--subtext);margin-bottom:5px;">${group.label}</div>
-      <div style="display:flex;flex-wrap:wrap;gap:0;">${chipsHtml}</div>
+      <div style="display:flex;flex-wrap:wrap;">${chipsRow}</div>
+      ${detailInputs}
     </div>`;
   }).join('');
 }
@@ -1923,13 +1932,28 @@ function renderSupChips() {
 // ══════════════════════════════════════════════
 // ZULA DRAWER
 // ══════════════════════════════════════════════
-let zulaQtys = {}; // { 'מים': 14, 'קונדומים': 5, ... }
+let zulaQtys = {};           // { 'מים': 14, 'קונדומים': 5, ... }
+let curEditingZulaId = null; // null = new event, string = editing existing
 
 function openZulaDrawer() {
+  curEditingZulaId = null;
   zulaQtys = {};
   renderZulaDrawer();
   document.getElementById('zula-notes').value = '';
   document.getElementById('zula-location').value = '';
+  document.getElementById('zula-loc-drop').style.display = 'none';
+  document.getElementById('zula-overlay').classList.add('open');
+  document.getElementById('zula-drawer').classList.add('open');
+}
+
+function editZulaEvent(eventId) {
+  const r = DB.rounds.find(x => x.id === curRoundId); if(!r) return;
+  const z = (r.zula_events||[]).find(x => x.id === eventId); if(!z) return;
+  curEditingZulaId = eventId;
+  zulaQtys = {...(z.supplies||{})};
+  renderZulaDrawer();
+  document.getElementById('zula-notes').value = z.notes||'';
+  document.getElementById('zula-location').value = z.location||'';
   document.getElementById('zula-loc-drop').style.display = 'none';
   document.getElementById('zula-overlay').classList.add('open');
   document.getElementById('zula-drawer').classList.add('open');
@@ -1979,7 +2003,13 @@ function saveZulaEvent() {
     return;
   }
   if (!r.zula_events) r.zula_events = [];
-  r.zula_events.push({ id: uid(), ts: Date.now(), supplies, notes, location });
+  if (curEditingZulaId) {
+    // Update existing event
+    const idx = r.zula_events.findIndex(x => x.id === curEditingZulaId);
+    if (idx >= 0) r.zula_events[idx] = { ...r.zula_events[idx], supplies, notes, location };
+  } else {
+    r.zula_events.push({ id: uid(), ts: Date.now(), supplies, notes, location });
+  }
   persist(DB);
   closeZulaDrawer();
   renderRound(curRoundId);
@@ -2476,7 +2506,14 @@ function autoCalcSupplies(silent) {
     }
   });
 
-  // From non-medical contacts
+  // From zula events — add actual quantities (not just ×1 per event)
+  (r.zula_events||[]).forEach(z => {
+    Object.entries(z.supplies||{}).forEach(([chip, qty]) => {
+      counts[chip] = (counts[chip]||0) + qty;
+    });
+  });
+
+  // From non-medical contacts (legacy)
   (r.contacts||[]).forEach(c => {
     (c.chips||[]).forEach(chip => { counts[chip] = (counts[chip]||0) + 1; });
     const t = (c.sup_text||'').trim();
@@ -2488,8 +2525,13 @@ function autoCalcSupplies(silent) {
     }
   });
 
-  const chipStr = SUPPLY_CHIPS.filter(c=>counts[c])
-    .map(c => counts[c]>1 ? `${c} ×${counts[c]}` : c)
+  // All known chips (SUPPLY_CHIPS + SOCIAL_CHIP_GROUPS)
+  const allKnownChips = [...new Set([
+    ...SUPPLY_CHIPS,
+    ...SOCIAL_CHIP_GROUPS.flatMap(g => g.chips)
+  ])];
+  const chipStr = allKnownChips.filter(c => counts[c])
+    .map(c => counts[c] > 1 ? `${c} ×${counts[c]}` : c)
     .join(', ');
 
   const freeParts = Object.entries(freeMap)
@@ -2497,7 +2539,7 @@ function autoCalcSupplies(silent) {
 
   const all = [chipStr, ...freeParts].filter(Boolean).join('; ');
   document.getElementById('r-supplies').value = all || '—';
-  if (!silent) { autoSaveRound(); toast('Supplies calculated ✓'); }
+  if (!silent) { autoSaveRound(); toast('ציוד עודכן ✓'); }
 }
 
 // ══════════════════════════════════════════════
