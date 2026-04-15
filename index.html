@@ -305,6 +305,83 @@
       opacity: 0; pointer-events: none; transition: opacity .2s;
     }
     .overlay.open { opacity: 1; pointer-events: all; }
+
+    /* Zula right-side drawer */
+    .zula-overlay {
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,.45);
+      z-index: 300;
+      opacity: 0; pointer-events: none; transition: opacity .25s;
+    }
+    .zula-overlay.open { opacity: 1; pointer-events: all; }
+    .zula-drawer {
+      position: fixed; top: 0; right: 0; bottom: 0;
+      width: min(88vw, 360px);
+      background: var(--card);
+      display: flex; flex-direction: column;
+      z-index: 301;
+      transform: translateX(100%);
+      transition: transform .28s cubic-bezier(.4,0,.2,1);
+      box-shadow: -4px 0 24px rgba(0,0,0,.18);
+    }
+    .zula-drawer.open { transform: translateX(0); }
+    .zula-drawer-hdr {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: calc(var(--safe-top) + 16px) 16px 14px;
+      background: var(--primary); color: #fff;
+      flex-shrink: 0;
+    }
+    .zula-drawer-hdr h2 { font-size: 17px; font-weight: 700; }
+    .zula-drawer-body { flex: 1; overflow-y: auto; padding: 14px 16px; }
+    .zula-group-label {
+      font-size: 12px; font-weight: 700; color: var(--subtext);
+      margin: 14px 0 8px; text-transform: uppercase; letter-spacing: .5px;
+    }
+    .zula-row {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 8px 0; border-bottom: 1px solid var(--border);
+      gap: 10px;
+    }
+    .zula-row:last-child { border-bottom: none; }
+    .zula-item-name { font-size: 15px; flex: 1; }
+    .zula-qty-wrap { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
+    .zula-qty-btn {
+      width: 30px; height: 30px; border-radius: 50%;
+      border: 1.5px solid var(--primary); background: transparent;
+      color: var(--primary); font-size: 18px; font-weight: 700;
+      cursor: pointer; display: flex; align-items: center; justify-content: center;
+      line-height: 1;
+    }
+    .zula-qty-btn:active { background: var(--primary); color: #fff; }
+    .zula-qty-input {
+      width: 44px; text-align: center; border: 1.5px solid var(--border);
+      border-radius: 8px; padding: 4px 2px; font-size: 15px; font-weight: 600;
+      background: var(--bg); color: var(--text); font-family: inherit;
+    }
+    .zula-qty-input:focus { border-color: var(--primary); outline: none; }
+    .zula-drawer-footer {
+      padding: 10px 16px calc(var(--safe-bottom) + 12px);
+      border-top: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+    /* Zula event card in enc-list */
+    .zula-card {
+      background: var(--card);
+      border-radius: 14px;
+      border: 1.5px solid #f0a500;
+      margin-bottom: 10px;
+      padding: 12px 14px;
+    }
+    .zula-card-title {
+      font-size: 14px; font-weight: 700; color: #c07800;
+      margin-bottom: 5px; display: flex; align-items: center; gap: 6px;
+    }
+    .zula-card-chips { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 6px; }
+    .zula-chip {
+      background: #fff3d6; color: #7a4f00; border-radius: 20px;
+      padding: 3px 10px; font-size: 13px; font-weight: 600;
+      border: 1px solid #f0c060;
+    }
     .modal-sheet {
       background: var(--card);
       border-radius: 20px 20px 0 0;
@@ -470,11 +547,14 @@
       </div>
     </div>
 
-    <!-- Add encounter button — sticky so it stays accessible as encounters grow -->
+    <!-- Sticky action bar: add encounter + zula -->
     <div style="position:sticky;top:0;z-index:20;margin:0 -16px;padding:10px 16px;
-                background:var(--bg);border-bottom:1px solid var(--border);">
-      <button class="btn btn-accent" style="width:100%;font-size:17px;padding:14px;"
+                background:var(--bg);border-bottom:1px solid var(--border);
+                display:flex;gap:10px;align-items:center;">
+      <button class="btn btn-accent" style="flex:1;font-size:17px;padding:14px;"
               onclick="openModal('modal-new-enc')">+ הוספת מפגש חדש</button>
+      <button class="btn btn-gray" style="flex:0 0 auto;font-size:14px;padding:10px 14px;white-space:nowrap;"
+              onclick="openZulaDrawer()">⛺ הגעתי לזולה</button>
     </div>
 
     <!-- Encounters -->
@@ -715,6 +795,29 @@
     <button class="btn btn-accent" onclick="createEnc()">התחלת מפגש</button>
     <div style="height:10px;"></div>
     <button class="btn btn-gray" onclick="closeModal('modal-new-enc')">ביטול</button>
+  </div>
+</div>
+
+<!-- ⛺ Zula Drawer -->
+<div class="zula-overlay" id="zula-overlay" onclick="closeZulaDrawer()"></div>
+<div class="zula-drawer" id="zula-drawer">
+  <div class="zula-drawer-hdr">
+    <h2>⛺ הגעתי לזולה</h2>
+    <button onclick="closeZulaDrawer()"
+            style="background:none;border:none;color:#fff;font-size:22px;cursor:pointer;padding:0 4px;">✕</button>
+  </div>
+  <div class="zula-drawer-body" id="zula-body">
+    <!-- rendered by renderZulaDrawer() -->
+  </div>
+  <div class="zula-drawer-footer">
+    <div style="margin-bottom:10px;">
+      <textarea id="zula-notes" rows="2" placeholder="הערות חופשיות..."
+                style="width:100%;border:1.5px solid var(--border);border-radius:10px;padding:8px 10px;
+                       font-size:15px;font-family:inherit;background:var(--bg);color:var(--text);
+                       resize:none;"></textarea>
+    </div>
+    <button class="btn btn-accent" style="width:100%;font-size:16px;padding:13px;"
+            onclick="saveZulaEvent()">שמור חלוקה ✓</button>
   </div>
 </div>
 
@@ -1037,12 +1140,15 @@ function renderRound(id) {
   document.getElementById('r-supplies').value = s.supplies||'';
   document.getElementById('r-notable').value = s.notable||'';
 
-  // Encounters
+  // Encounters + Zula events
   const el = document.getElementById('enc-list');
-  if (!(r.encounters||[]).length) {
+  const hasEncs = (r.encounters||[]).length > 0;
+  const hasZula = (r.zula_events||[]).length > 0;
+
+  if (!hasEncs && !hasZula) {
     el.innerHTML = `<div style="color:var(--text-light);text-align:center;padding:18px 0;font-size:14px;">עדיין אין מפגשים — לחצו + כדי להוסיף</div>`;
   } else {
-    el.innerHTML = r.encounters.map(e => {
+    const encCards = (r.encounters||[]).map(e => {
       const vitals = [e.bp&&`ל"ד ${e.bp}`, e.hr&&`דופק ${e.hr}`, e.spo2&&`SpO₂ ${e.spo2}%`].filter(Boolean).join(' · ');
       const type = classifyEnc(e);
       const typeBadge = type === 'medical'
@@ -1065,6 +1171,25 @@ function renderRound(id) {
         </div>
       </div>`;
     }).join('');
+
+    const zulaCards = (r.zula_events||[]).map(z => {
+      const time = new Date(z.ts).toLocaleTimeString('he-IL',{hour:'2-digit',minute:'2-digit'});
+      const chips = Object.entries(z.supplies||{}).map(([item,qty]) =>
+        `<span class="zula-chip">${item} ×${qty}</span>`).join('');
+      return `<div class="zula-card">
+        <div class="zula-card-title">
+          ⛺ חלוקת ציוד
+          <span style="font-weight:400;font-size:12px;color:#9a7040;">${time}</span>
+          <button onclick="deleteZulaEvent('${z.id}')"
+                  style="margin-right:auto;background:none;border:none;cursor:pointer;font-size:14px;color:#c08030;padding:0 2px;"
+                  title="מחק">🗑</button>
+        </div>
+        ${chips ? `<div class="zula-card-chips">${chips}</div>` : ''}
+        ${z.notes ? `<div style="margin-top:6px;font-size:13px;color:var(--subtext);">${z.notes}</div>` : ''}
+      </div>`;
+    }).join('');
+
+    el.innerHTML = encCards + (zulaCards ? `<div style="margin-top:4px;">${zulaCards}</div>` : '');
   }
 
   // Map shown only on Stats page
@@ -1768,6 +1893,76 @@ function renderSupChips() {
   c.innerHTML = SUPPLY_CHIPS.map(chip =>
     `<button class="chip-btn${curSupChips.includes(chip)?' on':''}" onclick="toggleSupChip('${chip}')">${chip}</button>`
   ).join('');
+}
+
+// ══════════════════════════════════════════════
+// ZULA DRAWER
+// ══════════════════════════════════════════════
+let zulaQtys = {}; // { 'מים': 14, 'קונדומים': 5, ... }
+
+function openZulaDrawer() {
+  zulaQtys = {};
+  renderZulaDrawer();
+  document.getElementById('zula-notes').value = '';
+  document.getElementById('zula-overlay').classList.add('open');
+  document.getElementById('zula-drawer').classList.add('open');
+}
+
+function closeZulaDrawer() {
+  document.getElementById('zula-overlay').classList.remove('open');
+  document.getElementById('zula-drawer').classList.remove('open');
+}
+
+function renderZulaDrawer() {
+  const body = document.getElementById('zula-body'); if(!body) return;
+  body.innerHTML = SOCIAL_CHIP_GROUPS.map(group => {
+    const rows = group.chips.map(chip => {
+      const qty = zulaQtys[chip] || 0;
+      return `<div class="zula-row">
+        <span class="zula-item-name">${chip}</span>
+        <div class="zula-qty-wrap">
+          <button class="zula-qty-btn" onclick="zulaAdj('${chip}',-1)">−</button>
+          <input class="zula-qty-input" type="number" min="0"
+                 value="${qty > 0 ? qty : ''}" placeholder="0"
+                 id="zulaInput-${chip.replace(/[^א-תa-z0-9]/gi,'_')}"
+                 oninput="zulaQtys['${chip}']=parseInt(this.value)||0">
+          <button class="zula-qty-btn" onclick="zulaAdj('${chip}',1)">+</button>
+        </div>
+      </div>`;
+    }).join('');
+    return `<div class="zula-group-label">${group.label}</div>${rows}`;
+  }).join('');
+}
+
+function zulaAdj(chip, delta) {
+  zulaQtys[chip] = Math.max(0, (zulaQtys[chip] || 0) + delta);
+  // update input field directly (no full re-render to keep scroll position)
+  const key = chip.replace(/[^א-תa-z0-9]/gi,'_');
+  const inp = document.getElementById('zulaInput-' + key);
+  if (inp) inp.value = zulaQtys[chip] > 0 ? zulaQtys[chip] : '';
+}
+
+function saveZulaEvent() {
+  const r = DB.rounds.find(x => x.id === curRoundId); if(!r) return;
+  const supplies = Object.fromEntries(Object.entries(zulaQtys).filter(([,v]) => v > 0));
+  const notes = document.getElementById('zula-notes').value.trim();
+  if (!Object.keys(supplies).length && !notes) {
+    toast('לא הוזן כלום — בטל או הכנס כמות');
+    return;
+  }
+  if (!r.zula_events) r.zula_events = [];
+  r.zula_events.push({ id: uid(), ts: Date.now(), supplies, notes });
+  persist(DB);
+  closeZulaDrawer();
+  renderRound(curRoundId);
+  toast('חלוקת ציוד נשמרה ✓');
+}
+
+function deleteZulaEvent(eventId) {
+  const r = DB.rounds.find(x => x.id === curRoundId); if(!r) return;
+  r.zula_events = (r.zula_events||[]).filter(x => x.id !== eventId);
+  persist(DB);
+  renderRound(curRoundId);
 }
 
 function toggleSupChip(chip) {
