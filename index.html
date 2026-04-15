@@ -6,8 +6,8 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="רפואת רחוב">
-  <meta name="theme-color" content="#1a3a5c" media="(prefers-color-scheme: light)">
-  <meta name="theme-color" content="#1c1c1e" media="(prefers-color-scheme: dark)">
+  <meta name="theme-color" content="#6B3FA0" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#2A1A44" media="(prefers-color-scheme: dark)">
   <meta name="color-scheme" content="light dark">
   <title>רפואת רחוב</title>
   <link rel="manifest" href="manifest.json">
@@ -15,16 +15,21 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
   <style>
     :root {
-      --primary:    #1a3a5c;
-      --accent:     #2ecc71;
-      --accent-dk:  #27ae60;
+      /* ── Brand: Purple & Beige ── */
+      --primary:    #6B3FA0;   /* רפואת רחוב purple */
+      --primary-dk: #5A2E90;   /* darker purple (hover/active) */
+      --accent:     #6B3FA0;   /* action buttons = brand purple */
+      --accent-dk:  #5A2E90;
+      --med-green:  #27ae60;   /* medical-only green (badges) */
+      --med-green-lt:#2ecc71;
       --danger:     #e74c3c;
       --warn:       #f39c12;
-      --bg:         #f2f2f7;
-      --card:       #ffffff;
-      --text:       #1c1c1e;
-      --text-light: #6e6e73;
-      --border:     #d1d1d6;
+      --bg:         #F5EDE0;   /* warm beige background */
+      --card:       #FDFAF5;   /* light warm-white cards */
+      --text:       #2D1A4A;   /* dark purple text */
+      --text-light: #8B79A0;   /* muted purple-gray */
+      --subtext:    #7A6A8A;
+      --border:     #DDD0C0;   /* warm beige border */
       --radius:     13px;
       --safe-top:    env(safe-area-inset-top, 0px);
       --safe-bottom: env(safe-area-inset-bottom, 0px);
@@ -34,19 +39,23 @@
     /* ── DARK MODE ── */
     @media (prefers-color-scheme: dark) {
       :root {
-        --bg:         #1c1c1e;
-        --card:       #2c2c2e;
-        --text:       #f2f2f7;
-        --text-light: #8e8e93;
-        --border:     #3a3a3c;
-        --primary:    #1e4976;
-        --accent:     #30d158;
-        --accent-dk:  #28b84a;
+        --bg:         #1A0D2E;   /* very dark purple */
+        --card:       #2A1A44;   /* dark purple card */
+        --text:       #F5EDE0;   /* cream text */
+        --text-light: #A090BC;
+        --subtext:    #9080AA;
+        --border:     #3D2A5E;
+        --primary:    #9068C8;   /* lighter purple for dark bg */
+        --primary-dk: #7848B8;
+        --accent:     #9068C8;
+        --accent-dk:  #7848B8;
+        --med-green:  #30d158;
+        --med-green-lt:#3aed6a;
       }
       /* Map placeholder bg */
-      #round-map, #home-map { background: #2c3542 !important; }
+      #round-map, #home-map { background: #1E1030 !important; }
       /* Toast needs contrast against dark bg */
-      .toast { background: #48484a; }
+      .toast { background: #3A2860; color: #F5EDE0; }
       /* Rich-preview scroll area (inline background:#fff override) */
       #rich-preview-scroll { background: var(--card) !important; }
       /* Leaflet map UI */
@@ -55,8 +64,8 @@
       .leaflet-bar a { background: var(--card); color: var(--text); border-color: var(--border); }
       .leaflet-bar a:hover { background: var(--bg); }
       /* Badge tints */
-      .badge-green { background: rgba(48,209,88,.18); }
-      .badge-gray  { background: rgba(142,142,147,.18); }
+      .badge-green { background: rgba(48,209,88,.18); color: #30d158; }
+      .badge-gray  { background: rgba(160,144,188,.15); }
     }
 
 
@@ -225,7 +234,7 @@
     .chk-row:last-child { border-bottom: none; }
     .chk-row input[type="checkbox"] {
       width: 20px; height: 20px; cursor: pointer; flex-shrink: 0; margin-top: 1px;
-      accent-color: var(--accent);
+      accent-color: var(--primary);
     }
     .chk-row .chk-label { font-size: 15px; flex: 1; cursor: pointer; }
     .sub-input-wrap { margin-top: 8px; }
@@ -276,7 +285,7 @@
       display: inline-block; border-radius: 10px;
       padding: 2px 8px; font-size: 12px; font-weight: 700;
     }
-    .badge-green { background: rgba(46,204,113,.15); color: var(--accent-dk); }
+    .badge-green { background: rgba(46,204,113,.15); color: var(--med-green); }
     .badge-gray  { background: rgba(110,110,115,.12); color: var(--text-light); }
 
     /* FAB */
@@ -285,7 +294,7 @@
       width: 58px; height: 58px; border-radius: 29px;
       background: var(--accent); color: #fff;
       font-size: 30px; border: none; cursor: pointer;
-      box-shadow: 0 4px 18px rgba(46,204,113,.45);
+      box-shadow: 0 4px 18px rgba(107,63,160,.45);
       display: flex; align-items: center; justify-content: center;
       z-index: 100; transition: transform .12s;
     }
@@ -443,7 +452,7 @@
       color: var(--text-light); cursor: pointer; font-family: inherit;
       transition: all .12s;
     }
-    .chip-btn.on { background: var(--accent-dk); color: #fff; border-color: var(--accent-dk); }
+    .chip-btn.on { background: var(--primary); color: #fff; border-color: var(--primary); }
 
     /* ── MAPS ── */
     .leaflet-container { font-family: -apple-system, sans-serif; }
