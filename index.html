@@ -599,16 +599,6 @@
         </div>
       </div>
       <div class="chk-row" onclick="event.stopPropagation()">
-        <input type="checkbox" id="e-sup-chk" onchange="toggleSub('e-sup-sub',this.checked); autoSaveEnc()">
-        <div style="flex:1">
-          <span class="chk-label" onclick="toggleChk('e-sup-chk'); toggleSub('e-sup-sub', document.getElementById('e-sup-chk').checked); autoSaveEnc()">מתן ציוד</span>
-          <div id="e-sup-sub" class="sub-input-wrap" style="display:none">
-            <div class="chip-row" id="sup-chips-container"></div>
-            <input class="sub-input" type="text" id="e-sup" placeholder="עוד / אחר..." oninput="autoSaveEnc()" style="margin-top:8px;">
-          </div>
-        </div>
-      </div>
-      <div class="chk-row" onclick="event.stopPropagation()">
         <input type="checkbox" id="e-ref-chk" onchange="toggleSub('e-ref-sub',this.checked); autoSaveEnc()">
         <div style="flex:1">
           <span class="chk-label" onclick="toggleChk('e-ref-chk'); toggleSub('e-ref-sub', document.getElementById('e-ref-chk').checked); autoSaveEnc()">הפניה</span>
@@ -634,10 +624,9 @@
     <div class="form-section">
       <div class="form-section-title">🤝 סוציאלי</div>
       <div class="form-field" style="border-bottom:none;">
-        <label>ציוד שניתן</label>
-        <div class="chip-row" id="welfare-chips-container" style="margin-bottom:8px;"></div>
+        <div id="welfare-chips-container"></div>
         <input class="sub-input" type="text" id="e-welfare-text" placeholder="ציוד נוסף / הערות..."
-               oninput="autoSaveEnc()" style="width:100%;border:none;outline:none;font-size:16px;font-family:inherit;background:transparent;">
+               oninput="autoSaveEnc()" style="width:100%;border:none;outline:none;font-size:16px;font-family:inherit;background:transparent;margin-top:10px;">
       </div>
     </div>
 
@@ -878,13 +867,19 @@ let saveRoundTimer = null;
 let saveEncTimer   = null;
 let curSex         = '';
 let curWelfareChips = [];
+let curWelfareChipDetails = {};  // { 'משחה': 'drug name', 'אנטיביוטיקה': 'drug name' }
 let curRefPhotos   = [];  // [{id, url}]
 let curContactChips = [];
 let curContactSex   = '';
-let curSupChips    = [];  // medical encounter supply chips
-// ⚠️ SINGLE SOURCE OF TRUTH — add new items here and they appear in ALL
-// three supply fields: medical > supplies given, welfare, and non-medical contact.
+let curSupChips    = [];  // medical encounter supply chips (legacy, kept for data compat)
 const SUPPLY_CHIPS = ['סוכריות','קונדומים','מים','מיץ','תה חם','גרביים','חמצוואר/כובע','חבישות הביתה'];
+const SOCIAL_CHIP_GROUPS = [
+  { label: '🍬 אוכל ושתיה', chips: ['מים','מיץ','תה','סוכריות'] },
+  { label: '🎒 ציוד',       chips: ['ספירטים','קונדומים','גרביים','חמצוואר / כובע'] },
+  { label: '🩹 רפואי',      chips: ['חבישות הביתה','משחה','אנטיביוטיקה'] }
+];
+const SOCIAL_CHIPS_NEED_DETAIL = ['משחה','אנטיביוטיקה'];
+const SOCIAL_CHIPS_MEDICAL = ['חבישות הביתה','משחה','אנטיביוטיקה'];
 
 // ══════════════════════════════════════════════
 // NAVIGATION
@@ -1110,7 +1105,7 @@ function createEnc() {
     wound:false, wound_detail:'',
     med_chk:false, med:'', sup_chk:false, sup:'',
     ref_chk:false, ref:'', ref_photos:[],
-    welfare:false, welfare_chips:[], welfare_text:'',
+    welfare:false, welfare_chips:[], welfare_chip_details:{}, welfare_text:'',
     followup:'No', notes:'', photos:[]
   };
   r.encounters.push(e); persist(DB);
@@ -1167,6 +1162,7 @@ function openEnc(roundId, encId) {
   // Welfare
   // סוציאלי — always visible, no toggle needed
   curWelfareChips = [...(e.welfare_chips||[])];
+  curWelfareChipDetails = {...(e.welfare_chip_details||{})};
   renderWelfareChips();
   document.getElementById('e-welfare-text').value = e.welfare_text||'';
 
@@ -1196,15 +1192,16 @@ function readEnc() {
     wound_detail:  document.getElementById('e-wound-detail').value,
     med_chk:       document.getElementById('e-med-chk').checked,
     med:           document.getElementById('e-med').value,
-    sup_chk:       document.getElementById('e-sup-chk').checked,
-    sup_chips:     [...curSupChips],
-    sup:           document.getElementById('e-sup').value,
-    ref_chk:       document.getElementById('e-ref-chk').checked,
-    ref:           document.getElementById('e-ref').value,
-    ref_photos:    curRefPhotos.map(p=>p.url),
-    welfare:       curWelfareChips.length > 0 || document.getElementById('e-welfare-text').value.trim().length > 0,
-    welfare_chips: [...curWelfareChips],
-    welfare_text:  document.getElementById('e-welfare-text').value,
+    sup_chk:            false,
+    sup_chips:          [...curSupChips],
+    sup:                '',
+    ref_chk:            document.getElementById('e-ref-chk').checked,
+    ref:                document.getElementById('e-ref').value,
+    ref_photos:         curRefPhotos.map(p=>p.url),
+    welfare:            curWelfareChips.length > 0 || document.getElementById('e-welfare-text').value.trim().length > 0,
+    welfare_chips:      [...curWelfareChips],
+    welfare_chip_details: {...curWelfareChipDetails},
+    welfare_text:       document.getElementById('e-welfare-text').value,
     followup:      followupState,
     notes:         document.getElementById('e-notes').value,
     photos:        curPhotos.map(p=>p.url),
@@ -1366,11 +1363,11 @@ function buildText(r) {
         if((e.ref_photos||[]).length) t += `    📷 ${e.ref_photos.length} צילומי הפניה\n`;
       }
       if(!e.wound&&!e.med_chk&&!e.sup_chk&&!e.ref_chk) t += `  — ללא\n`;
-      const wSup = fmtSupplies(e.welfare_chips||[], e.welfare_text||'');
-      if(wSup || e.welfare_text) {
-        t += `\nסוציאלי:\n`;
-        if(wSup) t += `  ציוד: ${wSup}\n`;
-        if(e.welfare_text && !wSup) t += `  ${e.welfare_text}\n`;
+      const wDetails = e.welfare_chip_details || {};
+      const wChipsLabeled = (e.welfare_chips||[]).map(c => wDetails[c] ? `${c} (${wDetails[c]})` : c);
+      const wSup = [...wChipsLabeled, e.welfare_text||''].filter(Boolean).join(', ');
+      if(wSup) {
+        t += `\nסוציאלי:\n  ${wSup}\n`;
       }
 
       t += `\nפולו-אפ נדרש: ${e.followup==='Yes'?'כן':'לא'}\n`;
@@ -1702,15 +1699,49 @@ function fmtSupplies(chips, text) {
 
 function renderWelfareChips() {
   const c = document.getElementById('welfare-chips-container'); if(!c) return;
-  c.innerHTML = SUPPLY_CHIPS.map(chip =>
-    `<button class="chip-btn${curWelfareChips.includes(chip)?' on':''}" onclick="toggleWelfareChip('${chip}')">${chip}</button>`
-  ).join('');
+  c.innerHTML = SOCIAL_CHIP_GROUPS.map(group => {
+    const chipsHtml = group.chips.map(chip => {
+      const on = curWelfareChips.includes(chip);
+      const needsDetail = SOCIAL_CHIPS_NEED_DETAIL.includes(chip);
+      const detailVal = curWelfareChipDetails[chip] || '';
+      const detailInput = needsDetail && on
+        ? `<input type="text" value="${detailVal}"
+             placeholder="שם תרופה..."
+             onchange="curWelfareChipDetails['${chip}']=this.value; autoSaveEnc();"
+             oninput="curWelfareChipDetails['${chip}']=this.value; autoSaveEnc();"
+             onclick="event.stopPropagation()"
+             style="margin-right:6px;margin-top:4px;border:1px solid var(--primary);border-radius:8px;
+                    padding:3px 8px;font-size:13px;width:120px;background:var(--bg);color:var(--text);
+                    font-family:inherit;">`
+        : '';
+      return `<div style="display:inline-flex;flex-direction:column;margin:0 4px 6px 0;">
+        <button class="chip-btn${on?' on':''}" onclick="toggleWelfareChip('${chip}')" style="white-space:nowrap;">${chip}</button>
+        ${detailInput}
+      </div>`;
+    }).join('');
+    return `<div style="margin-bottom:10px;">
+      <div style="font-size:12px;font-weight:700;color:var(--subtext);margin-bottom:5px;">${group.label}</div>
+      <div style="display:flex;flex-wrap:wrap;gap:0;">${chipsHtml}</div>
+    </div>`;
+  }).join('');
 }
 
 function toggleWelfareChip(chip) {
   const idx = curWelfareChips.indexOf(chip);
-  if (idx>=0) curWelfareChips.splice(idx,1); else curWelfareChips.push(chip);
+  if (idx >= 0) {
+    curWelfareChips.splice(idx, 1);
+    if (SOCIAL_CHIPS_NEED_DETAIL.includes(chip)) delete curWelfareChipDetails[chip];
+  } else {
+    curWelfareChips.push(chip);
+  }
   renderWelfareChips();
+  // Focus detail input if just activated
+  if (curWelfareChips.includes(chip) && SOCIAL_CHIPS_NEED_DETAIL.includes(chip)) {
+    setTimeout(() => {
+      const inputs = document.querySelectorAll('#welfare-chips-container input[type=text]');
+      inputs.forEach(inp => { if(inp.placeholder === 'שם תרופה...') inp.focus(); });
+    }, 50);
+  }
   autoSaveEnc();
 }
 
@@ -2173,7 +2204,8 @@ async function renderHomeMap(filterMonth) {
 function classifyEnc(e) {
   const hasClinical = !!(e.cc || e.exam || e.assessment || e.bp || e.hr || e.spo2 || e.temp);
   const hasIntervention = !!(e.wound || e.med_chk || e.sup_chk || e.ref_chk);
-  return (hasClinical || hasIntervention) ? 'medical' : 'social';
+  const hasSocialMedical = (e.welfare_chips||[]).some(c => SOCIAL_CHIPS_MEDICAL.includes(c));
+  return (hasClinical || hasIntervention || hasSocialMedical) ? 'medical' : 'social';
 }
 
 // ══════════════════════════════════════════════
