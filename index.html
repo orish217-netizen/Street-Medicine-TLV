@@ -539,20 +539,10 @@
     <button class="hdr-btn" onclick="confirmDeleteRound()" title="Delete">🗑</button>
   </div>
 
-  <!-- Action bar: outside .content so it's never inside the scroll container -->
-  <div style="background:var(--bg);border-bottom:1px solid var(--border);
-              padding:10px 16px;display:flex;flex-direction:column;gap:8px;flex-shrink:0;">
-    <button class="btn btn-accent" style="width:100%;font-size:17px;padding:14px;"
-            onclick="openModal('modal-new-enc')">+ הוספת מפגש חדש</button>
-    <button class="btn btn-gray" style="width:100%;font-size:14px;padding:10px;"
-            onclick="openZulaDrawer()">⛺ הגעתי לזולה</button>
-  </div>
-
-  <div class="content">
-
-    <!-- Round info -->
-    <div class="form-section">
-      <div class="form-section-title">📋 פרטי הסיור</div>
+  <!-- 1. פרטי הסיור — fixed above scroll area -->
+  <div style="background:var(--card);border-bottom:1px solid var(--border);flex-shrink:0;">
+    <div style="background:var(--primary);color:#fff;padding:8px 16px;font-size:13px;font-weight:700;">📋 פרטי הסיור</div>
+    <div style="padding:0 16px;">
       <div class="form-field">
         <label>תאריך</label>
         <input type="date" id="r-date" onchange="autoSaveRound()">
@@ -561,14 +551,29 @@
         <label>אזור / מיקום כללי</label>
         <input type="text" id="r-location" placeholder="לדוג': התחנה הישנה..." oninput="autoSaveRound()">
       </div>
-      <div class="form-field">
+      <div class="form-field" style="border-bottom:none;">
         <label>מתנדבים</label>
         <input type="text" id="r-volunteers" placeholder="שמות" oninput="autoSaveRound()">
       </div>
     </div>
+  </div>
+
+  <!-- 2. Action buttons — fixed, never scroll -->
+  <div style="background:var(--bg);border-bottom:2px solid var(--border);
+              padding:10px 16px;display:flex;flex-direction:column;gap:8px;flex-shrink:0;">
+    <button style="width:100%;font-size:17px;padding:14px;border-radius:var(--radius);
+                   border:none;cursor:pointer;font-weight:700;font-family:inherit;
+                   background:var(--med-green);color:#fff;"
+            onclick="openModal('modal-new-enc')">+ הוספת מפגש חדש</button>
+    <button class="btn btn-gray" style="width:100%;font-size:14px;padding:10px;"
+            onclick="openZulaDrawer()">⛺ הגעתי לזולה</button>
+  </div>
+
+  <!-- 3. Scrollable: encounters list + round summary -->
+  <div class="content">
 
     <!-- Encounters -->
-    <div id="enc-list" style="margin-top:8px;"></div>
+    <div id="enc-list"></div>
 
     <!-- Round summary -->
     <div class="form-section" style="margin-top:18px;">
@@ -597,8 +602,6 @@
         <textarea id="r-notable" placeholder="נקודות חשובות, דברים למעקב..." oninput="autoSaveRound()"></textarea>
       </div>
     </div>
-
-    <!-- Round map removed — see Stats page for full map -->
   </div>
 
   <div class="s-footer">
