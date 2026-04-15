@@ -1301,12 +1301,8 @@ function openEnc(roundId, encId) {
   toggleSub('e-med-sub', !!e.med_chk);
   document.getElementById('e-med').value = e.med||'';
 
-  // Supplies
-  document.getElementById('e-sup-chk').checked = !!e.sup_chk;
-  toggleSub('e-sup-sub', !!e.sup_chk);
+  // Supplies (legacy — מתן ציוד removed from UI; data kept for backward-compat)
   curSupChips = [...(e.sup_chips||[])];
-  renderSupChips();
-  document.getElementById('e-sup').value = e.sup||'';
 
   // Referral
   document.getElementById('e-ref-chk').checked = !!e.ref_chk;
