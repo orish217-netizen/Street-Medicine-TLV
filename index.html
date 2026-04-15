@@ -538,6 +538,16 @@
     <h1 id="round-hdr-title">Round</h1>
     <button class="hdr-btn" onclick="confirmDeleteRound()" title="Delete">🗑</button>
   </div>
+
+  <!-- Action bar: outside .content so it's never inside the scroll container -->
+  <div style="background:var(--bg);border-bottom:1px solid var(--border);
+              padding:10px 16px;display:flex;flex-direction:column;gap:8px;flex-shrink:0;">
+    <button class="btn btn-accent" style="width:100%;font-size:17px;padding:14px;"
+            onclick="openModal('modal-new-enc')">+ הוספת מפגש חדש</button>
+    <button class="btn btn-gray" style="width:100%;font-size:14px;padding:10px;"
+            onclick="openZulaDrawer()">⛺ הגעתי לזולה</button>
+  </div>
+
   <div class="content">
 
     <!-- Round info -->
@@ -555,16 +565,6 @@
         <label>מתנדבים</label>
         <input type="text" id="r-volunteers" placeholder="שמות" oninput="autoSaveRound()">
       </div>
-    </div>
-
-    <!-- Sticky action bar -->
-    <div style="position:sticky;top:0;z-index:20;
-                background:var(--bg);border-bottom:1px solid var(--border);
-                padding:10px 0 10px;display:flex;flex-direction:column;gap:8px;">
-      <button class="btn btn-accent" style="width:100%;font-size:17px;padding:14px;"
-              onclick="openModal('modal-new-enc')">+ הוספת מפגש חדש</button>
-      <button class="btn btn-gray" style="width:100%;font-size:14px;padding:10px;"
-              onclick="openZulaDrawer()">⛺ הגעתי לזולה</button>
     </div>
 
     <!-- Encounters -->
