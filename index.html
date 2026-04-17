@@ -1520,27 +1520,32 @@ function buildText(r) {
       if(e.exam)       t += `בדיקה: ${e.exam}\n`;
       if(e.assessment) t += `הערכה: ${e.assessment}\n`;
 
-      t += `\nהתערבות:\n`;
-      if(e.wound) {
-        t += `  ✓ חבישה / טיפול בפצע`;
-        if(e.wound_detail) t += ` — ${e.wound_detail}`;
-        t += `\n`;
+      // ── Interventions (only if any exist) ──
+      const hasIntv = e.wound || e.med_chk || e.sup_chk || e.ref_chk;
+      if(hasIntv) {
+        t += `\nהתערבות:\n`;
+        if(e.wound) {
+          t += `  ✓ חבישה / טיפול בפצע`;
+          if(e.wound_detail) t += ` — ${e.wound_detail}`;
+          t += `\n`;
+        }
+        if(e.med_chk) t += `  ✓ תרופות: ${e.med||'—'}\n`;
+        if(e.sup_chk) {
+          const medSup = fmtSupplies(e.sup_chips||[], e.sup||'');
+          t += `  ✓ ציוד: ${medSup||'—'}\n`;
+        }
+        if(e.ref_chk) {
+          t += `  ✓ הפניה: ${e.ref||'—'}\n`;
+          if((e.ref_photos||[]).length) t += `    📷 ${e.ref_photos.length} צילומי הפניה\n`;
+        }
       }
-      if(e.med_chk) t += `  ✓ תרופות: ${e.med||'—'}\n`;
-      if(e.sup_chk) {
-        const medSup = fmtSupplies(e.sup_chips||[], e.sup||'');
-        t += `  ✓ ציוד: ${medSup||'—'}\n`;
-      }
-      if(e.ref_chk) {
-        t += `  ✓ הפניה: ${e.ref||'—'}\n`;
-        if((e.ref_photos||[]).length) t += `    📷 ${e.ref_photos.length} צילומי הפניה\n`;
-      }
-      if(!e.wound&&!e.med_chk&&!e.sup_chk&&!e.ref_chk) t += `  — ללא\n`;
 
+      // ── Social supplies ── (always shown when present)
       const wChips = fmtWelfareText(e);
       const wText  = (e.welfare_text||'').trim();
       const wSup   = [wChips, wText].filter(Boolean).join(', ');
-      if(wSup) t += `\nסוציאלי: ${wSup}\n`;
+      if(wSup) t += `\nציוד וסוציאלי: ${wSup}\n`;
+      else if(!hasIntv) t += `\nציוד / סוציאלי: —\n`; // make clear nothing was given
 
       t += `\nפולו-אפ נדרש: ${e.followup==='Yes'?'כן':'לא'}\n`;
       if(e.notes) t += `נקודות לסיור הבא: ${e.notes}\n`;
@@ -1677,13 +1682,18 @@ function buildHTMLReport(r) {
         }
       }
 
-      // Social / welfare
+      // ── Social / welfare supplies ──
       const wChips = fmtWelfare(e);
       const wText  = (e.welfare_text||'').trim();
       if(wChips || wText) {
-        h += `<p style="margin:10px 0 4px;font-weight:700;">סוציאלי:</p>`;
-        if(wChips) h += `<p style="margin:2px 0 2px 16px;">ציוד שניתן: ${esc(wChips)}</p>`;
-        if(wText)  h += `<p style="margin:2px 0 2px 16px;">הערות: ${esc(wText)}</p>`;
+        h += `<p style="margin:10px 0 4px;font-weight:700;">🤲 ציוד וסוציאלי:</p>`;
+        if(wChips) {
+          // Each chip on its own line for readability
+          wChips.split(', ').forEach(item => {
+            h += `<p style="margin:2px 0 2px 16px;">✓ ${esc(item.trim())}</p>`;
+          });
+        }
+        if(wText) h += `<p style="margin:4px 0 2px 16px;font-style:italic;color:#555;">${esc(wText)}</p>`;
       }
 
       // Follow-up
