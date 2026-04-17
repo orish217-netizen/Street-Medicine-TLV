@@ -1583,181 +1583,185 @@ function buildText(r) {
 function buildHTMLReport(r) {
   const esc = s => (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>');
 
-  // Helper: format welfare chips — use explicit drug name when entered, else chip name
+  // Brand colours
+  const C = { purple:'#6B3FA0', purpleDk:'#4A2670', purpleLt:'#F0E8FF',
+               green:'#27ae60',  greenLt:'#F0FFF6',
+               amber:'#B07D10',  amberLt:'#FFFBF0',
+               gray:'#606070',   grayLt:'#F4F4F6',
+               text:'#1A1A2E',   sub:'#555566' };
+
   function fmtWelfare(e) {
-    const details = e.welfare_chip_details || {};
+    const det = e.welfare_chip_details||{};
     return (e.welfare_chips||[]).map(c => {
-      if (SOCIAL_CHIPS_NEED_DETAIL.includes(c)) {
-        const nm = (details[c]||'').trim();
-        return nm || c; // explicit drug name, or chip name as fallback
-      }
+      if(SOCIAL_CHIPS_NEED_DETAIL.includes(c)){ const nm=(det[c]||'').trim(); return nm||c; }
       return c;
     }).join(', ');
   }
-
-  // Helper: format zula supplies
-  function fmtZulaSupplies(supplies) {
-    return Object.entries(supplies||{})
-      .filter(([,v]) => v > 0)
-      .map(([k,v]) => v > 1 ? `${k} ×${v}` : k)
-      .join(', ') || '—';
-  }
-
-  // Helper: format timestamp HH:MM
   function fmtTime(ts) {
-    if (!ts) return '';
-    const d = new Date(ts);
-    return d.toLocaleTimeString('he-IL', {hour:'2-digit', minute:'2-digit'});
+    if(!ts) return '';
+    return new Date(ts).toLocaleTimeString('he-IL',{hour:'2-digit',minute:'2-digit'});
+  }
+  function row(label, val) {
+    return `<tr><td style="padding:1px 10px 1px 0;color:${C.sub};white-space:nowrap;">${label}</td>
+                <td style="padding:1px 0;font-weight:600;">${val}</td></tr>`;
   }
 
+  // ── Outer wrapper ──
   let h = `<div dir="rtl" style="font-family:-apple-system,Heebo,'Arial Hebrew',Arial,sans-serif;
-    font-size:14px;padding:20px;max-width:680px;color:#111;line-height:1.6;background:#fff;">`;
+    font-size:12px;color:${C.text};line-height:1.45;background:#fff;max-width:700px;">`;
 
-  // ── Header ──
-  h += `<h2 style="margin:0 0 6px;font-size:18px;border-bottom:2px solid #222;padding-bottom:8px;">
-    🏥 Street Medicine — ${esc(fmtDate(r.date))}</h2>`;
-  if(r.location)    h += `<p style="margin:4px 0;color:#444;">📍 מיקום: ${esc(r.location)}</p>`;
-  if(r.volunteers)  h += `<p style="margin:4px 0 16px;color:#444;">👤 מתנדבים: ${esc(r.volunteers)}</p>`;
+  // ── Coloured report header ──
+  h += `<div style="background:${C.purple};color:#fff;padding:14px 18px;border-radius:10px 10px 0 0;margin-bottom:14px;">
+    <div style="font-size:17px;font-weight:800;letter-spacing:.3px;">🏥 Street Medicine TLV</div>
+    <div style="font-size:13px;margin-top:4px;opacity:.9;">
+      📅 ${esc(fmtDate(r.date))}
+      ${r.location  ? ' &nbsp;·&nbsp; 📍 '+esc(r.location)  : ''}
+      ${r.volunteers? ' &nbsp;·&nbsp; 👤 '+esc(r.volunteers) : ''}
+    </div>
+  </div>`;
 
   // ── Encounters ──
   if ((r.encounters||[]).length) {
     const medC = r.encounters.filter(e=>classifyEnc(e)==='medical').length;
     const socC = r.encounters.filter(e=>classifyEnc(e)==='social').length;
-    h += `<h3 style="font-size:15px;margin:0 0 12px;color:#222;">
-      מפגשים — ${r.encounters.length} סה"כ (${medC} רפואיים | ${socC} סוציאליים)</h3>`;
+    h += `<div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;
+             color:${C.purple};margin:0 0 8px;padding:0 2px;">
+      מפגשים — ${r.encounters.length} סה"כ &nbsp;|&nbsp; ${medC} רפואיים &nbsp;|&nbsp; ${socC} סוציאליים
+    </div>`;
 
     r.encounters.forEach((e, i) => {
-      const isMed    = classifyEnc(e) === 'medical';
-      const typeLabel = isMed ? '🩺 רפואי' : '🤝 סוציאלי';
-      const borderColor = isMed ? '#27ae60' : '#8e8e93';
-      const bgColor     = isMed ? '#f0fff4' : '#f9f9f9';
+      const isMed      = classifyEnc(e) === 'medical';
+      const typeLabel  = isMed ? '🩺 רפואי' : '🤝 סוציאלי';
+      const accentColor = isMed ? C.green : C.purple;
+      const bgColor     = isMed ? C.greenLt : C.purpleLt;
 
-      h += `<div style="border:1.5px solid ${borderColor};border-radius:10px;padding:14px;
-               margin-bottom:14px;background:${bgColor};">`;
-      // Title: שם, מין, גיל, קופ"ח — typeLabel
-      const sexLabel   = e.sex === 'M' ? 'גבר' : e.sex === 'F' ? 'אשה' : '';
+      h += `<div style="border-right:4px solid ${accentColor};border-radius:0 7px 7px 0;
+               padding:8px 10px 8px 8px;margin-bottom:6px;background:${bgColor};">`;
+
+      // ── Title line ──
+      const sexLabel   = e.sex==='M'?'גבר':e.sex==='F'?'אשה':'';
       const titleParts = [e.name||'—', sexLabel, e.age||e.age_sex, e.insurance].filter(Boolean);
-      h += `<div style="font-weight:700;font-size:15px;margin-bottom:8px;border-bottom:1px solid ${borderColor};padding-bottom:6px;">
-        ${titleParts.map(esc).join(', ')} &nbsp;—&nbsp; ${typeLabel}
-        ${e.location ? '<span style="font-weight:400;font-size:13px;"> &nbsp;·&nbsp; 📍 ' + esc(e.location) + '</span>' : ''}
+      h += `<div style="font-weight:800;font-size:13px;color:${accentColor};margin-bottom:5px;">
+        ${titleParts.map(esc).join(' · ')}
+        <span style="font-weight:500;font-size:11px;color:${C.sub};margin-right:6px;">— ${typeLabel}</span>
+        ${e.location?`<span style="font-weight:400;font-size:11px;color:${C.sub};">&nbsp;📍 ${esc(e.location)}</span>`:''}
       </div>`;
 
-      // Clinical
-      if(e.cc)         h += `<p style="margin:8px 0 3px;"><strong>תלונה עיקרית:</strong> ${esc(e.cc)}</p>`;
-      if(e.exam)       h += `<p style="margin:3px 0;"><strong>בדיקה:</strong> ${esc(e.exam)}</p>`;
-      if(e.assessment) h += `<p style="margin:3px 0;"><strong>הערכה קלינית:</strong> ${esc(e.assessment)}</p>`;
+      // ── Clinical ──
+      if(e.cc)         h += `<p style="margin:0 0 2px;"><strong>תלונה:</strong> ${esc(e.cc)}</p>`;
+      if(e.exam)       h += `<p style="margin:0 0 2px;"><strong>בדיקה:</strong> ${esc(e.exam)}</p>`;
+      if(e.assessment) h += `<p style="margin:0 0 2px;"><strong>הערכה:</strong> ${esc(e.assessment)}</p>`;
 
-      // Vitals — styled box if any exist
+      // ── Vitals pill-bar ──
       const v = [e.bp&&`BP ${e.bp}`,e.hr&&`HR ${e.hr}`,e.spo2&&`SpO₂ ${e.spo2}%`,e.temp&&`T ${e.temp}°C`].filter(Boolean);
       if(v.length) {
-        h += `<div style="background:#fff;border:1px solid #ddd;border-radius:7px;padding:7px 12px;
-                 margin:8px 0;display:inline-block;font-size:13px;">`;
-        h += `<strong>סימנים חיוניים:</strong> ${v.map(esc).join('&nbsp;&nbsp;|&nbsp;&nbsp;')}`;
+        h += `<div style="display:inline-flex;gap:6px;flex-wrap:wrap;margin:3px 0 4px;">`;
+        v.forEach(vi => {
+          h += `<span style="background:#fff;border:1px solid ${accentColor}33;border-radius:12px;
+                   padding:1px 8px;font-size:11px;font-weight:600;color:${accentColor};">${esc(vi)}</span>`;
+        });
         h += `</div>`;
       }
 
-      // Interventions
-      const anyIntervention = e.wound || e.med_chk || e.sup_chk || e.ref_chk;
-      if(anyIntervention) {
-        h += `<p style="margin:10px 0 4px;font-weight:700;">התערבות:</p>`;
+      // ── Interventions ──
+      const anyIntv = e.wound || e.med_chk || e.sup_chk || e.ref_chk;
+      if(anyIntv) {
+        h += `<p style="margin:4px 0 2px;font-weight:700;font-size:11px;color:${C.sub};text-transform:uppercase;letter-spacing:.5px;">התערבות</p>`;
         if(e.wound) {
-          h += `<p style="margin:2px 0 2px 16px;">✓ חבישה / טיפול בפצע`;
-          if(e.wound_detail) h += ` — ${esc(e.wound_detail)}`;
-          h += `</p>`;
+          h += `<p style="margin:0 0 1px 10px;">✓ חבישה / טיפול בפצע${e.wound_detail?' — '+esc(e.wound_detail):''}</p>`;
         }
-        if(e.med_chk) h += `<p style="margin:2px 0 2px 16px;">✓ תרופות: ${esc(e.med||'—')}</p>`;
+        if(e.med_chk) h += `<p style="margin:0 0 1px 10px;">✓ תרופות: ${esc(e.med||'—')}</p>`;
         if(e.sup_chk) {
           const sup = fmtSupplies(e.sup_chips||[], e.sup||'');
-          h += `<p style="margin:2px 0 2px 16px;">✓ ציוד: ${esc(sup||'—')}</p>`;
+          h += `<p style="margin:0 0 1px 10px;">✓ ציוד: ${esc(sup||'—')}</p>`;
         }
         if(e.ref_chk) {
-          h += `<p style="margin:2px 0 2px 16px;">✓ הפניה: ${esc(e.ref||'—')}</p>`;
+          h += `<p style="margin:0 0 1px 10px;">✓ הפניה: ${esc(e.ref||'—')}</p>`;
           if((e.ref_photos||[]).length) {
-            h += `<div style="display:flex;flex-wrap:wrap;gap:8px;margin:8px 0 4px 16px;">`;
+            h += `<div style="display:flex;flex-wrap:wrap;gap:6px;margin:5px 0 3px 10px;">`;
             e.ref_photos.forEach(p => {
-              h += `<img src="${p}" style="width:160px;height:120px;object-fit:cover;border-radius:8px;border:1px solid #ccc;">`;
+              h += `<img src="${p}" style="width:200px;height:150px;object-fit:cover;border-radius:6px;border:1px solid #ccc;">`;
             });
             h += `</div>`;
           }
         }
       }
 
-      // ── Social / welfare supplies ──
+      // ── Social / welfare ──
       const wChips = fmtWelfare(e);
       const wText  = (e.welfare_text||'').trim();
       if(wChips || wText) {
-        h += `<p style="margin:10px 0 4px;font-weight:700;">🤲 ציוד וסוציאלי:</p>`;
+        h += `<p style="margin:4px 0 2px;font-weight:700;font-size:11px;color:${C.sub};text-transform:uppercase;letter-spacing:.5px;">ציוד וסוציאלי</p>`;
         if(wChips) {
-          // Each chip on its own line for readability
           wChips.split(', ').forEach(item => {
-            h += `<p style="margin:2px 0 2px 16px;">✓ ${esc(item.trim())}</p>`;
+            h += `<p style="margin:0 0 1px 10px;">✓ ${esc(item.trim())}</p>`;
           });
         }
-        if(wText) h += `<p style="margin:4px 0 2px 16px;font-style:italic;color:#555;">${esc(wText)}</p>`;
+        if(wText) h += `<p style="margin:2px 0 1px 10px;font-style:italic;color:${C.sub};">${esc(wText)}</p>`;
       }
 
-      // Follow-up
-      h += `<p style="margin:8px 0 3px;">פולו-אפ נדרש: <strong>${esc(e.followup==='Yes'?'✓ כן':'לא')}</strong></p>`;
-      if(e.notes) h += `<p style="margin:3px 0;">נקודות לסיור הבא: ${esc(e.notes)}</p>`;
+      // ── Follow-up & notes ──
+      if(e.followup==='Yes') {
+        h += `<p style="margin:4px 0 1px;color:#c0392b;font-weight:700;">⚠️ נדרש פולו-אפ${e.notes?' — '+esc(e.notes):''}</p>`;
+      } else if(e.notes) {
+        h += `<p style="margin:4px 0 1px;">📌 ${esc(e.notes)}</p>`;
+      }
 
-      // Encounter photos
-      const allPhotos = [...(e.photos||[])];
-      if(allPhotos.length) {
-        h += `<div style="margin-top:10px;border-top:1px solid ${borderColor};padding-top:8px;">`;
-        h += `<div style="font-size:12px;font-weight:700;color:#555;margin-bottom:6px;">📷 תמונות (${allPhotos.length})</div>`;
-        h += `<div style="display:flex;flex-wrap:wrap;gap:8px;">`;
-        allPhotos.forEach(p => {
-          h += `<img src="${p}" style="width:160px;height:120px;object-fit:cover;border-radius:8px;border:1px solid #ccc;">`;
+      // ── Photos ──
+      const photos = e.photos||[];
+      if(photos.length) {
+        h += `<div style="margin-top:6px;display:flex;flex-wrap:wrap;gap:6px;">`;
+        photos.forEach(p => {
+          h += `<img src="${p}" style="width:200px;height:150px;object-fit:cover;border-radius:6px;border:1px solid #ddd;">`;
         });
-        h += `</div></div>`;
+        h += `</div>`;
       }
 
-      h += `</div>`; // end encounter card
+      h += `</div>`; // end encounter
     });
   }
 
-  // ── Zula Events ──
+  // ── Zula events ──
   if ((r.zula_events||[]).length) {
-    h += `<h3 style="font-size:15px;margin:16px 0 10px;color:#222;">⛺ חלוקת ציוד בזולה (${r.zula_events.length})</h3>`;
+    h += `<div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;
+             color:${C.amber};margin:12px 0 6px;padding:0 2px;">⛺ חלוקת ציוד בזולה (${r.zula_events.length})</div>`;
     r.zula_events.forEach((z, i) => {
-      h += `<div style="border:1.5px solid #6B3FA0;border-radius:10px;padding:12px;margin-bottom:10px;background:#faf5ff;">`;
-      h += `<div style="font-weight:700;margin-bottom:6px;border-bottom:1px solid #6B3FA0;padding-bottom:4px;">`;
-      h += `זולה ${i+1}`;
-      if(z.ts)       h += ` &nbsp;·&nbsp; 🕐 ${fmtTime(z.ts)}`;
-      if(z.location) h += ` &nbsp;·&nbsp; 📍 ${esc(z.location)}`;
-      h += `</div>`;
-      // Supplies table
+      h += `<div style="border-right:4px solid ${C.amber};border-radius:0 7px 7px 0;
+               padding:8px 10px 8px 8px;margin-bottom:6px;background:${C.amberLt};">`;
+      h += `<div style="font-weight:700;font-size:12px;color:${C.amber};margin-bottom:4px;">
+        זולה ${i+1}${z.ts?' &nbsp;·&nbsp; 🕐 '+fmtTime(z.ts):''}
+        ${z.location?` &nbsp;·&nbsp; 📍 ${esc(z.location)}`:''}
+      </div>`;
       const supEntries = Object.entries(z.supplies||{}).filter(([,v])=>v>0);
       if(supEntries.length) {
-        h += `<table style="border-collapse:collapse;width:100%;margin:6px 0;font-size:13px;">`;
+        h += `<div style="display:flex;flex-wrap:wrap;gap:4px 10px;">`;
         supEntries.forEach(([chip,qty]) => {
-          h += `<tr><td style="padding:2px 8px 2px 0;">${esc(chip)}</td>
-                    <td style="padding:2px 0;font-weight:700;color:#6B3FA0;">×${qty}</td></tr>`;
+          h += `<span style="font-size:11px;"><strong>${esc(chip)}</strong> ×${qty}</span>`;
         });
-        h += `</table>`;
+        h += `</div>`;
       }
-      if(z.notes) h += `<p style="margin:6px 0 0;color:#444;font-size:13px;">הערות: ${esc(z.notes)}</p>`;
+      if(z.notes) h += `<p style="margin:4px 0 0;font-style:italic;color:${C.sub};">${esc(z.notes)}</p>`;
       h += `</div>`;
     });
   }
 
-  // ── Round Summary ──
+  // ── Round summary ──
   const s = r.summary||{};
   const medAutoCount = (r.encounters||[]).filter(e=>classifyEnc(e)==='medical').length;
   const refAutoCount = (r.encounters||[]).filter(e=>e.ref_chk).length;
-  h += `<div style="border-top:2px solid #222;margin-top:16px;padding-top:12px;background:#f8f8f8;
-           border-radius:0 0 8px 8px;padding:12px;">`;
-  h += `<h3 style="font-size:15px;margin:0 0 8px;color:#222;">📊 סיכום הסיור</h3>`;
-  h += `<table style="border-collapse:collapse;font-size:14px;width:100%;">`;
-  h += `<tr><td style="padding:3px 12px 3px 0;">סה"כ מפגשים</td><td style="font-weight:700;">${esc(String(s.total||(r.encounters||[]).length||'—'))}</td></tr>`;
-  h += `<tr><td style="padding:3px 12px 3px 0;">מפגשים רפואיים</td><td style="font-weight:700;">${s.medical!==undefined&&s.medical!==''?esc(String(s.medical)):medAutoCount}</td></tr>`;
-  h += `<tr><td style="padding:3px 12px 3px 0;">הפניות</td><td style="font-weight:700;">${s.referrals!==undefined&&s.referrals!==''?esc(String(s.referrals)):refAutoCount}</td></tr>`;
-  if(s.supplies) h += `<tr><td style="padding:3px 12px 3px 0;vertical-align:top;">ציוד שחולק</td><td style="font-weight:700;">${esc(s.supplies)}</td></tr>`;
+  h += `<div style="background:${C.purple};color:#fff;border-radius:7px;padding:10px 14px;margin-top:12px;">`;
+  h += `<div style="font-size:12px;font-weight:800;margin-bottom:6px;letter-spacing:.3px;">📊 סיכום הסיור</div>`;
+  h += `<table style="border-collapse:collapse;font-size:12px;color:#fff;width:100%;">`;
+  h += `<tr><td style="padding:1px 14px 1px 0;opacity:.8;">סה"כ מפגשים</td><td style="font-weight:700;">${esc(String(s.total||(r.encounters||[]).length||'—'))}</td>
+            <td style="padding:1px 14px 1px 16px;opacity:.8;">מפגשים רפואיים</td><td style="font-weight:700;">${s.medical!==undefined&&s.medical!==''?esc(String(s.medical)):medAutoCount}</td></tr>`;
+  h += `<tr><td style="padding:1px 14px 1px 0;opacity:.8;">הפניות</td><td style="font-weight:700;">${s.referrals!==undefined&&s.referrals!==''?esc(String(s.referrals)):refAutoCount}</td></tr>`;
+  if(s.supplies) h += `<tr><td style="padding:3px 14px 1px 0;opacity:.8;vertical-align:top;">ציוד שחולק</td><td colspan="3" style="font-weight:600;">${esc(s.supplies)}</td></tr>`;
   h += `</table>`;
-  if(s.notable) h += `<p style="margin:10px 0 0;"><strong>פולו-אפים ונקודות:</strong><br>${esc(s.notable)}</p>`;
+  if(s.notable) h += `<p style="margin:8px 0 0;font-size:12px;border-top:1px solid rgba(255,255,255,.3);padding-top:6px;">
+    <strong>פולו-אפים ונקודות:</strong><br>${esc(s.notable)}</p>`;
   h += `</div>`;
 
-  h += `</div>`; // end wrapper
+  h += `<div style="height:8px;"></div></div>`;
   return h;
 }
 // ─────────────────────────────────────────────────────────────────────────────
@@ -1884,7 +1888,7 @@ async function doPDF() {
 
   try {
     const canvas = await html2canvas(renderDiv, {
-      scale: 1.8,
+      scale: 2.5,
       useCORS: true,
       allowTaint: true,
       backgroundColor: '#ffffff',
@@ -1892,7 +1896,7 @@ async function doPDF() {
       windowWidth: 720,
     });
 
-    const imgData = canvas.toDataURL('image/jpeg', 0.88);
+    const imgData = canvas.toDataURL('image/jpeg', 0.92);
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF({ orientation: 'p', unit: 'mm', format: 'a4' });
 
