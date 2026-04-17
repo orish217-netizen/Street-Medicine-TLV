@@ -643,11 +643,11 @@
         <label>קופ"ח</label>
         <select id="e-insurance" onchange="autoSaveEnc()">
           <option value="">לא ידוע / לא שאלנו</option>
-          <option value="Clalit">כללית</option>
-          <option value="Maccabi">מכבי</option>
-          <option value="Meuhedet">מאוחדת</option>
-          <option value="Leumit">לאומית</option>
-          <option value="No insurance">אין קופ"ח</option>
+          <option value="כללית">כללית</option>
+          <option value="מכבי">מכבי</option>
+          <option value="מאוחדת">מאוחדת</option>
+          <option value="לאומית">לאומית</option>
+          <option value="אין קופ&quot;ח">אין קופ"ח</option>
         </select>
       </div>
     </div>
@@ -1511,7 +1511,7 @@ function buildText(r) {
       const typeLabel = classifyEnc(e) === 'medical' ? '🩺 רפואי' : '🤝 סוציאלי';
       const sexLabel  = e.sex === 'M' ? 'גבר' : e.sex === 'F' ? 'אשה' : '';
       // Title: שם, מין, גיל, קופ"ח — סוג
-      const titleParts = [e.name||'—', sexLabel, e.age||e.age_sex, e.insurance].filter(Boolean);
+      const titleParts = [e.name||'—', sexLabel, e.age||e.age_sex, insHe(e.insurance)].filter(Boolean);
       t += `━━━ ${titleParts.join(', ')} — ${typeLabel} ━━━\n`;
       if(e.location) t += `📍 ${e.location}\n`;
 
@@ -1581,6 +1581,11 @@ function buildText(r) {
 }
 
 // ── RICH HTML REPORT (for PDF + Notes export) ────────────────────────────────
+// Map legacy English insurance values → Hebrew (for old stored data)
+const INS_HE = { Clalit:'כללית', Maccabi:'מכבי', Meuhedet:'מאוחדת',
+                 Leumit:'לאומית', 'No insurance':'אין קופ"ח' };
+function insHe(v) { return INS_HE[v] || v || ''; }
+
 function buildHTMLReport(r) {
   const esc = s => (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>');
 
@@ -1625,7 +1630,7 @@ function buildHTMLReport(r) {
   if ((r.encounters||[]).length) {
     const medC = r.encounters.filter(e=>classifyEnc(e)==='medical').length;
     const socC = r.encounters.filter(e=>classifyEnc(e)==='social').length;
-    h += `<div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;
+    h += `<div class="pdf-card" style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;
              color:${C.purple};margin:0 0 8px;padding:0 2px;">
       מפגשים — ${r.encounters.length} סה"כ &nbsp;|&nbsp; ${medC} רפואיים &nbsp;|&nbsp; ${socC} סוציאליים
     </div>`;
@@ -1636,12 +1641,12 @@ function buildHTMLReport(r) {
       const accentColor = isMed ? C.green : C.purple;
       const bgColor     = isMed ? C.greenLt : C.purpleLt;
 
-      h += `<div style="border-right:4px solid ${accentColor};border-radius:0 7px 7px 0;
+      h += `<div class="pdf-card" style="border-right:4px solid ${accentColor};border-radius:0 7px 7px 0;
                padding:8px 10px 8px 8px;margin-bottom:6px;background:${bgColor};">`;
 
       // ── Title line ──
       const sexLabel   = e.sex==='M'?'גבר':e.sex==='F'?'אשה':'';
-      const titleParts = [e.name||'—', sexLabel, e.age||e.age_sex, e.insurance].filter(Boolean);
+      const titleParts = [e.name||'—', sexLabel, e.age||e.age_sex, insHe(e.insurance)].filter(Boolean);
       h += `<div style="font-weight:800;font-size:13px;color:${accentColor};margin-bottom:5px;">
         ${titleParts.map(esc).join(' · ')}
         <span style="font-weight:500;font-size:11px;color:${C.sub};margin-right:6px;">— ${typeLabel}</span>
@@ -1724,10 +1729,10 @@ function buildHTMLReport(r) {
 
   // ── Zula events ──
   if ((r.zula_events||[]).length) {
-    h += `<div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;
+    h += `<div class="pdf-card" style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;
              color:${C.amber};margin:12px 0 6px;padding:0 2px;">⛺ חלוקת ציוד בזולה (${r.zula_events.length})</div>`;
     r.zula_events.forEach((z, i) => {
-      h += `<div style="border-right:4px solid ${C.amber};border-radius:0 7px 7px 0;
+      h += `<div class="pdf-card" style="border-right:4px solid ${C.amber};border-radius:0 7px 7px 0;
                padding:8px 10px 8px 8px;margin-bottom:6px;background:${C.amberLt};">`;
       h += `<div style="font-weight:700;font-size:12px;color:${C.amber};margin-bottom:4px;">
         זולה ${i+1}${z.ts?' &nbsp;·&nbsp; 🕐 '+fmtTime(z.ts):''}
@@ -1750,7 +1755,7 @@ function buildHTMLReport(r) {
   const s = r.summary||{};
   const medAutoCount = (r.encounters||[]).filter(e=>classifyEnc(e)==='medical').length;
   const refAutoCount = (r.encounters||[]).filter(e=>e.ref_chk).length;
-  h += `<div style="background:${C.purple};color:#fff;border-radius:7px;padding:10px 14px;margin-top:12px;">`;
+  h += `<div class="pdf-card" style="background:${C.purple};color:#fff;border-radius:7px;padding:10px 14px;margin-top:12px;">`;
   h += `<div style="font-size:12px;font-weight:800;margin-bottom:6px;letter-spacing:.3px;">📊 סיכום הסיור</div>`;
   h += `<table style="border-collapse:collapse;font-size:12px;color:#fff;width:100%;">`;
   h += `<tr><td style="padding:1px 14px 1px 0;opacity:.8;">סה"כ מפגשים</td><td style="font-weight:700;">${esc(String(s.total||(r.encounters||[]).length||'—'))}</td>
@@ -1884,8 +1889,18 @@ async function doPDF() {
   }
   renderDiv.innerHTML = buildHTMLReport(r);
 
-  // Give images a tick to paint before capturing
-  await new Promise(res => setTimeout(res, 200));
+  // Give images time to load before measuring or capturing
+  await new Promise(res => setTimeout(res, 400));
+
+  // Measure card top positions (CSS px, relative to renderDiv top)
+  // These are the safe cut points — we will only slice between cards, never through one.
+  const divTop = renderDiv.getBoundingClientRect().top;
+  const cardEls = renderDiv.querySelectorAll('.pdf-card');
+  const cardTopsCSSPx = Array.from(cardEls).map(el =>
+    el.getBoundingClientRect().top - divTop
+  ).filter(y => y > 0); // skip anything at 0 (e.g. the very first element)
+
+  const totalContentCSSPx = renderDiv.scrollHeight;
 
   try {
     const canvas = await html2canvas(renderDiv, {
@@ -1897,30 +1912,65 @@ async function doPDF() {
       windowWidth: 720,
     });
 
-    const imgData = canvas.toDataURL('image/jpeg', 0.92);
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF({ orientation: 'p', unit: 'mm', format: 'a4' });
 
     const pageW  = doc.internal.pageSize.getWidth();   // 210 mm
     const pageH  = doc.internal.pageSize.getHeight();  // 297 mm
     const margin = 10; // mm
-    const printW = pageW - margin * 2;
-    const imgH   = (canvas.height * printW) / canvas.width; // proportional height
+    const printW = pageW - margin * 2;                 // 190 mm
+    const printH = pageH - margin * 2;                 // 277 mm
 
-    // Slice the tall image across multiple A4 pages
-    let printed = 0;
-    while (printed < imgH) {
-      if (printed > 0) doc.addPage();
-      // Source slice in PDF units: how much of imgH is on this page
-      const sliceH = Math.min(pageH - margin * 2, imgH - printed);
-      // y-offset for addImage: negative so the correct slice sits in the top-left
-      const yOffset = margin - printed;
-      doc.addImage(imgData, 'JPEG', margin, yOffset, printW, imgH, '', 'FAST');
-      // Clip to page — add a white rectangle over the overflow at top and bottom
-      doc.setFillColor(255, 255, 255);
-      if (printed > 0) doc.rect(0, 0, pageW, margin, 'F');
-      doc.rect(0, margin + sliceH, pageW, pageH, 'F');
-      printed += pageH - margin * 2;
+    // Scale: CSS px → canvas px
+    const cssToCanvas = canvas.height / Math.max(totalContentCSSPx, 1);
+    // Convert measured card tops to canvas pixels
+    const cardTopsCvPx = cardTopsCSSPx.map(y => y * cssToCanvas);
+
+    // Page height in canvas pixels (how many canvas px fit in one printable page)
+    const pageHCvPx = (printH / printW) * canvas.width;
+
+    // Extract a horizontal slice from the full canvas
+    function sliceCanvas(yStartCv, heightCv) {
+      const yS = Math.round(yStartCv);
+      const hS = Math.max(1, Math.round(heightCv));
+      const c  = document.createElement('canvas');
+      c.width  = canvas.width;
+      c.height = hS;
+      c.getContext('2d').drawImage(canvas, 0, -yS);
+      return c.toDataURL('image/jpeg', 0.92);
+    }
+
+    // Content-aware page loop — never cut through a card
+    const MIN_CVP = pageHCvPx * 0.12; // don't cut within the first 12 % of a page
+    let pageStart = 0;  // in canvas px
+    let isFirst   = true;
+
+    while (pageStart < canvas.height) {
+      if (!isFirst) doc.addPage();
+      isFirst = false;
+
+      const pageEnd = pageStart + pageHCvPx;
+
+      if (pageEnd >= canvas.height) {
+        // Last (or only) page — take everything remaining
+        const hCv  = canvas.height - pageStart;
+        const hMM  = hCv * printW / canvas.width;
+        doc.addImage(sliceCanvas(pageStart, hCv), 'JPEG', margin, margin, printW, hMM);
+        break;
+      }
+
+      // Find last safe break: a card top that falls within the usable page area
+      // and is not too close to the page start (to avoid near-empty pages)
+      const valid = cardTopsCvPx.filter(y => y > pageStart + MIN_CVP && y <= pageEnd);
+      const cutAt = valid.length > 0
+        ? valid[valid.length - 1]   // break just before this card
+        : pageEnd;                   // no natural break — forced cut (tall card)
+
+      const hCv = cutAt - pageStart;
+      const hMM = hCv * printW / canvas.width;
+      doc.addImage(sliceCanvas(pageStart, hCv), 'JPEG', margin, margin, printW, hMM);
+
+      pageStart = cutAt;
     }
 
     doc.save(`street-medicine-${r.date||'round'}.pdf`);
