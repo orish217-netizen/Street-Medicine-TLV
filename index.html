@@ -66,6 +66,8 @@
       /* Badge tints */
       .badge-green { background: rgba(48,209,88,.18); color: #30d158; }
       .badge-gray  { background: rgba(160,144,188,.15); }
+      /* Keep action buttons green in dark mode */
+      .btn-green   { background: #30d158 !important; color: #000 !important; }
     }
 
 
@@ -147,6 +149,7 @@
     .btn-danger   { background: var(--danger);  color: #fff; }
     .btn-outline  { background: transparent; color: var(--primary); border: 2px solid var(--primary); }
     .btn-gray     { background: var(--bg); color: var(--text); border: 1px solid var(--border); }
+    .btn-green    { background: var(--med-green); color: #fff; }
     .btn-sm       { padding: 8px 14px; font-size: 14px; display: inline-block; width: auto; }
 
     /* ── CARDS ── */
@@ -561,9 +564,7 @@
   <!-- 2. Action buttons — fixed, never scroll -->
   <div style="background:var(--bg);border-bottom:2px solid var(--border);
               padding:6px 12px;display:flex;gap:8px;flex-shrink:0;">
-    <button style="flex:1;font-size:15px;padding:9px;border-radius:var(--radius);
-                   border:none;cursor:pointer;font-weight:700;font-family:inherit;
-                   background:var(--med-green);color:#fff;"
+    <button class="btn btn-green btn-sm" style="flex:1;font-size:15px;padding:9px;"
             onclick="openModal('modal-new-enc')">+ מפגש חדש</button>
     <button class="btn btn-gray" style="flex:1;font-size:13px;padding:9px;"
             onclick="openZulaDrawer()">⛺ הגעתי לזולה</button>
@@ -769,7 +770,7 @@
 
   </div>
   <div class="s-footer">
-    <button class="btn" style="background:var(--med-green);color:#fff;" onclick="saveEnc(); navBack('pg-round')">שמור ✓</button>
+    <button class="btn btn-green" onclick="saveEnc(); navBack('pg-round')">שמור ✓</button>
   </div>
 </div>
 
@@ -805,7 +806,7 @@
       <label>שם / כינוי</label>
       <input type="text" id="m-enc-name" placeholder="שם, כינוי או תיאור">
     </div>
-    <button class="btn" style="background:var(--med-green);color:#fff;" onclick="createEnc()">התחלת מפגש</button>
+    <button class="btn btn-green" onclick="createEnc()">התחלת מפגש</button>
     <div style="height:10px;"></div>
     <button class="btn btn-gray" onclick="closeModal('modal-new-enc')">ביטול</button>
   </div>
