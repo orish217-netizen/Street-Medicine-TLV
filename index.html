@@ -1483,6 +1483,19 @@ function setFollowup(val, silent) {
 // ══════════════════════════════════════════════
 function buildText(r) {
   const D = '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━';
+
+  // Format welfare chips: use explicit drug name when entered, else chip name
+  function fmtWelfareText(e) {
+    const details = e.welfare_chip_details || {};
+    return (e.welfare_chips||[]).map(c => {
+      if (SOCIAL_CHIPS_NEED_DETAIL.includes(c)) {
+        const nm = (details[c]||'').trim();
+        return nm || c; // drug name if filled, else chip name
+      }
+      return c;
+    }).join(', ');
+  }
+
   let t = `${D}\n📋 דו"ח סיור רפואת רחוב\n${D}\n\n`;
   t += `📅 תאריך: ${fmtDate(r.date)}\n`;
   t += `📍 מיקום: ${r.location||'—'}\n`;
@@ -1492,20 +1505,20 @@ function buildText(r) {
     const medEncs = r.encounters.filter(e => classifyEnc(e) === 'medical');
     const socEncs = r.encounters.filter(e => classifyEnc(e) === 'social');
     t += `${D}\nמפגשים (${r.encounters.length} סה"כ | ${medEncs.length} רפואיים | ${socEncs.length} סוציאליים)\n${D}\n\n`;
-    r.encounters.forEach((e,i) => {
-      const typeLabel = classifyEnc(e) === 'medical' ? '🩺 רפואי' : '🤝 סוציאלי';
-      t += `━━━ מפגש ${i+1} — ${typeLabel} ━━━\n`;
-      if(e.location) t += `📍 ${e.location}\n`;
-      t += `\nשם / כינוי: ${e.name||'—'}\n`;
-      const ageSex = [e.age || e.age_sex, e.sex].filter(Boolean).join(' / ');
-      if(ageSex) t += `גיל ומין: ${ageSex}\n`;
-      t += `קופ"ח: ${e.insurance||'—'}\n`;
-      t += `\nתלונה עיקרית: ${e.cc||'—'}\n`;
 
-      const v=[e.bp&&`BP ${e.bp}`,e.hr&&`HR ${e.hr}`,e.spo2&&`SpO₂ ${e.spo2}%`,e.temp&&`T ${e.temp}°C`].filter(Boolean);
-      if(v.length) t += `סימנים חיוניים: ${v.join(' | ')}\n`;
-      if(e.exam)        t += `בדיקה: ${e.exam}\n`;
-      if(e.assessment)  t += `הערכה: ${e.assessment}\n`;
+    r.encounters.forEach((e, i) => {
+      const typeLabel = classifyEnc(e) === 'medical' ? '🩺 רפואי' : '🤝 סוציאלי';
+      const sexLabel  = e.sex === 'M' ? 'גבר' : e.sex === 'F' ? 'אשה' : '';
+      // Title: שם, מין, גיל, קופ"ח — סוג
+      const titleParts = [e.name||'—', sexLabel, e.age||e.age_sex, e.insurance].filter(Boolean);
+      t += `━━━ ${titleParts.join(', ')} — ${typeLabel} ━━━\n`;
+      if(e.location) t += `📍 ${e.location}\n`;
+
+      if(e.cc)         t += `\nתלונה עיקרית: ${e.cc}\n`;
+      const v = [e.bp&&`BP ${e.bp}`,e.hr&&`HR ${e.hr}`,e.spo2&&`SpO₂ ${e.spo2}%`,e.temp&&`T ${e.temp}°C`].filter(Boolean);
+      if(v.length)     t += `סימנים חיוניים: ${v.join(' | ')}\n`;
+      if(e.exam)       t += `בדיקה: ${e.exam}\n`;
+      if(e.assessment) t += `הערכה: ${e.assessment}\n`;
 
       t += `\nהתערבות:\n`;
       if(e.wound) {
@@ -1523,132 +1536,215 @@ function buildText(r) {
         if((e.ref_photos||[]).length) t += `    📷 ${e.ref_photos.length} צילומי הפניה\n`;
       }
       if(!e.wound&&!e.med_chk&&!e.sup_chk&&!e.ref_chk) t += `  — ללא\n`;
-      const wDetails = e.welfare_chip_details || {};
-      const wChipsLabeled = (e.welfare_chips||[]).map(c => wDetails[c] ? `${c} (${wDetails[c]})` : c);
-      const wSup = [...wChipsLabeled, e.welfare_text||''].filter(Boolean).join(', ');
-      if(wSup) {
-        t += `\nסוציאלי:\n  ${wSup}\n`;
-      }
+
+      const wChips = fmtWelfareText(e);
+      const wText  = (e.welfare_text||'').trim();
+      const wSup   = [wChips, wText].filter(Boolean).join(', ');
+      if(wSup) t += `\nסוציאלי: ${wSup}\n`;
 
       t += `\nפולו-אפ נדרש: ${e.followup==='Yes'?'כן':'לא'}\n`;
       if(e.notes) t += `נקודות לסיור הבא: ${e.notes}\n`;
-      if((e.photos||[]).length) t += `תמונות: ${e.photos.length} מצורפות\n`;
+      if((e.photos||[]).length) t += `📷 תמונות: ${e.photos.length} מצורפות\n`;
       t += '\n';
     });
   }
 
-  // (non-medical contacts merged into unified encounters)
+  // ── Zula events ──
+  if ((r.zula_events||[]).length) {
+    t += `${D}\n⛺ חלוקת ציוד בזולה (${r.zula_events.length})\n${D}\n\n`;
+    r.zula_events.forEach((z, i) => {
+      const ts = z.ts ? new Date(z.ts).toLocaleTimeString('he-IL',{hour:'2-digit',minute:'2-digit'}) : '';
+      t += `━━━ זולה ${i+1}${ts?' · '+ts:''}${z.location?' · '+z.location:''} ━━━\n`;
+      const supEntries = Object.entries(z.supplies||{}).filter(([,v])=>v>0);
+      if(supEntries.length) t += supEntries.map(([k,v]) => `  ${k} ×${v}`).join('\n') + '\n';
+      if(z.notes) t += `  הערות: ${z.notes}\n`;
+      t += '\n';
+    });
+  }
 
   const s = r.summary||{};
+  const medAutoCount = (r.encounters||[]).filter(e=>classifyEnc(e)==='medical').length;
+  const refAutoCount = (r.encounters||[]).filter(e=>e.ref_chk).length;
   t += `${D}\nסיכום הסיור\n${D}\n`;
-  t += `סה"כ מפגשים:          ${s.total||'—'}\n`;
-  t += `מפגשים רפואיים:       ${s.medical!==undefined&&s.medical!==''?s.medical:(r.encounters||[]).length}\n`;
-  t += `הפניות:               ${s.referrals||'—'}\n`;
-  if(s.supplies) t += `ציוד שחולק: ${s.supplies}\n`;
+  t += `סה"כ מפגשים:    ${s.total||(r.encounters||[]).length||'—'}\n`;
+  t += `רפואיים:        ${s.medical!==undefined&&s.medical!==''?s.medical:medAutoCount}\n`;
+  t += `הפניות:         ${s.referrals!==undefined&&s.referrals!==''?s.referrals:refAutoCount}\n`;
+  if(s.supplies) t += `ציוד שחולק:     ${s.supplies}\n`;
   if(s.notable)  t += `\nפולו-אפים ונקודות:\n${s.notable}\n`;
   return t;
 }
 
 // ── RICH HTML REPORT (for PDF + Notes export) ────────────────────────────────
 function buildHTMLReport(r) {
-  const esc = s => (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  const esc = s => (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>');
 
-  let h = `<div style="font-family:-apple-system,Heebo,'Arial Hebrew',Arial,sans-serif;
+  // Helper: format welfare chips — use explicit drug name when entered, else chip name
+  function fmtWelfare(e) {
+    const details = e.welfare_chip_details || {};
+    return (e.welfare_chips||[]).map(c => {
+      if (SOCIAL_CHIPS_NEED_DETAIL.includes(c)) {
+        const nm = (details[c]||'').trim();
+        return nm || c; // explicit drug name, or chip name as fallback
+      }
+      return c;
+    }).join(', ');
+  }
+
+  // Helper: format zula supplies
+  function fmtZulaSupplies(supplies) {
+    return Object.entries(supplies||{})
+      .filter(([,v]) => v > 0)
+      .map(([k,v]) => v > 1 ? `${k} ×${v}` : k)
+      .join(', ') || '—';
+  }
+
+  // Helper: format timestamp HH:MM
+  function fmtTime(ts) {
+    if (!ts) return '';
+    const d = new Date(ts);
+    return d.toLocaleTimeString('he-IL', {hour:'2-digit', minute:'2-digit'});
+  }
+
+  let h = `<div dir="rtl" style="font-family:-apple-system,Heebo,'Arial Hebrew',Arial,sans-serif;
     font-size:14px;padding:20px;max-width:680px;color:#111;line-height:1.6;background:#fff;">`;
 
-  // Header
-  h += `<h2 style="margin:0 0 4px;font-size:18px;border-bottom:2px solid #222;padding-bottom:8px;">
+  // ── Header ──
+  h += `<h2 style="margin:0 0 6px;font-size:18px;border-bottom:2px solid #222;padding-bottom:8px;">
     🏥 Street Medicine — ${esc(fmtDate(r.date))}</h2>`;
-  h += `<p style="margin:6px 0 18px;color:#444;">👤 מתנדבים: ${esc(r.volunteers||'—')}</p>`;
+  if(r.location)    h += `<p style="margin:4px 0;color:#444;">📍 מיקום: ${esc(r.location)}</p>`;
+  if(r.volunteers)  h += `<p style="margin:4px 0 16px;color:#444;">👤 מתנדבים: ${esc(r.volunteers)}</p>`;
 
   // ── Encounters ──
   if ((r.encounters||[]).length) {
     const medC = r.encounters.filter(e=>classifyEnc(e)==='medical').length;
     const socC = r.encounters.filter(e=>classifyEnc(e)==='social').length;
     h += `<h3 style="font-size:15px;margin:0 0 12px;color:#222;">
-      מפגשים (${r.encounters.length} סה"כ | ${medC} רפואיים | ${socC} סוציאליים)</h3>`;
+      מפגשים — ${r.encounters.length} סה"כ (${medC} רפואיים | ${socC} סוציאליים)</h3>`;
 
     r.encounters.forEach((e, i) => {
-      const typeLabel = classifyEnc(e) === 'medical' ? '🩺 רפואי' : '🤝 סוציאלי';
-      const borderColor = classifyEnc(e) === 'medical' ? '#2ecc71' : '#8e8e93';
-      h += `<div style="border:1px solid ${borderColor};border-radius:10px;padding:14px;margin-bottom:14px;">`;
-      h += `<div style="font-weight:700;font-size:15px;margin-bottom:10px;">
-        מפגש ${i+1} — ${typeLabel}${e.location ? ' · ' + esc(e.location) : ''}</div>`;
+      const isMed    = classifyEnc(e) === 'medical';
+      const typeLabel = isMed ? '🩺 רפואי' : '🤝 סוציאלי';
+      const borderColor = isMed ? '#27ae60' : '#8e8e93';
+      const bgColor     = isMed ? '#f0fff4' : '#f9f9f9';
 
-      const ageParts = [e.name, e.age||e.age_sex, e.sex].filter(Boolean);
-      if(ageParts.length) h += `<p style="margin:3px 0;">${ageParts.map(esc).join(' · ')}</p>`;
-      if(e.insurance) h += `<p style="margin:3px 0;">קופ"ח: ${esc(e.insurance)}</p>`;
-      if(e.cc) h += `<p style="margin:8px 0 3px;"><strong>תלונה עיקרית:</strong> ${esc(e.cc)}</p>`;
+      h += `<div style="border:1.5px solid ${borderColor};border-radius:10px;padding:14px;
+               margin-bottom:14px;background:${bgColor};">`;
+      // Title: שם, מין, גיל, קופ"ח — typeLabel
+      const sexLabel   = e.sex === 'M' ? 'גבר' : e.sex === 'F' ? 'אשה' : '';
+      const titleParts = [e.name||'—', sexLabel, e.age||e.age_sex, e.insurance].filter(Boolean);
+      h += `<div style="font-weight:700;font-size:15px;margin-bottom:8px;border-bottom:1px solid ${borderColor};padding-bottom:6px;">
+        ${titleParts.map(esc).join(', ')} &nbsp;—&nbsp; ${typeLabel}
+        ${e.location ? '<span style="font-weight:400;font-size:13px;"> &nbsp;·&nbsp; 📍 ' + esc(e.location) + '</span>' : ''}
+      </div>`;
 
+      // Clinical
+      if(e.cc)         h += `<p style="margin:8px 0 3px;"><strong>תלונה עיקרית:</strong> ${esc(e.cc)}</p>`;
+      if(e.exam)       h += `<p style="margin:3px 0;"><strong>בדיקה:</strong> ${esc(e.exam)}</p>`;
+      if(e.assessment) h += `<p style="margin:3px 0;"><strong>הערכה קלינית:</strong> ${esc(e.assessment)}</p>`;
+
+      // Vitals — styled box if any exist
       const v = [e.bp&&`BP ${e.bp}`,e.hr&&`HR ${e.hr}`,e.spo2&&`SpO₂ ${e.spo2}%`,e.temp&&`T ${e.temp}°C`].filter(Boolean);
-      if(v.length) h += `<p style="margin:3px 0;">סימנים חיוניים: ${v.map(esc).join(' | ')}</p>`;
-      if(e.exam)       h += `<p style="margin:3px 0;">בדיקה: ${esc(e.exam)}</p>`;
-      if(e.assessment) h += `<p style="margin:3px 0;">הערכה: ${esc(e.assessment)}</p>`;
+      if(v.length) {
+        h += `<div style="background:#fff;border:1px solid #ddd;border-radius:7px;padding:7px 12px;
+                 margin:8px 0;display:inline-block;font-size:13px;">`;
+        h += `<strong>סימנים חיוניים:</strong> ${v.map(esc).join('&nbsp;&nbsp;|&nbsp;&nbsp;')}`;
+        h += `</div>`;
+      }
 
       // Interventions
-      h += `<p style="margin:10px 0 4px;font-weight:600;">התערבות:</p>`;
-      let any = false;
-      if(e.wound) {
-        h += `<p style="margin:2px 0 2px 14px;">✓ חבישה / טיפול בפצע${e.wound_detail?' — '+esc(e.wound_detail):''}</p>`;
-        any = true;
-      }
-      if(e.med_chk) {
-        h += `<p style="margin:2px 0 2px 14px;">✓ תרופות: ${esc(e.med||'—')}</p>`;
-        any = true;
-      }
-      if(e.sup_chk) {
-        h += `<p style="margin:2px 0 2px 14px;">✓ ציוד: ${esc(fmtSupplies(e.sup_chips||[], e.sup||'')||'—')}</p>`;
-        any = true;
-      }
-      if(e.ref_chk) {
-        h += `<p style="margin:2px 0 2px 14px;">✓ הפניה: ${esc(e.ref||'—')}</p>`;
-        // Referral photos immediately below the referral line
-        if((e.ref_photos||[]).length) {
-          h += `<div style="display:flex;flex-wrap:wrap;gap:8px;margin:8px 0 8px 14px;">`;
-          e.ref_photos.forEach(p => {
-            h += `<img src="${p}" style="width:160px;height:120px;object-fit:cover;border-radius:8px;border:1px solid #ddd;">`;
-          });
-          h += `</div>`;
+      const anyIntervention = e.wound || e.med_chk || e.sup_chk || e.ref_chk;
+      if(anyIntervention) {
+        h += `<p style="margin:10px 0 4px;font-weight:700;">התערבות:</p>`;
+        if(e.wound) {
+          h += `<p style="margin:2px 0 2px 16px;">✓ חבישה / טיפול בפצע`;
+          if(e.wound_detail) h += ` — ${esc(e.wound_detail)}`;
+          h += `</p>`;
         }
-        any = true;
+        if(e.med_chk) h += `<p style="margin:2px 0 2px 16px;">✓ תרופות: ${esc(e.med||'—')}</p>`;
+        if(e.sup_chk) {
+          const sup = fmtSupplies(e.sup_chips||[], e.sup||'');
+          h += `<p style="margin:2px 0 2px 16px;">✓ ציוד: ${esc(sup||'—')}</p>`;
+        }
+        if(e.ref_chk) {
+          h += `<p style="margin:2px 0 2px 16px;">✓ הפניה: ${esc(e.ref||'—')}</p>`;
+          if((e.ref_photos||[]).length) {
+            h += `<div style="display:flex;flex-wrap:wrap;gap:8px;margin:8px 0 4px 16px;">`;
+            e.ref_photos.forEach(p => {
+              h += `<img src="${p}" style="width:160px;height:120px;object-fit:cover;border-radius:8px;border:1px solid #ccc;">`;
+            });
+            h += `</div>`;
+          }
+        }
       }
-      // social shown separately below
-      if(!any) h += `<p style="margin:2px 0 2px 14px;color:#888;">ללא</p>`;
 
-      const wSup2 = fmtSupplies(e.welfare_chips||[], e.welfare_text||'');
-      if(wSup2 || e.welfare_text) {
-        h += `<p style="margin:8px 0 3px;font-weight:600;">סוציאלי:</p>`;
-        if(wSup2) h += `<p style="margin:2px 0 2px 14px;">ציוד: ${esc(wSup2)}</p>`;
-        if(e.welfare_text) h += `<p style="margin:2px 0 2px 14px;">${esc(e.welfare_text)}</p>`;
+      // Social / welfare
+      const wChips = fmtWelfare(e);
+      const wText  = (e.welfare_text||'').trim();
+      if(wChips || wText) {
+        h += `<p style="margin:10px 0 4px;font-weight:700;">סוציאלי:</p>`;
+        if(wChips) h += `<p style="margin:2px 0 2px 16px;">ציוד שניתן: ${esc(wChips)}</p>`;
+        if(wText)  h += `<p style="margin:2px 0 2px 16px;">הערות: ${esc(wText)}</p>`;
       }
-      h += `<p style="margin:8px 0 3px;">פולו-אפ נדרש: ${esc(e.followup==='Yes'?'כן':'לא')}</p>`;
-      if(e.notes) h += `<p style="margin:3px 0;">הערות: ${esc(e.notes)}</p>`;
 
-      // Regular encounter photos at end of encounter block
-      if((e.photos||[]).length) {
-        h += `<div style="margin-top:10px;">`;
-        h += `<div style="font-size:12px;color:#666;font-weight:600;margin-bottom:6px;">📷 תמונות</div>`;
+      // Follow-up
+      h += `<p style="margin:8px 0 3px;">פולו-אפ נדרש: <strong>${esc(e.followup==='Yes'?'✓ כן':'לא')}</strong></p>`;
+      if(e.notes) h += `<p style="margin:3px 0;">נקודות לסיור הבא: ${esc(e.notes)}</p>`;
+
+      // Encounter photos
+      const allPhotos = [...(e.photos||[])];
+      if(allPhotos.length) {
+        h += `<div style="margin-top:10px;border-top:1px solid ${borderColor};padding-top:8px;">`;
+        h += `<div style="font-size:12px;font-weight:700;color:#555;margin-bottom:6px;">📷 תמונות (${allPhotos.length})</div>`;
         h += `<div style="display:flex;flex-wrap:wrap;gap:8px;">`;
-        e.photos.forEach(p => {
-          h += `<img src="${p}" style="width:160px;height:120px;object-fit:cover;border-radius:8px;border:1px solid #ddd;">`;
+        allPhotos.forEach(p => {
+          h += `<img src="${p}" style="width:160px;height:120px;object-fit:cover;border-radius:8px;border:1px solid #ccc;">`;
         });
         h += `</div></div>`;
       }
+
       h += `</div>`; // end encounter card
     });
   }
 
-  // (non-medical contacts merged into unified encounters)
+  // ── Zula Events ──
+  if ((r.zula_events||[]).length) {
+    h += `<h3 style="font-size:15px;margin:16px 0 10px;color:#222;">⛺ חלוקת ציוד בזולה (${r.zula_events.length})</h3>`;
+    r.zula_events.forEach((z, i) => {
+      h += `<div style="border:1.5px solid #6B3FA0;border-radius:10px;padding:12px;margin-bottom:10px;background:#faf5ff;">`;
+      h += `<div style="font-weight:700;margin-bottom:6px;border-bottom:1px solid #6B3FA0;padding-bottom:4px;">`;
+      h += `זולה ${i+1}`;
+      if(z.ts)       h += ` &nbsp;·&nbsp; 🕐 ${fmtTime(z.ts)}`;
+      if(z.location) h += ` &nbsp;·&nbsp; 📍 ${esc(z.location)}`;
+      h += `</div>`;
+      // Supplies table
+      const supEntries = Object.entries(z.supplies||{}).filter(([,v])=>v>0);
+      if(supEntries.length) {
+        h += `<table style="border-collapse:collapse;width:100%;margin:6px 0;font-size:13px;">`;
+        supEntries.forEach(([chip,qty]) => {
+          h += `<tr><td style="padding:2px 8px 2px 0;">${esc(chip)}</td>
+                    <td style="padding:2px 0;font-weight:700;color:#6B3FA0;">×${qty}</td></tr>`;
+        });
+        h += `</table>`;
+      }
+      if(z.notes) h += `<p style="margin:6px 0 0;color:#444;font-size:13px;">הערות: ${esc(z.notes)}</p>`;
+      h += `</div>`;
+    });
+  }
 
   // ── Round Summary ──
   const s = r.summary||{};
-  h += `<div style="border-top:2px solid #222;margin-top:8px;padding-top:12px;">`;
-  h += `<h3 style="font-size:15px;margin:0 0 10px;color:#222;">סיכום הסיור</h3>`;
-  h += `<p style="margin:3px 0;">סה"כ מפגשים: ${esc(String(s.total||'—'))}</p>`;
-  h += `<p style="margin:3px 0;">מפגשים רפואיים: ${s.medical!==undefined&&s.medical!==''?esc(String(s.medical)):(r.encounters||[]).length}</p>`;
-  h += `<p style="margin:3px 0;">הפניות: ${esc(String(s.referrals||'—'))}</p>`;
-  if(s.supplies) h += `<p style="margin:3px 0;">ציוד שחולק: ${esc(s.supplies)}</p>`;
-  if(s.notable)  h += `<p style="margin:8px 0;">פולו-אפים ונקודות:<br>${esc(s.notable)}</p>`;
+  const medAutoCount = (r.encounters||[]).filter(e=>classifyEnc(e)==='medical').length;
+  const refAutoCount = (r.encounters||[]).filter(e=>e.ref_chk).length;
+  h += `<div style="border-top:2px solid #222;margin-top:16px;padding-top:12px;background:#f8f8f8;
+           border-radius:0 0 8px 8px;padding:12px;">`;
+  h += `<h3 style="font-size:15px;margin:0 0 8px;color:#222;">📊 סיכום הסיור</h3>`;
+  h += `<table style="border-collapse:collapse;font-size:14px;width:100%;">`;
+  h += `<tr><td style="padding:3px 12px 3px 0;">סה"כ מפגשים</td><td style="font-weight:700;">${esc(String(s.total||(r.encounters||[]).length||'—'))}</td></tr>`;
+  h += `<tr><td style="padding:3px 12px 3px 0;">מפגשים רפואיים</td><td style="font-weight:700;">${s.medical!==undefined&&s.medical!==''?esc(String(s.medical)):medAutoCount}</td></tr>`;
+  h += `<tr><td style="padding:3px 12px 3px 0;">הפניות</td><td style="font-weight:700;">${s.referrals!==undefined&&s.referrals!==''?esc(String(s.referrals)):refAutoCount}</td></tr>`;
+  if(s.supplies) h += `<tr><td style="padding:3px 12px 3px 0;vertical-align:top;">ציוד שחולק</td><td style="font-weight:700;">${esc(s.supplies)}</td></tr>`;
+  h += `</table>`;
+  if(s.notable) h += `<p style="margin:10px 0 0;"><strong>פולו-אפים ונקודות:</strong><br>${esc(s.notable)}</p>`;
   h += `</div>`;
 
   h += `</div>`; // end wrapper
@@ -2489,20 +2585,21 @@ function autoCalcAll() {
 
 function autoCalcSupplies(silent) {
   const r = DB.rounds.find(x=>x.id===curRoundId); if(!r) return;
-  const counts   = {};   // chip → count
-  const freeMap  = {};   // free-text entry → count (deduped with ×N)
-  const drugSets = {};   // chip → Set of drug names (for chips needing drug name)
-  SOCIAL_CHIPS_NEED_DETAIL.forEach(c => { drugSets[c] = new Set(); });
+  const counts      = {};   // chip → count  (for non-detail chips)
+  const drugCounts  = {};   // displayName → count  (for detail chips: drug name or chip name fallback)
+  const freeMap     = {};   // free-text entry → count
 
-  // From encounters – welfare + medical supply chips + free text
+  // From encounters
   (r.encounters||[]).forEach(e => {
     if (e.welfare) {
       (e.welfare_chips||[]).forEach(chip => {
-        counts[chip] = (counts[chip]||0) + 1;
-        // Collect drug names for detail chips (משחה, אנטיביוטיקה)
         if (SOCIAL_CHIPS_NEED_DETAIL.includes(chip)) {
+          // Use explicit drug name if entered, else fall back to chip name
           const nm = ((e.welfare_chip_details||{})[chip]||'').trim();
-          if (nm) drugSets[chip].add(nm);
+          const key = nm || chip;
+          drugCounts[key] = (drugCounts[key]||0) + 1;
+        } else {
+          counts[chip] = (counts[chip]||0) + 1;
         }
       });
       const t = (e.welfare_text||'').trim();
@@ -2515,46 +2612,45 @@ function autoCalcSupplies(silent) {
     }
   });
 
-  // From zula events — add actual quantities (not just ×1 per event)
+  // From zula events — actual quantities; no drug-name detail available, use chip name
   (r.zula_events||[]).forEach(z => {
     Object.entries(z.supplies||{}).forEach(([chip, qty]) => {
-      counts[chip] = (counts[chip]||0) + qty;
+      if (SOCIAL_CHIPS_NEED_DETAIL.includes(chip)) {
+        drugCounts[chip] = (drugCounts[chip]||0) + qty;
+      } else {
+        counts[chip] = (counts[chip]||0) + qty;
+      }
     });
   });
 
-  // From non-medical contacts (legacy)
+  // Legacy contacts
   (r.contacts||[]).forEach(c => {
     (c.chips||[]).forEach(chip => { counts[chip] = (counts[chip]||0) + 1; });
     const t = (c.sup_text||'').trim();
     if (t) freeMap[t] = (freeMap[t]||0) + 1;
-    // Backwards-compat: old plain-text supplies field
     if (!c.chips && c.supplies && c.supplies.trim()) {
-      const bt = c.supplies.trim();
-      freeMap[bt] = (freeMap[bt]||0) + 1;
+      freeMap[c.supplies.trim()] = (freeMap[c.supplies.trim()]||0) + 1;
     }
   });
 
-  // All known chips (SUPPLY_CHIPS + SOCIAL_CHIP_GROUPS)
+  // Regular chips (exclude detail chips — they go in drugCounts)
   const allKnownChips = [...new Set([
     ...SUPPLY_CHIPS,
     ...SOCIAL_CHIP_GROUPS.flatMap(g => g.chips)
-  ])];
-  const chipStr = allKnownChips.filter(c => counts[c])
-    .map(c => {
-      const cnt = counts[c];
-      // For משחה / אנטיביוטיקה: show collected drug names in parentheses
-      if (SOCIAL_CHIPS_NEED_DETAIL.includes(c) && drugSets[c].size > 0) {
-        const names = [...drugSets[c]].join(', ');
-        return cnt > 1 ? `${c} (${names}) ×${cnt}` : `${c} (${names})`;
-      }
-      return cnt > 1 ? `${c} ×${cnt}` : c;
-    })
+  ])].filter(c => !SOCIAL_CHIPS_NEED_DETAIL.includes(c));
+
+  const regularStr = allKnownChips.filter(c => counts[c])
+    .map(c => counts[c] > 1 ? `${c} ×${counts[c]}` : c)
+    .join(', ');
+
+  const drugStr = Object.entries(drugCounts)
+    .map(([name, cnt]) => cnt > 1 ? `${name} ×${cnt}` : name)
     .join(', ');
 
   const freeParts = Object.entries(freeMap)
     .map(([t, n]) => n > 1 ? `${t} ×${n}` : t);
 
-  const all = [chipStr, ...freeParts].filter(Boolean).join('; ');
+  const all = [regularStr, drugStr, ...freeParts].filter(Boolean).join(', ');
   document.getElementById('r-supplies').value = all || '—';
   if (!silent) { autoSaveRound(); toast('ציוד עודכן ✓'); }
 }
