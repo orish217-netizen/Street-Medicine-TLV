@@ -624,13 +624,20 @@
     <div class="form-section">
       <div class="form-section-title">👤 מטופל/ת</div>
       <div class="form-field">
-        <label>שם / כינוי</label>
-        <input type="text" id="e-name" placeholder="שם או כינוי"
-               oninput="autoSaveEnc(); updateEncHdr()"
-               onblur="nameBlur()">
+        <label>שם / כינוי <span style="color:#e74c3c;font-weight:700;">*</span></label>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <input type="text" id="e-name" placeholder="שם או כינוי"
+                 oninput="autoSaveEnc(); updateEncHdr()"
+                 onblur="nameBlur()"
+                 style="flex:1;border:none;outline:none;font-size:16px;font-family:inherit;background:transparent;">
+          <button class="pill" style="font-size:12px;padding:4px 10px;flex-shrink:0;background:var(--bg);color:var(--text-light);border:1px solid var(--border);"
+                  onclick="setAnonName('אנונימי')">אנונימי</button>
+          <button class="pill" style="font-size:12px;padding:4px 10px;flex-shrink:0;background:var(--bg);color:var(--text-light);border:1px solid var(--border);"
+                  onclick="setAnonName('אנונימית')">אנונימית</button>
+        </div>
       </div>
       <div class="form-field">
-        <label>גיל ומין</label>
+        <label>גיל ומין <span style="color:#e74c3c;font-weight:700;">*</span></label>
         <div style="display:flex;align-items:center;gap:10px;">
           <input type="text" id="e-age" placeholder="לדוג': בשנות ה-50" oninput="autoSaveEnc()" style="flex:1;border:none;outline:none;font-size:16px;font-family:inherit;background:transparent;">
           <div style="display:flex;gap:6px;flex-shrink:0;">
@@ -640,7 +647,7 @@
         </div>
       </div>
       <div class="form-field">
-        <label>קופ"ח</label>
+        <label>קופ"ח <span style="color:#e74c3c;font-weight:700;">*</span></label>
         <select id="e-insurance" onchange="autoSaveEnc()">
           <option value="">לא ידוע / לא שאלנו</option>
           <option value="כללית">כללית</option>
@@ -803,8 +810,14 @@
   <div class="modal-sheet" onclick="event.stopPropagation()">
     <h3>מפגש חדש</h3>
     <div class="field-wrap">
-      <label>שם / כינוי</label>
+      <label>שם / כינוי <span style="color:#e74c3c;font-weight:700;">*</span></label>
       <input type="text" id="m-enc-name" placeholder="שם, כינוי או תיאור">
+      <div style="display:flex;gap:6px;margin-top:7px;">
+        <button class="pill" style="font-size:12px;padding:4px 10px;background:var(--bg);color:var(--text-light);border:1px solid var(--border);"
+                onclick="document.getElementById('m-enc-name').value='אנונימי'">אנונימי</button>
+        <button class="pill" style="font-size:12px;padding:4px 10px;background:var(--bg);color:var(--text-light);border:1px solid var(--border);"
+                onclick="document.getElementById('m-enc-name').value='אנונימית'">אנונימית</button>
+      </div>
     </div>
     <button class="btn btn-green" onclick="createEnc()">התחלת מפגש</button>
     <div style="height:10px;"></div>
@@ -1986,6 +1999,14 @@ async function doPDF() {
 // ══════════════════════════════════════════════
 // SEX BUTTONS
 // ══════════════════════════════════════════════
+function setAnonName(v) {
+  const el = document.getElementById('e-name');
+  if (!el) return;
+  el.value = v;
+  autoSaveEnc();
+  updateEncHdr();
+}
+
 function setSex(val, silent) {
   curSex = (curSex === val) ? '' : val;  // tap again = deselect
   document.getElementById('sex-btn-M').classList.toggle('selected', curSex==='M');
