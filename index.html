@@ -206,6 +206,11 @@
       -webkit-appearance: none;
     }
     .form-field textarea { resize: none; min-height: 72px; line-height: 1.5; }
+    .form-field.field-error {
+      background: rgba(231,76,60,.07);
+      border-right: 3px solid #e74c3c;
+      transition: background .2s, border-right .2s;
+    }
 
     /* Vitals 2-col grid */
     .vitals-grid {
@@ -623,11 +628,11 @@
     <!-- Patient (includes name at top) -->
     <div class="form-section">
       <div class="form-section-title">👤 מטופל/ת</div>
-      <div class="form-field">
+      <div class="form-field" id="field-name">
         <label>שם / כינוי <span style="color:#e74c3c;font-weight:700;">*</span></label>
         <div style="display:flex;align-items:center;gap:8px;">
           <input type="text" id="e-name" placeholder="שם או כינוי"
-                 oninput="autoSaveEnc(); updateEncHdr()"
+                 oninput="autoSaveEnc(); updateEncHdr(); clearFieldError('field-name')"
                  onblur="nameBlur()"
                  style="flex:1;border:none;outline:none;font-size:16px;font-family:inherit;background:transparent;">
           <button class="pill" style="font-size:12px;padding:4px 10px;flex-shrink:0;background:var(--bg);color:var(--text-light);border:1px solid var(--border);"
@@ -636,19 +641,19 @@
                   onclick="setAnonName('אנונימית')">אנונימית</button>
         </div>
       </div>
-      <div class="form-field">
-        <label>גיל ומין <span style="color:#e74c3c;font-weight:700;">*</span></label>
+      <div class="form-field" id="field-age">
+        <label>גיל ומגדר <span style="color:#e74c3c;font-weight:700;">*</span></label>
         <div style="display:flex;align-items:center;gap:10px;">
-          <input type="text" id="e-age" placeholder="לדוג': בשנות ה-50" oninput="autoSaveEnc()" style="flex:1;border:none;outline:none;font-size:16px;font-family:inherit;background:transparent;">
+          <input type="text" id="e-age" placeholder="לדוג': בשנות ה-50" oninput="autoSaveEnc(); clearFieldError('field-age')" style="flex:1;border:none;outline:none;font-size:16px;font-family:inherit;background:transparent;">
           <div style="display:flex;gap:6px;flex-shrink:0;">
-            <button id="sex-btn-M" class="pill" onclick="setSex('M')">גבר</button>
-            <button id="sex-btn-F" class="pill" onclick="setSex('F')">אשה</button>
+            <button id="sex-btn-M" class="pill" onclick="setSex('M'); clearFieldError('field-age')">גבר</button>
+            <button id="sex-btn-F" class="pill" onclick="setSex('F'); clearFieldError('field-age')">אשה</button>
           </div>
         </div>
       </div>
-      <div class="form-field">
+      <div class="form-field" id="field-insurance">
         <label>קופ"ח <span style="color:#e74c3c;font-weight:700;">*</span></label>
-        <select id="e-insurance" onchange="autoSaveEnc()">
+        <select id="e-insurance" onchange="autoSaveEnc(); clearFieldError('field-insurance')">
           <option value="">לא ידוע / לא שאלנו</option>
           <option value="כללית">כללית</option>
           <option value="מכבי">מכבי</option>
@@ -777,7 +782,7 @@
 
   </div>
   <div class="s-footer">
-    <button class="btn btn-green" onclick="saveEnc(); navBack('pg-round')">שמור ✓</button>
+    <button class="btn btn-green" onclick="if(validateEnc()){ saveEnc(); navBack('pg-round'); }">שמור ✓</button>
   </div>
 </div>
 
@@ -1042,7 +1047,10 @@ function showPage(id) {
 
 function navBack(target) {
   if (target === 'pg-home') { saveRound(); renderHome(); showPage('pg-home'); }
-  if (target === 'pg-round') { saveEnc(); renderRound(curRoundId); showPage('pg-round'); }
+  if (target === 'pg-round') {
+    if (!validateEnc()) return;   // block if required fields missing
+    saveEnc(); renderRound(curRoundId); showPage('pg-round');
+  }
 }
 
 // ══════════════════════════════════════════════
@@ -2003,8 +2011,44 @@ function setAnonName(v) {
   const el = document.getElementById('e-name');
   if (!el) return;
   el.value = v;
+  clearFieldError('field-name');
+  // Auto-set gender based on anonymous label
+  if (v === 'אנונימי')  { curSex = ''; setSex('M', true); }
+  if (v === 'אנונימית') { curSex = ''; setSex('F', true); }
   autoSaveEnc();
   updateEncHdr();
+}
+
+function clearFieldError(fieldId) {
+  const el = document.getElementById(fieldId);
+  if (el) el.classList.remove('field-error');
+}
+
+function validateEnc() {
+  const name = (document.getElementById('e-name').value || '').trim();
+  const age  = (document.getElementById('e-age').value  || '').trim();
+  const ins  = document.getElementById('e-insurance').value;
+
+  const errors = [];
+  if (!name) errors.push('field-name');
+  if (!age)  errors.push('field-age');
+  if (!ins)  errors.push('field-insurance');
+
+  // Clear all first, then mark missing ones
+  ['field-name','field-age','field-insurance'].forEach(clearFieldError);
+  errors.forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.classList.add('field-error');
+  });
+
+  if (errors.length > 0) {
+    // Scroll to first error
+    const first = document.getElementById(errors[0]);
+    if (first) first.scrollIntoView({ behavior:'smooth', block:'center' });
+    toast('יש למלא שם, גיל וקופ"ח לפני השמירה');
+    return false;
+  }
+  return true;
 }
 
 function setSex(val, silent) {
