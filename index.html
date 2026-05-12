@@ -719,11 +719,7 @@
             <div class="ref-photo-mini" id="ref-photos-grid"></div>
             <div style="display:flex;gap:14px;margin-top:7px;">
               <label style="display:flex;align-items:center;gap:5px;font-size:13px;color:var(--primary);cursor:pointer;font-weight:600;">
-                📷 מצלמה
-                <input type="file" accept="image/*" capture="environment" style="display:none" onchange="addRefPhoto(event)">
-              </label>
-              <label style="display:flex;align-items:center;gap:5px;font-size:13px;color:var(--primary);cursor:pointer;font-weight:600;">
-                🖼️ גלריה
+                🖼️ הוספת תמונה מהאלבום
                 <input type="file" accept="image/*" style="display:none" onchange="addRefPhoto(event)">
               </label>
             </div>
@@ -1439,12 +1435,8 @@ function renderPhotos() {
       <img src="${p.url}" alt="">
       <button class="photo-del" onclick="delPhoto(${i})">×</button>
     </div>`).join('') +
-  `<label class="photo-add" title="Take photo">
-    <span>📷</span><span class="lbl">מצלמה</span>
-    <input type="file" accept="image/*" capture="environment" style="display:none" onchange="addPhoto(event)">
-  </label>
-  <label class="photo-add" title="Choose from library">
-    <span>🖼️</span><span class="lbl">גלריה</span>
+  `<label class="photo-add" title="Choose from library">
+    <span>🖼️</span><span class="lbl">אלבום</span>
     <input type="file" accept="image/*" style="display:none" onchange="addPhoto(event)">
   </label>`;
 }
