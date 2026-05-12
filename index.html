@@ -620,7 +620,7 @@
 <div id="pg-enc" class="page">
   <div class="hdr">
     <button class="hdr-btn" onclick="navBack('pg-round')" style="font-size:22px;">›</button>
-    <h1 id="enc-hdr-title">Encounter</h1>
+    <h1 id="enc-hdr-title">מפגש</h1>
     <button class="hdr-btn" onclick="confirmDeleteEnc()" title="Delete">🗑</button>
   </div>
   <div class="content">
@@ -654,7 +654,7 @@
       <div class="form-field" id="field-insurance">
         <label>קופ"ח <span style="color:#e74c3c;font-weight:700;">*</span></label>
         <select id="e-insurance" onchange="autoSaveEnc(); clearFieldError('field-insurance')">
-          <option value="">לא ידוע / לא שאלנו</option>
+          <option value="" disabled selected>— בחר קופ"ח —</option>
           <option value="כללית">כללית</option>
           <option value="מכבי">מכבי</option>
           <option value="מאוחדת">מאוחדת</option>
@@ -1283,7 +1283,7 @@ function openEnc(roundId, encId) {
   const r = DB.rounds.find(x=>x.id===roundId);
   const e = (r.encounters||[]).find(x=>x.id===encId); if(!e) return;
 
-  document.getElementById('enc-hdr-title').textContent = e.name||'Encounter';
+  document.getElementById('enc-hdr-title').textContent = e.name||'מפגש';
   document.getElementById('e-location').value = e.location||'';
   document.getElementById('e-name').value = e.name||'';
   // Backwards-compat: old records stored age_sex as a combined string
