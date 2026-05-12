@@ -570,7 +570,7 @@
   <div style="background:var(--bg);border-bottom:2px solid var(--border);
               padding:6px 12px;display:flex;gap:8px;flex-shrink:0;">
     <button class="btn btn-green btn-sm" style="flex:1;font-size:15px;padding:9px;"
-            onclick="openModal('modal-new-enc')">+ מפגש חדש</button>
+            onclick="createEnc()">+ מפגש חדש</button>
     <button class="btn btn-gray" style="flex:1;font-size:13px;padding:9px;"
             onclick="openZulaDrawer()">⛺ הגעתי לזולה</button>
   </div>
@@ -810,25 +810,6 @@
   </div>
 </div>
 
-<!-- New Encounter -->
-<div class="overlay" id="modal-new-enc" onclick="closeModal('modal-new-enc')">
-  <div class="modal-sheet" onclick="event.stopPropagation()">
-    <h3>מפגש חדש</h3>
-    <div class="field-wrap">
-      <label>שם / כינוי <span style="color:#e74c3c;font-weight:700;">*</span></label>
-      <input type="text" id="m-enc-name" placeholder="שם, כינוי או תיאור">
-      <div style="display:flex;gap:6px;margin-top:7px;">
-        <button class="pill" style="font-size:12px;padding:4px 10px;background:var(--bg);color:var(--text-light);border:1px solid var(--border);"
-                onclick="document.getElementById('m-enc-name').value='אנונימי'">אנונימי</button>
-        <button class="pill" style="font-size:12px;padding:4px 10px;background:var(--bg);color:var(--text-light);border:1px solid var(--border);"
-                onclick="document.getElementById('m-enc-name').value='אנונימית'">אנונימית</button>
-      </div>
-    </div>
-    <button class="btn btn-green" onclick="createEnc()">התחלת מפגש</button>
-    <div style="height:10px;"></div>
-    <button class="btn btn-gray" onclick="closeModal('modal-new-enc')">ביטול</button>
-  </div>
-</div>
 
 <!-- ⛺ Zula Drawer -->
 <div class="zula-overlay" id="zula-overlay" onclick="closeZulaDrawer()"></div>
@@ -1283,9 +1264,8 @@ function confirmDeleteRound() {
 function createEnc() {
   saveRound();
   const r = DB.rounds.find(x=>x.id===curRoundId); if(!r) return;
-  const name = document.getElementById('m-enc-name').value.trim();
   const e = {
-    id:uid(), name, location:'', age:'', sex:'', insurance:'',
+    id:uid(), name:'', location:'', age:'', sex:'', insurance:'',
     cc:'', bp:'', hr:'', spo2:'', temp:'',
     exam:'', assessment:'',
     wound:false, wound_detail:'',
@@ -1295,7 +1275,6 @@ function createEnc() {
     followup:'No', notes:'', photos:[]
   };
   r.encounters.push(e); persist(DB);
-  closeModal('modal-new-enc');
   openEnc(curRoundId, e.id);
 }
 
