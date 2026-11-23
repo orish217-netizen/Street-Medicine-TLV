@@ -2803,6 +2803,69 @@ if('serviceWorker' in navigator) {
 }
 
 // ══════════════════════════════════════════════
+// INSTALL BANNER (Android: native prompt · iOS: instructions)
+// ══════════════════════════════════════════════
+(function installBanner() {
+  const isStandalone = window.matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
+  if (isStandalone) return;
+
+  const KEY = 'sm_install_dismissed';
+  try {
+    const t = +localStorage.getItem(KEY);
+    if (t && Date.now() - t < 14*24*3600*1000) return;   // dismissed in the last 14 days
+  } catch(e) {}
+
+  const ua    = navigator.userAgent;
+  const isIOS = /iPhone|iPad|iPod/.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  let deferred = null;
+
+  const bar = document.createElement('div');
+  bar.id = 'install-banner';
+  bar.style.cssText = 'position:fixed;left:10px;right:10px;bottom:calc(10px + env(safe-area-inset-bottom));' +
+    'z-index:9000;background:var(--card);color:var(--text);border:1px solid var(--border);' +
+    'border-radius:14px;box-shadow:0 6px 24px rgba(0,0,0,.18);padding:12px 14px;' +
+    'display:none;align-items:center;gap:12px;font-size:14px;line-height:1.4;';
+
+  function show(html) {
+    bar.innerHTML =
+      `<img src="icon-192.png" alt="" style="width:42px;height:42px;border-radius:10px;flex-shrink:0;">
+       <div style="flex:1;">${html}</div>
+       <button id="install-x" aria-label="סגירה"
+               style="background:none;border:none;font-size:22px;color:var(--text-light);cursor:pointer;padding:0 4px;">×</button>`;
+    bar.style.display = 'flex';
+    document.getElementById('install-x').onclick = () => {
+      bar.style.display = 'none';
+      try { localStorage.setItem(KEY, Date.now()); } catch(e) {}
+    };
+  }
+
+  document.body.appendChild(bar);
+
+  // Android / Chrome / Edge: browser fires this when the app is installable
+  window.addEventListener('beforeinstallprompt', e => {
+    e.preventDefault();
+    deferred = e;
+    show(`<strong>התקינו את האפליקציה</strong><br>
+          <button id="install-go" class="btn btn-green btn-sm" style="margin-top:6px;padding:6px 16px;">התקנה</button>`);
+    document.getElementById('install-go').onclick = async () => {
+      bar.style.display = 'none';
+      deferred.prompt();
+      await deferred.userChoice;
+      deferred = null;
+    };
+  });
+
+  window.addEventListener('appinstalled', () => { bar.style.display = 'none'; });
+
+  // iOS: no install prompt exists — show manual instructions
+  if (isIOS) {
+    show(`<strong>התקינו את האפליקציה במסך הבית</strong><br>
+          לחצו על <span style="display:inline-block;border:1px solid var(--border);border-radius:5px;padding:0 5px;">⬆︎</span>
+          שיתוף בתחתית המסך, ואז <strong>"הוספה למסך הבית"</strong>`);
+  }
+})();
+
+// ══════════════════════════════════════════════
 // INIT
 // ══════════════════════════════════════════════
 renderHome();
