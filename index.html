@@ -561,6 +561,167 @@
     }
     .ref-thumb img { width: 100%; height: 100%; object-fit: cover; }
     .ref-thumb .photo-del { width: 18px; height: 18px; font-size: 11px; }
+
+    /* ═══════════════════════════════════════════════════════════════
+       GLASS THEME — visual layer only (colours, depth, shape).
+       Inspired by Apple's "Liquid Glass" look: translucent layers,
+       soft depth, pill controls, floating bars. Layout & logic untouched.
+       ═══════════════════════════════════════════════════════════════ */
+    :root {
+      --radius: 20px;
+      --glass:        rgba(255,255,255,.62);
+      --glass-strong: rgba(255,255,255,.84);
+      --glass-edge:   rgba(255,255,255,.75);
+      --hairline:     rgba(70,40,110,.10);
+      --shadow-soft:  0 1px 2px rgba(60,30,100,.05), 0 8px 28px rgba(60,30,100,.08);
+      --shadow-pop:   0 6px 20px rgba(90,46,144,.30);
+      --grad-primary: linear-gradient(135deg, #8257C8 0%, #6B3FA0 55%, #5A2E90 100%);
+      --grad-green:   linear-gradient(135deg, #34C46E 0%, #27AE60 100%);
+      --page-bg:
+        radial-gradient(120% 60% at 100% 0%, rgba(140,100,210,.20) 0%, rgba(140,100,210,0) 60%),
+        radial-gradient(90% 50% at 0% 100%, rgba(230,190,140,.25) 0%, rgba(230,190,140,0) 60%),
+        linear-gradient(180deg, #F7F2FC 0%, #F6EFE6 100%);
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --glass:        rgba(46,30,72,.55);
+        --glass-strong: rgba(46,30,72,.80);
+        --glass-edge:   rgba(255,255,255,.08);
+        --hairline:     rgba(255,255,255,.08);
+        --shadow-soft:  0 1px 2px rgba(0,0,0,.3), 0 8px 28px rgba(0,0,0,.35);
+        --page-bg:
+          radial-gradient(120% 60% at 100% 0%, rgba(140,100,210,.25) 0%, rgba(140,100,210,0) 60%),
+          linear-gradient(180deg, #1B1030 0%, #140A24 100%);
+      }
+    }
+
+    body { background: var(--page-bg) fixed; -webkit-font-smoothing: antialiased; }
+    .content { background: transparent; }
+
+    /* Header: frosted glass, dark title, round glass buttons */
+    .hdr {
+      background: var(--glass);
+      -webkit-backdrop-filter: blur(24px) saturate(180%); backdrop-filter: blur(24px) saturate(180%);
+      color: var(--text);
+      box-shadow: 0 1px 0 var(--hairline);
+    }
+    .hdr h1 { font-size: 21px; font-weight: 800; letter-spacing: -.2px; color: var(--text); }
+    .hdr-btn {
+      width: 38px; height: 38px; border-radius: 19px; padding: 0;
+      background: var(--glass-strong); border: 1px solid var(--glass-edge);
+      color: var(--primary); font-size: 22px; box-shadow: var(--shadow-soft);
+    }
+    .hdr-btn-text {
+      background: var(--glass-strong) !important; border: 1px solid var(--glass-edge) !important;
+      color: var(--primary) !important; border-radius: 999px !important; box-shadow: var(--shadow-soft);
+    }
+
+    /* Bar under the round header */
+    .action-bar {
+      background: transparent !important; border-bottom: none !important;
+      padding: 10px 14px 4px !important;
+    }
+
+    /* Cards & sections: floating glass panels */
+    .card, .form-section, .zula-card {
+      background: var(--glass-strong);
+      border: 1px solid var(--glass-edge);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow-soft);
+      -webkit-backdrop-filter: blur(20px) saturate(160%); backdrop-filter: blur(20px) saturate(160%);
+    }
+    .card { padding: 14px 16px; margin-bottom: 12px; }
+    .form-section { margin-bottom: 14px; }
+    .form-section-title {
+      background: transparent; color: var(--primary);
+      padding: 14px 16px 2px; font-size: 14px; font-weight: 800;
+      letter-spacing: 0; text-transform: none;
+    }
+    .form-field { border-bottom-color: var(--hairline); }
+    .zula-card { background: linear-gradient(135deg, rgba(255,246,225,.88), rgba(255,250,240,.80)); border-color: rgba(176,125,16,.18); }
+    @media (prefers-color-scheme: dark) { .zula-card { background: rgba(70,52,24,.55); } }
+
+    /* Buttons: pills with depth */
+    .btn { border-radius: 999px; font-weight: 700; letter-spacing: -.1px; }
+    .btn-primary, .btn-accent { background: var(--grad-primary); color: #fff; box-shadow: var(--shadow-pop); }
+    .btn-green { background: var(--grad-green); color: #fff; box-shadow: 0 6px 18px rgba(39,174,96,.30); }
+    .btn-gray {
+      background: var(--glass-strong); color: var(--text);
+      border: 1px solid var(--glass-edge); box-shadow: var(--shadow-soft);
+    }
+    .btn:active, .chip-btn:active, .hdr-btn:active, .fab:active { transform: scale(.97); }
+    .btn, .chip-btn, .hdr-btn, .fab { transition: transform .12s ease, box-shadow .12s ease, background .12s ease; }
+
+    /* Footer: a floating button over the page instead of a bar */
+    .s-footer {
+      background: transparent; box-shadow: none;
+      padding: 8px 16px calc(var(--safe-bottom) + 14px);
+      pointer-events: none;
+    }
+    .s-footer .btn { pointer-events: auto; }
+
+    /* Floating + button */
+    .fab {
+      background: var(--grad-primary);
+      box-shadow: 0 10px 28px rgba(90,46,144,.40), inset 0 1px 0 rgba(255,255,255,.35);
+    }
+
+    /* Chips: soft glass pills; selected = filled */
+    .chip-btn {
+      background: var(--glass-strong); border: 1px solid var(--hairline);
+      color: var(--text); border-radius: 999px;
+    }
+    .chip-btn.on { background: var(--grad-primary); border-color: transparent; color: #fff; box-shadow: 0 3px 10px rgba(90,46,144,.25); }
+    .chip-btn.on.dim { background: #B8A5D4; box-shadow: none; }
+
+    /* Inputs inside rows */
+    .treat-row input[type=text], .sub-input, .form-field input.exact-age {
+      border: 1px solid var(--hairline) !important; border-radius: 12px !important;
+      background: var(--glass-strong) !important;
+    }
+
+    /* Summary tiles */
+    .sum-tile { background: var(--glass); border: 1px solid var(--glass-edge); border-radius: 16px; }
+    .sum-tile.total { background: var(--grad-primary); border-color: transparent; box-shadow: var(--shadow-pop); }
+
+    /* Sheets, drawer, overlay */
+    .overlay { background: rgba(25,12,45,.28); -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); }
+    .modal-sheet {
+      background: var(--glass-strong);
+      -webkit-backdrop-filter: blur(30px) saturate(180%); backdrop-filter: blur(30px) saturate(180%);
+      border-radius: 28px 28px 0 0; border-top: 1px solid var(--glass-edge);
+      position: relative; padding-top: 26px;
+    }
+    .modal-sheet::before {
+      content: ''; position: absolute; top: 9px; left: 50%; transform: translateX(-50%);
+      width: 38px; height: 5px; border-radius: 3px; background: rgba(120,100,150,.35);
+    }
+    .zula-drawer {
+      background: var(--glass-strong);
+      -webkit-backdrop-filter: blur(30px) saturate(180%); backdrop-filter: blur(30px) saturate(180%);
+      border-radius: 28px 0 0 28px; box-shadow: -10px 0 40px rgba(40,20,70,.18);
+    }
+    .zula-drawer-hdr { background: transparent; color: var(--text); border-bottom: 1px solid var(--hairline); }
+    .zula-drawer-hdr button { color: var(--primary) !important; }
+    .zrow.on { background: rgba(107,63,160,.07); }
+    .zbtn { background: var(--glass-strong); border: 1px solid var(--hairline); }
+    .zbtn.plus { background: var(--grad-primary); color: #fff; border-color: transparent; }
+
+    /* Suggestions, toast, banner */
+    .pt-suggest {
+      background: var(--glass-strong); border: 1px solid var(--glass-edge); border-radius: 18px;
+      -webkit-backdrop-filter: blur(24px); backdrop-filter: blur(24px); box-shadow: 0 12px 34px rgba(40,20,70,.18);
+    }
+    .toast {
+      background: rgba(30,18,48,.78); color: #fff; border-radius: 999px;
+      -webkit-backdrop-filter: blur(18px); backdrop-filter: blur(18px);
+      box-shadow: 0 8px 26px rgba(0,0,0,.25);
+    }
+    #install-banner {
+      background: var(--glass-strong) !important; border: 1px solid var(--glass-edge) !important;
+      -webkit-backdrop-filter: blur(24px); backdrop-filter: blur(24px); border-radius: 22px !important;
+    }
+    .loc-line { padding-top: 10px; }
   </style>
 </head>
 <body>
@@ -622,7 +783,7 @@
          style="position:absolute;opacity:0;pointer-events:none;width:1px;height:1px;">
 
   <!-- Action buttons — fixed, never scroll -->
-  <div style="background:var(--bg);border-bottom:2px solid var(--border);
+  <div class="action-bar" style="background:var(--bg);border-bottom:2px solid var(--border);
               padding:6px 12px;display:flex;gap:8px;flex-shrink:0;">
     <button class="btn btn-green btn-sm" style="flex:1;font-size:15px;padding:9px;"
             onclick="createEnc()">+ מפגש חדש</button>
@@ -1387,8 +1548,8 @@ function openEnc(roundId, encId) {
   curPatientId = e.patientId || null;
   hidePatientSuggest();
 
+  document.getElementById('e-age-exact').value = e.age_exact || '';   // before drawing the chips (dim state)
   setAge(e.age || e.age_sex || '', true);
-  document.getElementById('e-age-exact').value = e.age_exact || '';
   curSex = e.sex || '';
   renderSex();
   setInsurance(insHe(e.insurance) || '', true);
@@ -1494,7 +1655,13 @@ function cardAge(e) {
   if (e.age_exact)          core = String(e.age_exact);
   else if (/^\d0$/.test(a)) core = `${a} בערך`;
   else if (a === '70+')     core = '70+';
-  else return fmtAge(a);                       // legacy free text / unknown
+  else {
+    // Ages typed as free text in older versions: "42", "50 בערך", "כ-30", "בשנות ה-60"
+    const m = a.match(/\d{1,3}/);
+    if (!m) return a;                                     // nothing numeric (e.g. "?")
+    const n = m[0];
+    core = /^\s*\d{1,3}\s*$/.test(a) ? n : `${n} בערך`;
+  }
   return w ? `${w} ${core}` : `גיל ${core}`;
 }
 function fmtAgeE(e) {
@@ -1517,7 +1684,7 @@ function setAge(v, silent, keepExact) {
   el.className = 'chip-grid'; el.style.gridTemplateColumns = `repeat(${AGE_OPTIONS.length},1fr)`;
   const hasExact = !!(ex && ex.value);
   el.innerHTML = AGE_OPTIONS.map(o =>
-    `<button type="button" class="chip-btn${v===o?' on':''}${v===o&&hasExact?' dim':''}" onclick="setAge('${o}')">${o}</button>`).join('');
+    `<button type="button" class="chip-btn${v===o?' on':''}${v===o&&hasExact?' dim':''}" onclick="setAge('${o}')"><span dir="ltr">${o}</span></button>`).join('');
   const legacy = document.getElementById('age-legacy');
   const isLegacy = v && !AGE_OPTIONS.includes(v);
   legacy.style.display = isLegacy ? 'block' : 'none';
@@ -2054,8 +2221,8 @@ function pickPatient(id) {
   const p = (DB.patients||[]).find(x => x.id === id); if (!p) return;
   curPatientId = p.id;
   document.getElementById('e-name').value = p.name;
-  if (p.age) setAge(p.age, true);
   document.getElementById('e-age-exact').value = p.age_exact || '';
+  if (p.age) setAge(p.age, true);
   curSex = p.sex || ''; renderSex();
   if (p.insurance) setInsurance(p.insurance, true);
   ['field-name','field-age','field-insurance'].forEach(clearFieldError);
