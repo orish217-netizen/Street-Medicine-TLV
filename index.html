@@ -816,6 +816,13 @@
     /* Identifier warning */
     .id-warn { margin:8px 16px 0; padding:8px 12px; border-radius:10px; font-size:12.5px; font-weight:600;
       color:var(--tag-fu); background:color-mix(in srgb, var(--tag-fu) 12%, transparent); }
+    .opt-row.inline { flex:1; margin:0; }
+    .opt-chip.other { border-style:solid; border-color:var(--border); color:var(--text-light); }
+    .opt-chip.other.on { background:color-mix(in srgb, var(--text-light) 14%, transparent); color:var(--text); border-color:var(--text-light); }
+    .treat-other { margin:6px 66px 0 0; width:calc(100% - 66px) !important; }
+    .treat-block .treat-row { align-items:flex-start; }
+    .treat-block .treat-name { padding-top:5px; }
+    .title-note { font-size:12px; font-weight:500; color:var(--text-light); }
   </style>
 </head>
 <body>
@@ -1010,13 +1017,8 @@
         <div style="flex:1">
           <span class="chk-label" onclick="toggleChk('e-ref-chk'); toggleSub('e-ref-sub', document.getElementById('e-ref-chk').checked); autoSaveEnc()" style="font-weight:700;">הפניה</span>
           <div id="e-ref-sub" class="sub-input-wrap" style="display:none">
-            <input class="sub-input" type="text" id="e-ref" placeholder="לאן — מיון / מרפאה / שירותים סוציאליים..." oninput="autoSaveEnc()">
-            <div class="quick-row">
-              <button type="button" class="opt-chip" onclick="setQuick('e-ref','מיון')">מיון</button>
-              <button type="button" class="opt-chip" onclick="setQuick('e-ref','רל״א')">רל״א</button>
-              <button type="button" class="opt-chip" onclick="setQuick('e-ref','לוינסקי')">לוינסקי</button>
-              <button type="button" class="opt-chip" onclick="setQuick('e-ref','רופא משפחה')">רופא משפחה</button>
-            </div>
+            <div class="quick-row" id="ref-chips"></div>
+            <input class="sub-input" type="text" id="e-ref" placeholder="לאן?" oninput="autoSaveEnc()" style="display:none;margin-top:6px;">
             <div class="ref-photo-mini" id="ref-photos-grid"></div>
             <div style="display:flex;gap:14px;margin-top:7px;">
               <label style="display:flex;align-items:center;gap:5px;font-size:13px;color:var(--primary);cursor:pointer;font-weight:600;">
@@ -1067,16 +1069,13 @@
       <div class="form-field" style="border-bottom:none;">
         <label>פולו-אפ לסיור הבא</label>
         <textarea id="e-notes" placeholder="מה לבדוק בפעם הבאה? (ריק = אין צורך)" oninput="autoSaveEnc()"></textarea>
-        <div class="quick-row">
-          <button type="button" class="opt-chip" onclick="appendQuick('e-notes','רביעי בבוקר ברציף')">רביעי בבוקר ברציף</button>
-          <button type="button" class="opt-chip" onclick="appendQuick('e-notes','שני בערב ברציף')">שני בערב ברציף</button>
-        </div>
+        <div class="quick-row" id="fu-slots"></div>
       </div>
     </div>
 
     <!-- Photos -->
     <div class="form-section">
-      <div class="form-section-title">תמונות</div>
+      <div class="form-section-title">תמונות <span class="title-note">(נא להעלות מהאלבום בטלפון)</span></div>
       <div class="photos-grid" id="photos-grid"></div>
     </div>
 
@@ -1707,7 +1706,7 @@ function renderRound(id) {
   ].map(([n,l], i) => `<div class="sum-tile${i===0?' total':''}"><b>${n}</b><span>${l}</span></div>`).join('');
   document.getElementById('sum-supplies').textContent = sm.supplies || '—';
   const fu = (r.encounters||[]).filter(e => e.followup === 'Yes')
-    .map(e => `• ${e.name || 'ללא שם'}: ${e.notes || 'נדרש פולו-אפ'}`);
+    .map(e => `• ${e.name || 'ללא שם'}: ${fuText(e)}`);
   document.getElementById('sum-followups-wrap').style.display = fu.length ? '' : 'none';
   document.getElementById('sum-followups').textContent = fu.join('\n');
 }
@@ -1803,6 +1802,7 @@ function openEnc(roundId, encId) {
   document.getElementById('e-ref-chk').checked = !!e.ref_chk;
   toggleSub('e-ref-sub', !!e.ref_chk);
   document.getElementById('e-ref').value = e.ref||'';
+  refOtherOpen = false; refOtherStash = ''; renderRefChips();
   curRefPhotos = (e.ref_photos||[]).map(url=>({id:uid(),url}));
   renderRefPhotos();
 
@@ -1816,8 +1816,9 @@ function openEnc(roundId, encId) {
 
   // Follow-up: one field. Older records that only had "כן" keep a note.
   let notes = e.notes || '';
-  if (e.followup === 'Yes' && !notes.trim()) notes = 'נדרש פולו-אפ';
+  if (e.followup === 'Yes' && !notes.trim() && !e.fu_slot) notes = 'נדרש פולו-אפ';
   document.getElementById('e-notes').value = notes;
+  curFuSlot = e.fu_slot || ''; renderFuSlots();
 
   curPhotos = (e.photos||[]).map(url=>({id:uid(),url}));
   renderPhotos();
@@ -1845,7 +1846,7 @@ function readEnc() {
     temp:          document.getElementById('e-temp').value,
     exam:          document.getElementById('e-exam').value,
     assessment:    '',
-    treatments:    JSON.parse(JSON.stringify(curTreatments)),
+    treatments:    curTreatments.map(({ _other, _stash, ...t }) => JSON.parse(JSON.stringify(t))),
     sup_chk:            false,
     sup_chips:          [...curSupChips],
     sup:                '',
@@ -1856,8 +1857,9 @@ function readEnc() {
     welfare_chips:      [...curWelfareChips],
     welfare_chip_details: {...curWelfareChipDetails},
     welfare_text:       document.getElementById('e-welfare-text').value,
-    followup:      notes.trim() ? 'Yes' : 'No',
+    followup:      (notes.trim() || curFuSlot) ? 'Yes' : 'No',
     notes:         notes,
+    fu_slot:       curFuSlot,
     refused:       curRefused,
     allergies:     document.getElementById('e-allergies').value.trim(),
     photos:        curPhotos.map(p=>p.url),
@@ -1962,7 +1964,48 @@ function checkAllergyClash() {
   box.style.display = clash ? 'block' : 'none';
   box.textContent = clash ? 'שימו לב: רשומה רגישות לפניצילין, ואוגמנטין הוא מקבוצת הפניצילינים.' : '';
 }
+// Follow-up meeting slot (a tap marks it; the text box stays for "what to check")
+const FU_SLOTS = ['רביעי בבוקר ברציף','שני בערב ברציף'];
+let curFuSlot = '';
+function renderFuSlots() {
+  const box = document.getElementById('fu-slots'); if (!box) return;
+  box.innerHTML = FU_SLOTS.map(o => `<button type="button" class="opt-chip${curFuSlot===o?' on':''}" onclick="pickFuSlot('${o}')">${o}</button>`).join('');
+}
+function pickFuSlot(o) { curFuSlot = curFuSlot === o ? '' : o; renderFuSlots(); autoSaveEnc(); }
+// "נדרש פולו-אפ: …" text used in reports and lists
+function fuText(e) {
+  const parts = [(e.notes||'').trim(), e.fu_slot ? `נקבע: ${e.fu_slot}` : ''].filter(Boolean);
+  return parts.join(' · ') || 'נדרש פולו-אפ';
+}
 function setQuick(id, v) { const el = document.getElementById(id); el.value = v; autoSaveEnc(); }
+// Referral destination: one tap = one place; "אחר" opens free text
+const REF_OPTIONS = ['מיון','רופא/ת משפחה','לוינסקי','רל״א'];
+let refOtherOpen = false, refOtherStash = '';
+function renderRefChips() {
+  const box = document.getElementById('ref-chips'); if (!box) return;
+  const inp = document.getElementById('e-ref');
+  const v = inp.value.trim();
+  const isOther = refOtherOpen || (v && !REF_OPTIONS.includes(v));
+  box.innerHTML = REF_OPTIONS.map(o => `<button type="button" class="opt-chip${v===o?' on':''}" onclick="pickRef('${o}')">${o}</button>`).join('')
+    + `<button type="button" class="opt-chip other${isOther?' on':''}" onclick="pickRef(null)">אחר</button>`;
+  inp.style.display = isOther ? 'block' : 'none';
+}
+function pickRef(o) {
+  const inp = document.getElementById('e-ref');
+  const cur = inp.value.trim();
+  const curIsOther = cur && !REF_OPTIONS.includes(cur);
+  if (o === null) {                                   // אחר: open/close; typed text is kept aside, never lost
+    const wasOpen = refOtherOpen || curIsOther;
+    if (wasOpen) { if (curIsOther) refOtherStash = cur; inp.value = ''; refOtherOpen = false; }
+    else { refOtherOpen = true; inp.value = refOtherStash; }
+  } else {
+    if (curIsOther) refOtherStash = cur;
+    refOtherOpen = false;
+    inp.value = cur === o ? '' : o;
+  }
+  renderRefChips(); autoSaveEnc();
+  if (refOtherOpen) inp.focus();
+}
 function appendQuick(id, v) {
   const el = document.getElementById(id);
   const cur = el.value.trim();
@@ -2145,7 +2188,7 @@ function reportModel(r) {
           ['טיפול', [(e.treatments||[]).map(fmtTreatment).join(' · '), e.refused ? 'סירב/ה לטיפול' : ''].filter(Boolean).join(' · ')],
           ['הפניה', e.ref_chk ? (e.ref || 'כן') : ''],
           ['ציוד', suppliesLine(e)],
-          ['פולו-אפ', e.followup === 'Yes' ? (e.notes || 'נדרש') : ''],
+          ['פולו-אפ', e.followup === 'Yes' ? fuText(e) : ''],
         ].filter(([, v]) => (v||'').trim()),
         photos: [...(e.photos||[]), ...(e.ref_photos||[])],
       };
@@ -2158,7 +2201,7 @@ function reportModel(r) {
     };
   });
   const followups = (r.encounters||[]).filter(e => e.followup === 'Yes')
-    .map(e => `${e.name || 'ללא שם'}: ${e.notes || 'נדרש פולו-אפ'}`);
+    .map(e => `${e.name || 'ללא שם'}: ${fuText(e)}`);
   return {
     date: fmtDate(r.date),
     volunteers: (r.volunteers||'').trim(),
@@ -2475,7 +2518,7 @@ function showPatientSuggest() {
       const d = new Date(last.e.createdAt || last.r.date);
       const seen = isNaN(d) ? '' : `נראה ב-${d.getDate()}.${d.getMonth()+1}`;
       sub = [seen, treatSummary(last.e)].filter(Boolean).map(esc).join(' · ');
-      if (last.e.followup === 'Yes') sub += `<br><span class="tag fu">פולו-אפ</span> ${esc(last.e.notes || 'נדרש פולו-אפ')}`;
+      if (last.e.followup === 'Yes') sub += `<br><span class="tag fu">פולו-אפ</span> ${esc(fuText(last.e))}`;
     }
     return `<div class="pt-item" onmousedown="event.preventDefault()" onclick="pickPatient('${p.id}')">
       <div class="t">${head}</div>
@@ -2520,7 +2563,7 @@ function renderPtHistory() {
   const got = treatSummary(last.e);
   box.innerHTML = `<div class="h-id">${idLine}</div>` + (p.allergies ? `<div class="h-allergy">רגישות: ${esc(p.allergies)}</div>` : '') + `<div class="h-l">${esc(visit)}</div>`
     + (got ? `<div class="h-l">בפעם הקודמת: ${esc(got)}</div>` : '')
-    + (last.e.followup === 'Yes' ? `<div class="h-fu">פולו-אפ פתוח: ${esc(last.e.notes || 'נדרש פולו-אפ')}</div>` : '');
+    + (last.e.followup === 'Yes' ? `<div class="h-fu">פולו-אפ פתוח: ${esc(fuText(last.e))}</div>` : '');
   box.style.display = 'block';
 }
 // After a valid save: attach the encounter to a patient record (new or existing)
@@ -2561,7 +2604,7 @@ function encIsEmpty(e) {
   return txt.every(k => !String(e[k]||'').trim())
     && !(e.treatments||[]).length && !(e.welfare_chips||[]).length
     && !(e.photos||[]).length && !(e.ref_photos||[]).length && !e.ref_chk
-    && e.followup !== 'Yes' && !e.refused && !String(e.allergies||'').trim();
+    && e.followup !== 'Yes' && !e.fu_slot && !e.refused && !String(e.allergies||'').trim();
 }
 
 function validateEnc() {
@@ -2628,32 +2671,66 @@ function renderTreatments() {
          <input type="checkbox" ${t.left?'checked':''} onchange="curTreatments[${i}].left=this.checked;autoSaveEnc()">
          ${leftLabel(t.type)}
        </label>`;
+    const options = TREATMENT_OPTIONS[t.type] || [];
+    if (!options.length) {           // no quick picks (תרופה אחרת): plain text field, as before
+      return `<div class="treat-block"><div class="treat-row">
+        <span class="treat-name">${t.type}</span>
+        <input type="text" value="${(t.detail||'').replace(/"/g,'&quot;')}" placeholder="${TREATMENT_PH[t.type]||''}"
+               data-treat="${i}" oninput="curTreatments[${i}].detail=this.value;autoSaveEnc();checkAllergyClash()">
+        ${leftBox}</div></div>`;
+    }
     const parts = detailParts(t.detail);
-    const opts = (TREATMENT_OPTIONS[t.type]||[]).map(o =>
-      `<button type="button" class="opt-chip${parts.includes(o)?' on':''}" onclick="toggleTreatOption(${i}, '${o.replace(/'/g,"\\'")}')">${o}</button>`).join('');
+    const extra = parts.filter(x => !options.includes(x)).join(', ');
+    const otherOpen = !!t._other || !!extra;
+    const opts = options.map(o =>
+      `<button type="button" class="opt-chip${parts.includes(o)?' on':''}" onclick="toggleTreatOption(${i}, '${o.replace(/'/g,"\\'")}')">${o}</button>`).join('')
+      + `<button type="button" class="opt-chip other${otherOpen?' on':''}" onclick="toggleTreatOther(${i})">אחר</button>`;
     return `<div class="treat-block">
       <div class="treat-row">
-      <span class="treat-name">${t.type}</span>
-      <input type="text" value="${(t.detail||'').replace(/"/g,'&quot;')}" placeholder="${TREATMENT_PH[t.type]||''}"
-             data-treat="${i}" oninput="curTreatments[${i}].detail=this.value;renderTreatOptState(${i});autoSaveEnc();checkAllergyClash()">
-      ${leftBox}
+        <span class="treat-name">${t.type}</span>
+        <div class="opt-row inline" data-opts="${i}">${opts}</div>
+        ${leftBox}
       </div>
-      ${opts ? `<div class="opt-row" data-opts="${i}">${opts}</div>` : ''}
+      ${otherOpen ? `<input type="text" class="sub-input treat-other" value="${extra.replace(/"/g,'&quot;')}" placeholder="${TREATMENT_PH[t.type]||'פירוט'}"
+             data-treat="${i}" oninput="setTreatExtra(${i}, this.value)">` : ''}
     </div>`;
   }).join('');
   checkAllergyClash();
 }
 
 function detailParts(d) { return String(d||'').split(/\s*[,،]\s*/).map(x => x.trim()).filter(Boolean); }
+function splitDetail(t) {
+  const options = TREATMENT_OPTIONS[t.type] || [];
+  const parts = detailParts(t.detail);
+  return { picked: options.filter(o => parts.includes(o)), extra: parts.filter(x => !options.includes(x)).join(', ') };
+}
 function toggleTreatOption(i, opt) {
   const t = curTreatments[i]; if (!t) return;
-  const parts = detailParts(t.detail);
-  const k = parts.indexOf(opt);
-  if (k >= 0) parts.splice(k, 1); else parts.push(opt);
-  t.detail = parts.join(', ');
-  const inp = document.querySelector(`#treat-details input[data-treat="${i}"]`);
-  if (inp) inp.value = t.detail;
+  const { picked, extra } = splitDetail(t);
+  const k = picked.indexOf(opt);
+  if (k >= 0) picked.splice(k, 1); else picked.push(opt);
+  const order = TREATMENT_OPTIONS[t.type] || [];
+  picked.sort((a, b) => order.indexOf(a) - order.indexOf(b));
+  t.detail = [...picked, extra].filter(Boolean).join(', ');
   renderTreatOptState(i); autoSaveEnc(); checkAllergyClash();
+}
+function setTreatExtra(i, v) {
+  const t = curTreatments[i]; if (!t) return;
+  const { picked } = splitDetail(t);
+  t.detail = [...picked, v.trim()].filter(Boolean).join(', ');
+  autoSaveEnc(); checkAllergyClash();
+}
+function toggleTreatOther(i) {
+  const t = curTreatments[i]; if (!t) return;
+  const { picked, extra } = splitDetail(t);
+  if (t._other || extra) {                 // close: hide the box, keep the text aside until leaving the page
+    t._other = false; t._stash = extra || t._stash || ''; t.detail = picked.join(', ');
+  } else {                                  // reopen: bring back what was typed
+    t._other = true;
+    if (t._stash) { t.detail = [...picked, t._stash].filter(Boolean).join(', '); t._stash = ''; }
+  }
+  renderTreatments(); autoSaveEnc(); checkAllergyClash();
+  if (t._other) { const inp = document.querySelector(`#treat-details input[data-treat="${i}"]`); if (inp) inp.focus(); }
 }
 function renderTreatOptState(i) {
   const row = document.querySelector(`#treat-details [data-opts="${i}"]`); if (!row) return;
@@ -3305,6 +3382,7 @@ const XL_DICT = [
   ['encounters','referral_to','לאן הופנה'],
   ['encounters','followup','האם נדרש פולו-אפ (1/0)'],
   ['encounters','followup_note','מה לבדוק בפולו-אפ'],
+  ['encounters','followup_meeting','מפגש שנקבע (רביעי בבוקר / שני בערב ברציף)'],
   ['encounters','photos','מספר תמונות'],
   ['items','source','encounter = במפגש · zula = חלוקה בזולה'],
   ['items','source_id','מזהה המפגש או הזולה'],
@@ -3350,6 +3428,7 @@ function buildWorkbookData(withNames) {
         refused: e.refused ? 1 : 0, allergies: e.allergies || '',
         referral: e.ref_chk ? 1 : 0, referral_to: e.ref_chk ? (e.ref || '') : '',
         followup: e.followup === 'Yes' ? 1 : 0, followup_note: e.followup === 'Yes' ? (e.notes || '') : '',
+        followup_meeting: e.fu_slot || '',
         photos: (e.photos||[]).length + (e.ref_photos||[]).length,
       });
       encounters.push(row);
