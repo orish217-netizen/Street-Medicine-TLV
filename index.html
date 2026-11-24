@@ -208,14 +208,18 @@
     .form-field textarea { resize: none; min-height: 72px; line-height: 1.5; }
     .req { color:#e74c3c; font-weight:700; }
     .hint { font-size:12px; color:var(--text-light); margin-top:4px; }
-    .chip-btn.big { min-height:40px; padding:8px 16px; font-size:15px; margin:0 0 6px 6px; }
+    .chip-btn.big { margin:0 0 6px 6px; }   /* same size as every other chip */
+    .chip-grid { display:grid; gap:6px; margin-bottom:6px; }
+    .chip-grid .chip-btn { margin:0; padding:5px 2px; white-space:nowrap; }
     .mini-btn { background:none; border:1px solid var(--border); border-radius:8px; font-size:12px;
       font-weight:600; cursor:pointer; color:var(--text-light); padding:3px 9px; font-family:inherit; }
     .loc-line { display:flex; align-items:center; justify-content:space-between; gap:8px;
       padding:8px 16px 2px; font-size:13px; color:var(--text-light); }
     .loc-line button { background:none; border:none; color:var(--primary); font-weight:700;
       font-size:13px; font-family:inherit; cursor:pointer; padding:6px 0; }
-    .vitals-5 { border:1px solid var(--border); border-radius:10px; overflow:hidden; }
+    .vitals-5 { border:1px solid var(--border); border-radius:10px; overflow:hidden; direction:ltr; }
+    .vitals-5 .vc { text-align:center; } .vitals-5 .vc label { text-align:center; }
+    .vitals-5 .vc input { text-align:center; }
     .vitals-5 .vc { padding:6px 6px; }
     .vitals-5 .vc input { font-size:16px; }
     .pt-suggest { position:absolute; right:12px; left:12px; z-index:60; background:var(--card);
@@ -224,6 +228,20 @@
     .pt-item:last-child { border-bottom:none; }
     .pt-item .t { font-weight:700; font-size:15px; }
     .pt-item .s { font-size:12px; color:var(--text-light); margin-top:2px; }
+    .sum-tiles { display:grid; grid-template-columns:repeat(4,1fr); gap:8px; padding:12px 16px 4px; }
+    .sum-tile { border:1px solid var(--border); border-radius:10px; padding:8px 4px; text-align:center; }
+    .sum-tile b { display:block; font-size:20px; color:var(--text); }
+    .sum-tile span { font-size:11px; color:var(--text-light); }
+    .sum-text { font-size:14px; line-height:1.6; color:var(--text); white-space:pre-line; }
+    .card-time { position:absolute; left:34px; top:12px; font-size:11px; color:var(--text-light); font-weight:400; }
+    .card-line { font-size:12px; color:var(--text-light); margin-top:2px; }
+    .zchip { display:inline-flex; align-items:center; margin:0 0 6px 6px; }
+    .zchip .chip-btn { margin:0; }
+    .zchip .zminus { margin-right:2px; width:26px; height:26px; border-radius:13px; border:1.5px solid var(--border);
+      background:var(--card); color:var(--text); font-weight:700; cursor:pointer; font-family:inherit; line-height:1; }
+    .export-links { display:flex; flex-direction:column; align-items:center; gap:2px; margin-bottom:14px; }
+    .export-links button { background:none; border:none; color:var(--primary); font-weight:700; font-size:15px;
+      font-family:inherit; cursor:pointer; padding:10px; }
     .treat-row { display:flex; align-items:center; gap:8px; margin:2px 0 8px; }
     .treat-row .treat-name { font-size:13px; font-weight:700; color:var(--primary); min-width:58px; }
     .treat-row input[type=text] { flex:1; min-width:0; border:1.5px solid var(--primary); border-radius:8px;
@@ -536,7 +554,7 @@
     <!-- Rounds list (JS-rendered) -->
     <div id="home-content"></div>
   </div>
-  <button class="fab" onclick="openModal('modal-new-round')" title="סיור חדש">+</button>
+  <button class="fab" onclick="createRound()" title="סיור חדש">+</button>
 </div>
 
 <!-- ═══════════════════════════ STATS ═══════════════════════════ -->
@@ -571,30 +589,15 @@
 <div id="pg-round" class="page">
   <div class="hdr">
     <button class="hdr-btn" onclick="navBack('pg-home')" style="font-size:22px;">›</button>
-    <h1 id="round-hdr-title">Round</h1>
+    <h1 id="round-hdr-title" onclick="pickRoundDate()" style="cursor:pointer;">סיור</h1>
     <button class="hdr-btn" onclick="confirmDeleteRound()" title="Delete">🗑</button>
   </div>
 
-  <!-- 1. פרטי הסיור — fixed above scroll area -->
-  <div style="background:var(--card);border-bottom:1px solid var(--border);flex-shrink:0;">
-    <div style="background:var(--primary);color:#fff;padding:4px 12px;font-size:12px;font-weight:700;">📋 פרטי הסיור</div>
-    <div style="padding:0 12px;display:grid;grid-template-columns:1fr 1fr 1fr;gap:0 8px;">
-      <div class="form-field" style="border-bottom:none;padding:6px 0;">
-        <label style="font-size:11px;">תאריך</label>
-        <input type="date" id="r-date" onchange="autoSaveRound()" style="font-size:13px;padding:4px 6px;">
-      </div>
-      <div class="form-field" style="border-bottom:none;padding:6px 0;">
-        <label style="font-size:11px;">אזור / מיקום</label>
-        <input type="text" id="r-location" placeholder="לדוג': התחנה הישנה..." oninput="autoSaveRound()" style="font-size:13px;padding:4px 6px;">
-      </div>
-      <div class="form-field" style="border-bottom:none;padding:6px 0;">
-        <label style="font-size:11px;">מתנדבים</label>
-        <input type="text" id="r-volunteers" placeholder="שמות" oninput="autoSaveRound()" style="font-size:13px;padding:4px 6px;">
-      </div>
-    </div>
-  </div>
+  <!-- Date lives in the header (tap to change); volunteers are asked at export -->
+  <input type="date" id="r-date" onchange="saveRound(); renderRound(curRoundId)"
+         style="position:absolute;opacity:0;pointer-events:none;width:1px;height:1px;">
 
-  <!-- 2. Action buttons — fixed, never scroll -->
+  <!-- Action buttons — fixed, never scroll -->
   <div style="background:var(--bg);border-bottom:2px solid var(--border);
               padding:6px 12px;display:flex;gap:8px;flex-shrink:0;">
     <button class="btn btn-green btn-sm" style="flex:1;font-size:15px;padding:9px;"
@@ -603,44 +606,30 @@
             onclick="openZulaDrawer()">⛺ הגעתי לזולה</button>
   </div>
 
-  <!-- 3. Scrollable: encounters list + round summary -->
+  <!-- Scrollable: encounters + zula (by time) and the automatic summary -->
   <div class="content">
-
-    <!-- Encounters -->
     <div id="enc-list"></div>
 
-    <!-- Round summary -->
     <div class="form-section" style="margin-top:18px;">
-      <div class="form-section-title" style="display:flex;align-items:center;justify-content:space-between;">
-        <span>📊 סיכום הסיור</span>
-        <button class="btn btn-gray btn-sm" onclick="autoCalcAll()" style="font-size:12px;padding:4px 10px;">עדכן אוטומטית</button>
-      </div>
-      <div class="form-field">
-        <label>סה"כ מפגשים (כולל לא-רפואיים)</label>
-        <input type="number" id="r-total" placeholder="אוטומטית או ידנית" oninput="autoSaveRound()">
-      </div>
-      <div class="form-field">
-        <label>מפגשים רפואיים</label>
-        <input type="number" id="r-medical" oninput="autoSaveRound()">
-      </div>
-      <div class="form-field">
-        <label>הפניות שניתנו</label>
-        <input type="number" id="r-referrals" oninput="autoSaveRound()">
-      </div>
+      <div class="form-section-title">📊 סיכום הסיור</div>
+      <div class="sum-tiles" id="sum-tiles"></div>
       <div class="form-field">
         <label>ציוד שחולק</label>
-        <textarea id="r-supplies" placeholder="לדוג': 20 גרביים, 10 קונדומים, 5 חבישות..." oninput="autoSaveRound()"></textarea>
+        <div id="sum-supplies" class="sum-text"></div>
       </div>
-      <div class="form-field">
-        <label>פולו-אפים ונקודות לסיורים הבאים</label>
-        <textarea id="r-notable" placeholder="נקודות חשובות, דברים למעקב..." oninput="autoSaveRound()"></textarea>
+      <div class="form-field" id="sum-followups-wrap">
+        <label>פולו-אפים מהמפגשים</label>
+        <div id="sum-followups" class="sum-text"></div>
+      </div>
+      <div class="form-field" style="border-bottom:none;">
+        <label>נקודות נוספות לסיור הבא</label>
+        <textarea id="r-notable" placeholder="דברים שלא קשורים למפגש מסוים..." oninput="autoSaveRound()"></textarea>
       </div>
     </div>
   </div>
 
   <div class="s-footer">
-    <button class="btn btn-primary" onclick="saveRound(); toast('נשמר ✓')">שמירה</button>
-    <button class="btn btn-accent" onclick="saveRound(); openModal('modal-export')">📤 ייצוא</button>
+    <button class="btn btn-accent" onclick="openExport()">📤 שיתוף הדוח</button>
   </div>
 </div>
 
@@ -700,7 +689,7 @@
       <div class="form-field" id="field-insurance">
         <label>קופ"ח <span class="req">*</span></label>
         <input type="hidden" id="e-insurance">
-        <div class="chip-row" id="ins-chips"></div>
+        <div id="ins-chips"></div>
       </div>
     </div>
 
@@ -781,34 +770,11 @@
 
   </div>
   <div class="s-footer">
-    <button class="btn btn-green" onclick="if(validateEnc()){ saveEnc(); navBack('pg-round'); }">שמור ✓</button>
+    <button class="btn btn-green" onclick="if(validateEnc()){ saveEnc(); navBack('pg-round'); }">סיום ✓</button>
   </div>
 </div>
 
 <!-- ═══════════════════════════ MODALS ═══════════════════════════ -->
-
-<!-- New Round -->
-<div class="overlay" id="modal-new-round" onclick="closeModal('modal-new-round')">
-  <div class="modal-sheet" onclick="event.stopPropagation()">
-    <h3>סיור חדש</h3>
-    <div class="field-wrap">
-      <label>תאריך</label>
-      <input type="date" id="m-round-date">
-    </div>
-    <div class="field-wrap">
-      <label>מיקום כללי</label>
-      <input type="text" id="m-round-loc" placeholder="לדוג': התחנה הישנה, פלורנטין...">
-    </div>
-    <div class="field-wrap">
-      <label>מתנדבים</label>
-      <input type="text" id="m-round-vol" placeholder="שמות">
-    </div>
-    <button class="btn btn-primary" onclick="createRound()">צור סיור</button>
-    <div style="height:10px;"></div>
-    <button class="btn btn-gray" onclick="closeModal('modal-new-round')">ביטול</button>
-  </div>
-</div>
-
 
 <!-- ⛺ Zula Drawer -->
 <div class="zula-overlay" id="zula-overlay" onclick="closeZulaDrawer()"></div>
@@ -823,7 +789,7 @@
   </div>
   <div class="zula-drawer-footer">
     <div style="margin-bottom:8px;">
-      <textarea id="zula-notes" rows="2" placeholder="הערות חופשיות..."
+      <textarea id="zula-notes" rows="2" placeholder="אחר / הערות..."
                 style="width:100%;border:1.5px solid var(--border);border-radius:10px;padding:8px 10px;
                        font-size:15px;font-family:inherit;background:var(--bg);color:var(--text);
                        resize:none;"></textarea>
@@ -831,13 +797,13 @@
     <div style="margin-bottom:10px;">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:5px;">
         <span style="font-size:13px;font-weight:600;color:var(--subtext);">📍 מיקום הזולה</span>
-        <button id="geo-zula-btn" onclick="geolocateToField('zula-location','geo-zula-btn',null)"
+        <button id="geo-zula-btn" onclick="zulaLocate(true)"
                 style="background:none;border:1px solid var(--border);border-radius:8px;font-size:12px;
                        font-weight:600;cursor:pointer;color:var(--text-light);padding:3px 9px;">📍 נוכחי</button>
       </div>
       <div class="loc-wrap">
         <input type="text" id="zula-location" placeholder="לדוג': לוינסקי 43" autocomplete="off"
-               oninput="onLocInput(this,'zula-loc-drop')"
+               oninput="zulaLatLon=null; onLocInput(this,'zula-loc-drop')"
                style="width:100%;border:1.5px solid var(--border);border-radius:10px;padding:8px 10px;
                       font-size:15px;font-family:inherit;background:var(--bg);color:var(--text);">
         <div class="loc-drop" id="zula-loc-drop"></div>
@@ -894,19 +860,17 @@
 <!-- Export -->
 <div class="overlay" id="modal-export" onclick="closeModal('modal-export')">
   <div class="modal-sheet" onclick="event.stopPropagation()">
-    <h3>ייצוא הסיור</h3>
-    <p style="color:var(--text-light);font-size:14px;margin-bottom:18px;">
-      בחרו כיצד לייצא את דוח הסיור.
-    </p>
-    <button class="btn btn-primary" style="margin-bottom:10px;" onclick="doShare()">
-      📤 Share Sheet (iOS)
-    </button>
-    <button class="btn btn-accent" style="margin-bottom:10px;" onclick="doNotesExport()">
-      📋 Copy → Apple Notes
-    </button>
-    <button class="btn btn-outline" style="margin-bottom:10px;" onclick="doPDF()">
-      📄 Download PDF
-    </button>
+    <h3>שיתוף הדוח</h3>
+    <div class="field-wrap">
+      <label>מי היה בסיור?</label>
+      <input type="text" id="exp-volunteers" placeholder="שמות המתנדבים" oninput="setVolunteers(this.value)">
+      <div id="exp-vol-last" class="chip-row" style="margin-top:6px;"></div>
+    </div>
+    <button class="btn btn-accent" style="margin-bottom:12px;" onclick="doPDF()">📄 שיתוף הדוח כ-PDF</button>
+    <div class="export-links">
+      <button onclick="doNotesExport()">העתקת הטקסט</button>
+      <button onclick="doShare()">שליחת הטקסט (וואטסאפ וכו׳)</button>
+    </div>
     <button class="btn btn-gray" onclick="closeModal('modal-export')">ביטול</button>
   </div>
 </div>
@@ -1088,7 +1052,7 @@ const SOCIAL_CHIPS_MEDICAL = [];
 // e.treatments = [{ type, detail, left }]  left = "השארנו" (given to keep → counts as a supply)
 const TREATMENT_TYPES = ['חבישה','משחה','אנטיביוטיקה','תרופה אחרת'];
 const TREATMENT_PH = {
-  'חבישה':'מיקום ואפיון הפצע, סוג החבישה',
+  'חבישה':'סוג החבישה',
   'משחה':'שם המשחה',
   'אנטיביוטיקה':'שם ומינון',
   'תרופה אחרת':'שם, מינון, דרך מתן',
@@ -1135,6 +1099,14 @@ function migrateData(db) {
       changed = true;
     });
   });
+  // Zula supplies: old spellings → current names
+  (db.rounds || []).forEach(r => (r.zula_events || []).forEach(z => {
+    const sup = z.supplies || {};
+    Object.keys(sup).forEach(k => {
+      const nk = SUPPLY_ALIASES[k];
+      if (nk) { sup[nk] = (sup[nk] || 0) + sup[k]; delete sup[k]; changed = true; }
+    });
+  }));
   // Patients become their own records (stable id) — needed for returning-patient
   // suggestions now and for syncing between devices later.
   if (!Array.isArray(db.patients)) {
@@ -1259,7 +1231,7 @@ function renderHome() {
       <div class="card-row" onclick="openRound('${r.id}')">
         <div>
           <div class="card-title">${fmtDate(r.date)}</div>
-          <div class="card-sub">${r.location||'—'} &bull; ${r.volunteers||'—'}</div>
+          ${r.volunteers ? `<div class="card-sub">👤 ${r.volunteers}</div>` : ''}
           <div style="margin-top:6px;display:flex;gap:6px;flex-wrap:wrap;">
             ${medCount ? `<span class="badge badge-green">🩺 ${medCount} רפואי${medCount!==1?'ים':''}</span>` : ''}
             ${socCount ? `<span class="badge badge-gray">🤝 ${socCount} סוציאלי${socCount!==1?'ים':''}</span>` : ''}
@@ -1275,32 +1247,29 @@ function renderHome() {
 
 function fmtDate(s) {
   if (!s) return 'תאריך לא ידוע';
-  try { return new Date(s+'T12:00:00').toLocaleDateString('he-IL',{weekday:'long',day:'numeric',month:'long',year:'numeric'}); }
-  catch { return s; }
+  const [y, m, d] = String(s).split('-');
+  return (y && m && d) ? `${d}/${m}/${y}` : s;      // 31/12/2026
 }
 
 // ══════════════════════════════════════════════
 // ROUND
 // ══════════════════════════════════════════════
-function openModal_newRound() {
-  const today = new Date().toISOString().slice(0,10);
-  document.getElementById('m-round-date').value = today;
-  document.getElementById('m-round-loc').value = '';
-  document.getElementById('m-round-vol').value = '';
-  openModal('modal-new-round');
+function localISODate(d = new Date()) {
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
 }
 
+// "+" on the home screen: a round dated today, opened right away
 function createRound() {
-  const r = {
-    id: uid(),
-    date: document.getElementById('m-round-date').value,
-    location: document.getElementById('m-round-loc').value,
-    volunteers: document.getElementById('m-round-vol').value,
-    encounters: [], contacts: [], summary: {}
-  };
+  const r = { id: uid(), date: localISODate(), volunteers: '',
+              encounters: [], zula_events: [], contacts: [], summary: {},
+              createdAt: nowISO(), updatedAt: nowISO() };
   DB.rounds.push(r); persist(DB);
-  closeModal('modal-new-round');
   openRound(r.id);
+}
+
+function pickRoundDate() {
+  const el = document.getElementById('r-date');
+  try { el.showPicker(); } catch { el.focus(); el.click(); }
 }
 
 function openRound(id) {
@@ -1309,92 +1278,95 @@ function openRound(id) {
   showPage('pg-round');
 }
 
+// Everything in the round summary is computed from the data
+function computeSummary(r) {
+  const encs = r.encounters || [];
+  return {
+    total:     encs.length,
+    medical:   encs.filter(e => classifyEnc(e) === 'medical').length,
+    social:    encs.filter(e => classifyEnc(e) === 'social').length,
+    referrals: encs.filter(e => e.ref_chk).length,
+    followups: encs.filter(e => e.followup === 'Yes').length,
+    supplies:  fmtTally(tallySupplies([r])),
+  };
+}
+function fmtTime(ts) {
+  if (!ts) return '';
+  const d = new Date(ts); if (isNaN(d)) return '';
+  return d.toLocaleTimeString('he-IL', { hour:'2-digit', minute:'2-digit' });
+}
+function suppliesLine(e) {
+  return [...(e.welfare_chips||[]), (e.welfare_text||'').trim()].filter(Boolean).join(', ');
+}
+
 function renderRound(id) {
   const r = DB.rounds.find(x=>x.id===id); if(!r) return;
-  document.getElementById('round-hdr-title').textContent = fmtDate(r.date);
+  const esc = x => String(x||'').replace(/&/g,'&amp;').replace(/</g,'&lt;');
+  document.getElementById('round-hdr-title').textContent = `סיור ${fmtDate(r.date)}`;
   document.getElementById('r-date').value = r.date||'';
-  document.getElementById('r-location').value = r.location||'';
-  document.getElementById('r-volunteers').value = r.volunteers||'';
-  const s = r.summary||{};
-  document.getElementById('r-total').value = s.total||'';
-  document.getElementById('r-medical').value = s.medical !== undefined ? s.medical : (r.encounters||[]).length;
-  document.getElementById('r-referrals').value = s.referrals||'';
-  document.getElementById('r-supplies').value = s.supplies||'';
-  document.getElementById('r-notable').value = s.notable||'';
+  document.getElementById('r-notable').value = (r.summary||{}).notable||'';
 
-  // Encounters + Zula events
+  // One list, ordered by time: encounters + zula events
+  const items = [
+    ...(r.encounters||[]).map(e => ({ kind:'enc', t: e.createdAt || '', e })),
+    ...(r.zula_events||[]).map(z => ({ kind:'zula', t: z.ts ? new Date(z.ts).toISOString() : '', z })),
+  ].sort((a, b) => a.t.localeCompare(b.t));
+
   const el = document.getElementById('enc-list');
-  const hasEncs = (r.encounters||[]).length > 0;
-  const hasZula = (r.zula_events||[]).length > 0;
-
-  if (!hasEncs && !hasZula) {
-    el.innerHTML = `<div style="color:var(--text-light);text-align:center;padding:18px 0;font-size:14px;">עדיין אין מפגשים — לחצו + כדי להוסיף</div>`;
-  } else {
-    const encCards = (r.encounters||[]).map(e => {
-      const vitals = [e.bp&&`ל"ד ${e.bp}`, e.hr&&`דופק ${e.hr}`, e.spo2&&`SpO₂ ${e.spo2}%`].filter(Boolean).join(' · ');
-      const type = classifyEnc(e);
-      const typeBadge = type === 'medical'
-        ? `<span class="badge badge-green" style="font-size:11px;">🩺 רפואי</span>`
-        : `<span class="badge badge-gray" style="font-size:11px;">🤝 סוציאלי</span>`;
-      return `
-      <div class="card">
+  if (!items.length) {
+    el.innerHTML = `<div style="color:var(--text-light);text-align:center;padding:18px 0;font-size:14px;">עדיין אין מפגשים — לחצו "+ מפגש חדש"</div>`;
+  } else el.innerHTML = items.map(it => {
+    if (it.kind === 'enc') {
+      const e = it.e;
+      const head = [e.name || 'ללא שם', fmtAge(e.age||e.age_sex), insHe(e.insurance)].filter(Boolean).map(esc).join(' · ');
+      const line1 = [e.location, e.cc].filter(Boolean).map(esc).join(' · ');
+      const line2 = [treatSummary({ treatments: e.treatments }), suppliesLine(e)].filter(Boolean).map(esc).join(' · ');
+      return `<div class="card" style="position:relative;">
+        <span class="card-time">${fmtTime(e.createdAt)}</span>
         <div class="card-row" onclick="openEnc('${r.id}','${e.id}')">
-          <div style="flex:1;min-width:0;">
-            <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
-              <span class="card-title">${e.name||'מטופל/ת לא ידוע/ה'}</span>
-              ${typeBadge}
-              ${e.followup==='Yes'?'<span class="followup-yes">⚠️ פולו-אפ</span>':''}
-            </div>
-            <div class="card-sub">${[fmtAge(e.age||e.age_sex), insHe(e.insurance), e.location, e.cc].filter(Boolean).join(' · ')}</div>
-            ${vitals?`<div class="card-sub" style="margin-top:2px;font-family:monospace;font-size:12px;">${vitals}</div>`:''}
-            ${(e.photos||[]).length?`<div class="card-sub" style="margin-top:2px;">📷 ${e.photos.length} תמונות</div>`:''}
+          <div style="flex:1;min-width:0;padding-left:40px;">
+            <div class="card-title">${e.followup==='Yes'?'⚠️ ':''}${head}</div>
+            ${line1 ? `<div class="card-line">${line1}</div>` : ''}
+            ${line2 ? `<div class="card-line">${line2}</div>` : ''}
+            ${(e.photos||[]).length ? `<div class="card-line">📷 ${e.photos.length}</div>` : ''}
           </div>
           <div class="card-arrow">›</div>
         </div>
       </div>`;
-    }).join('');
+    }
+    const z = it.z;
+    const chips = Object.entries(z.supplies||{}).filter(([,q]) => q > 0)
+      .map(([n,q]) => `<span class="zula-chip">${esc(fmtQty(n,q))}</span>`).join('');
+    return `<div class="zula-card" style="position:relative;">
+      <span class="card-time">${fmtTime(z.ts)}</span>
+      <div class="zula-card-title">⛺ זולה${z.location ? ` · <span style="font-weight:400;">${esc(z.location)}</span>` : ''}</div>
+      ${chips ? `<div class="zula-card-chips">${chips}</div>` : ''}
+      ${z.notes ? `<div style="margin-top:6px;font-size:13px;color:var(--subtext);">${esc(z.notes)}</div>` : ''}
+      <div style="display:flex;gap:8px;margin-top:8px;">
+        <button class="btn btn-gray btn-sm" style="flex:1;" onclick="editZulaEvent('${z.id}')">עריכה</button>
+        <button class="btn btn-gray btn-sm" style="flex:1;" onclick="deleteZulaEvent('${z.id}')">מחיקה</button>
+      </div>
+    </div>`;
+  }).join('');
 
-    const zulaCards = (r.zula_events||[]).map(z => {
-      const time = new Date(z.ts).toLocaleTimeString('he-IL',{hour:'2-digit',minute:'2-digit'});
-      const chips = Object.entries(z.supplies||{}).map(([item,qty]) =>
-        `<span class="zula-chip">${item} ×${qty}</span>`).join('');
-      return `<div class="zula-card">
-        <div class="zula-card-title">
-          ⛺ חלוקת ציוד
-          <span style="font-weight:400;font-size:12px;color:#9a7040;">${time}</span>
-          <span style="margin-right:auto;display:flex;gap:6px;">
-            <button onclick="editZulaEvent('${z.id}')"
-                    style="background:none;border:none;cursor:pointer;font-size:15px;padding:0 2px;"
-                    title="ערוך">✏️</button>
-            <button onclick="deleteZulaEvent('${z.id}')"
-                    style="background:none;border:none;cursor:pointer;font-size:14px;color:#c08030;padding:0 2px;"
-                    title="מחק">🗑</button>
-          </span>
-        </div>
-        ${z.location ? `<div style="font-size:12px;color:#9a7040;margin-bottom:4px;">📍 ${z.location}</div>` : ''}
-        ${chips ? `<div class="zula-card-chips">${chips}</div>` : ''}
-        ${z.notes ? `<div style="margin-top:6px;font-size:13px;color:var(--subtext);">${z.notes}</div>` : ''}
-      </div>`;
-    }).join('');
-
-    el.innerHTML = encCards + (zulaCards ? `<div style="margin-top:4px;">${zulaCards}</div>` : '');
-  }
-
-  // Map shown only on Stats page
+  // Summary
+  const sm = computeSummary(r);
+  document.getElementById('sum-tiles').innerHTML = [
+    [sm.total,'מפגשים'], [sm.medical,'רפואיים'], [sm.referrals,'הפניות'], [sm.followups,'פולו-אפים']
+  ].map(([n,l]) => `<div class="sum-tile"><b>${n}</b><span>${l}</span></div>`).join('');
+  document.getElementById('sum-supplies').textContent = sm.supplies || '—';
+  const fu = (r.encounters||[]).filter(e => e.followup === 'Yes')
+    .map(e => `⚠️ ${e.name || 'ללא שם'}: ${e.notes || 'נדרש פולו-אפ'}`);
+  document.getElementById('sum-followups-wrap').style.display = fu.length ? '' : 'none';
+  document.getElementById('sum-followups').textContent = fu.join('\n');
 }
 
 function saveRound() {
   const r = DB.rounds.find(x=>x.id===curRoundId); if(!r) return;
-  r.date = document.getElementById('r-date').value;
-  r.location = document.getElementById('r-location').value;
-  r.volunteers = document.getElementById('r-volunteers').value;
-  r.summary = {
-    total:     document.getElementById('r-total').value,
-    medical:   document.getElementById('r-medical').value,
-    referrals: document.getElementById('r-referrals').value,
-    supplies:  document.getElementById('r-supplies').value,
-    notable:   document.getElementById('r-notable').value,
-  };
+  const d = document.getElementById('r-date').value;
+  if (d) r.date = d;
+  r.summary = { ...computeSummary(r), notable: document.getElementById('r-notable').value };
+  r.updatedAt = nowISO();
   persist(DB);
 }
 
@@ -1531,7 +1503,7 @@ function readEnc() {
 }
 
 // ── Age (decade chips) ──
-const AGE_OPTIONS = ['20','30','40','50','60','70+','?'];
+const AGE_OPTIONS = ['20','30','40','50','60','70+'];
 function fmtAge(a) {
   a = String(a||'').trim();
   if (!a) return '';
@@ -1541,8 +1513,10 @@ function fmtAge(a) {
 }
 function setAge(v, silent) {
   document.getElementById('e-age').value = v;
-  document.getElementById('age-chips').innerHTML = AGE_OPTIONS.map(o =>
-    `<button type="button" class="chip-btn big${v===o?' on':''}" onclick="setAge('${o}')">${o==='?'?'לא ידוע':o}</button>`).join('');
+  const el = document.getElementById('age-chips');
+  el.className = 'chip-grid'; el.style.gridTemplateColumns = `repeat(${AGE_OPTIONS.length},1fr)`;
+  el.innerHTML = AGE_OPTIONS.map(o =>
+    `<button type="button" class="chip-btn${v===o?' on':''}" onclick="setAge('${o}')">${o}</button>`).join('');
   const legacy = document.getElementById('age-legacy');
   const isLegacy = v && !AGE_OPTIONS.includes(v);
   legacy.style.display = isLegacy ? 'block' : 'none';
@@ -1554,8 +1528,10 @@ function setAge(v, silent) {
 const INS_OPTIONS = ['כללית','מכבי','מאוחדת','לאומית','אין קופ"ח','לא ידוע / לא שאלנו'];
 function setInsurance(v, silent) {
   document.getElementById('e-insurance').value = v;
-  document.getElementById('ins-chips').innerHTML = INS_OPTIONS.map((o,i) =>
-    `<button type="button" class="chip-btn big${v===o?' on':''}" onclick="setInsurance(INS_OPTIONS[${i}])">${o==='לא ידוע / לא שאלנו'?'לא ידוע':o}</button>`).join('');
+  const btn = (o,i) => `<button type="button" class="chip-btn${v===o?' on':''}" onclick="setInsurance(INS_OPTIONS[${i}])">${o==='לא ידוע / לא שאלנו'?'לא ידוע':o}</button>`;
+  document.getElementById('ins-chips').innerHTML =
+    `<div class="chip-grid" style="grid-template-columns:repeat(4,1fr)">${INS_OPTIONS.slice(0,4).map((o,i)=>btn(o,i)).join('')}</div>` +
+    `<div class="chip-grid" style="grid-template-columns:repeat(4,1fr)">${INS_OPTIONS.slice(4).map((o,i)=>btn(o,i+4)).join('')}</div>`;
   if (!silent) { clearFieldError('field-insurance'); autoSaveEnc(); }
 }
 
@@ -1737,7 +1713,7 @@ function buildText(r) {
 
   let t = `${D}\n📋 דו"ח סיור רפואת רחוב\n${D}\n\n`;
   t += `📅 תאריך: ${fmtDate(r.date)}\n`;
-  t += `📍 מיקום: ${r.location||'—'}\n`;
+  if (r.location) t += `📍 מיקום: ${r.location}\n`;
   t += `👤 מתנדבים: ${r.volunteers||'—'}\n\n`;
 
   if ((r.encounters||[]).length) {
@@ -2458,12 +2434,14 @@ function renderSupChips() {
 let zulaQtys = {};           // { 'מים': 14, 'קונדומים': 5, ... }
 let curEditingZulaId = null; // null = new event, string = editing existing
 
+let zulaLatLon = null;
 function openZulaDrawer() {
   curEditingZulaId = null;
-  zulaQtys = {};
+  zulaQtys = {}; zulaLatLon = null;
   renderZulaDrawer();
   document.getElementById('zula-notes').value = '';
   document.getElementById('zula-location').value = '';
+  zulaLocate(false);
   document.getElementById('zula-loc-drop').style.display = 'none';
   document.getElementById('zula-overlay').classList.add('open');
   document.getElementById('zula-drawer').classList.add('open');
@@ -2474,6 +2452,7 @@ function editZulaEvent(eventId) {
   const z = (r.zula_events||[]).find(x => x.id === eventId); if(!z) return;
   curEditingZulaId = eventId;
   zulaQtys = {...(z.supplies||{})};
+  zulaLatLon = (z.lat != null) ? { lat:z.lat, lon:z.lon } : null;
   renderZulaDrawer();
   document.getElementById('zula-notes').value = z.notes||'';
   document.getElementById('zula-location').value = z.location||'';
@@ -2487,33 +2466,58 @@ function closeZulaDrawer() {
   document.getElementById('zula-drawer').classList.remove('open');
 }
 
+// Same chips as an encounter; every tap adds one, "−" takes one back
 function renderZulaDrawer() {
   const body = document.getElementById('zula-body'); if(!body) return;
-  body.innerHTML = SOCIAL_CHIP_GROUPS.map(group => {
-    const rows = group.chips.map(chip => {
-      const qty = zulaQtys[chip] || 0;
-      return `<div class="zula-row">
-        <span class="zula-item-name">${chip}</span>
-        <div class="zula-qty-wrap">
-          <button class="zula-qty-btn" onclick="zulaAdj('${chip}',-1)">−</button>
-          <input class="zula-qty-input" type="number" min="0"
-                 value="${qty > 0 ? qty : ''}" placeholder="0"
-                 id="zulaInput-${chip.replace(/[^א-תa-z0-9]/gi,'_')}"
-                 oninput="zulaQtys['${chip}']=parseInt(this.value)||0">
-          <button class="zula-qty-btn" onclick="zulaAdj('${chip}',1)">+</button>
-        </div>
-      </div>`;
-    }).join('');
-    return `<div class="zula-group-label">${group.label}</div>${rows}`;
-  }).join('');
+  const legacy = Object.keys(zulaQtys).filter(k => zulaQtys[k] > 0 && !SUPPLY_CHIPS.includes(k));
+  const chip = c => {
+    const q = zulaQtys[c] || 0;
+    const label = q ? `${c} ×${q}` : c;
+    return `<span class="zchip"><button type="button" class="chip-btn${q?' on':''}" onclick="zulaAdj('${c}',1)">${label}</button>${
+      q ? `<button type="button" class="zminus" onclick="zulaAdj('${c}',-1)" aria-label="הפחתה">−</button>` : ''}</span>`;
+  };
+  body.innerHTML = `<div class="hint" style="margin-bottom:8px;">כל לחיצה מוסיפה 1 · משקאות נספרים בכוסות</div>` +
+    SOCIAL_CHIP_GROUPS.map(g => `<div class="zula-group-label">${g.label}</div>
+      <div style="display:flex;flex-wrap:wrap;">${g.chips.map(chip).join('')}</div>`).join('') +
+    (legacy.length ? `<div class="zula-group-label">אחר (מרשומות קודמות)</div>
+      <div style="display:flex;flex-wrap:wrap;">${legacy.map(chip).join('')}</div>` : '');
 }
 
-function zulaAdj(chip, delta) {
-  zulaQtys[chip] = Math.max(0, (zulaQtys[chip] || 0) + delta);
-  // update input field directly (no full re-render to keep scroll position)
-  const key = chip.replace(/[^א-תa-z0-9]/gi,'_');
-  const inp = document.getElementById('zulaInput-' + key);
-  if (inp) inp.value = zulaQtys[chip] > 0 ? zulaQtys[chip] : '';
+function zulaAdj(c, delta) {
+  zulaQtys[c] = Math.max(0, (zulaQtys[c] || 0) + delta);
+  renderZulaDrawer();
+}
+
+function zulaLocate(manual) {
+  if (!navigator.geolocation) return;
+  const inp = document.getElementById('zula-location');
+  if (!manual && inp.value.trim()) return;
+  inp.placeholder = 'מאתר מיקום…';
+  getHere().then(({ addr, lat, lon }) => {
+    if (!manual && inp.value.trim()) return;          // user typed meanwhile
+    inp.value = addr; zulaLatLon = { lat, lon };
+  }).catch(() => { if (manual) toast('לא הצלחנו לקבל מיקום'); })
+    .finally(() => { inp.placeholder = 'לדוג׳: לוינסקי 43'; });
+}
+
+// Current position + short street address
+function getHere() {
+  return new Promise((resolve, reject) => {
+    navigator.geolocation.getCurrentPosition(async pos => {
+      const { latitude: lat, longitude: lon } = pos.coords;
+      let addr = `${lat.toFixed(5)}, ${lon.toFixed(5)}`;
+      try {
+        const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}&accept-language=he`);
+        const d = await res.json();
+        if (d && d.address) {
+          const a = d.address, parts = [a.road, a.house_number].filter(Boolean);
+          if (!parts.length && (a.suburb || a.neighbourhood)) parts.push(a.suburb || a.neighbourhood);
+          if (parts.length) addr = parts.join(' ');
+        }
+      } catch {}
+      resolve({ addr, lat, lon });
+    }, reject, { enableHighAccuracy: true, timeout: 10000, maximumAge: 60000 });
+  });
 }
 
 function saveZulaEvent() {
@@ -2529,9 +2533,11 @@ function saveZulaEvent() {
   if (curEditingZulaId) {
     // Update existing event
     const idx = r.zula_events.findIndex(x => x.id === curEditingZulaId);
-    if (idx >= 0) r.zula_events[idx] = { ...r.zula_events[idx], supplies, notes, location };
+    if (idx >= 0) r.zula_events[idx] = { ...r.zula_events[idx], supplies, notes, location,
+      lat: zulaLatLon ? zulaLatLon.lat : null, lon: zulaLatLon ? zulaLatLon.lon : null, updatedAt: nowISO() };
   } else {
-    r.zula_events.push({ id: uid(), ts: Date.now(), supplies, notes, location });
+    r.zula_events.push({ id: uid(), ts: Date.now(), supplies, notes, location,
+      lat: zulaLatLon ? zulaLatLon.lat : null, lon: zulaLatLon ? zulaLatLon.lon : null, createdAt: nowISO() });
   }
   persist(DB);
   closeZulaDrawer();
@@ -2965,27 +2971,6 @@ function classifyEnc(e) {
 // ══════════════════════════════════════════════
 // AUTO-CALCULATE SUPPLIES
 // ══════════════════════════════════════════════
-function autoCalcAll() {
-  const r = DB.rounds.find(x=>x.id===curRoundId); if(!r) return;
-
-  // Total = all encounters
-  const totalContacts = (r.encounters||[]).length;
-  document.getElementById('r-total').value = totalContacts;
-
-  // Medical encounters — auto-classified
-  const medCount = (r.encounters||[]).filter(e => classifyEnc(e) === 'medical').length;
-  document.getElementById('r-medical').value = medCount;
-
-  // Referrals = encounters where referral checkbox was ticked
-  const refCount = (r.encounters||[]).filter(e => e.ref_chk).length;
-  document.getElementById('r-referrals').value = refCount;
-
-  // Supplies (reuse existing logic)
-  autoCalcSupplies(true);
-
-  autoSaveRound();
-  toast('הסיכום עודכן ✓');
-}
 
 // One tally used everywhere (round summary, stats page, exports).
 // Returns [[name, count], …] — known chips first in list order, then drugs, then free text.
@@ -3013,15 +2998,16 @@ function tallySupplies(rounds) {
   const rest  = [...counts].filter(([c]) => !SUPPLY_CHIPS.includes(c));
   return [...known, ...rest];
 }
+// Drinks are counted in cups
+const DRINKS = ['מים','מיץ','תה'];
+function fmtQty(n, q) {
+  if (DRINKS.includes(n)) return q === 1 ? `${n} (כוס אחת)` : `${n} (${q} כוסות)`;
+  return q > 1 ? `${n} ×${q}` : n;
+}
 function fmtTally(list) {
-  return list.map(([n, c]) => c > 1 ? `${n} ×${c}` : n).join(', ');
+  return list.map(([n, c]) => fmtQty(n, c)).join(', ');
 }
 
-function autoCalcSupplies(silent) {
-  const r = DB.rounds.find(x=>x.id===curRoundId); if(!r) return;
-  document.getElementById('r-supplies').value = fmtTally(tallySupplies([r])) || '—';
-  if (!silent) { autoSaveRound(); toast('ציוד עודכן ✓'); }
-}
 
 // ══════════════════════════════════════════════
 // MODAL HELPERS
@@ -3055,6 +3041,29 @@ function toast(msg, action) {
 }
 
 function showAbout() { openModal('modal-about'); }
+
+// ── Export window: asks who was on the round (saved with the round) ──
+function openExport() {
+  saveRound();
+  const r = DB.rounds.find(x=>x.id===curRoundId); if (!r) return;
+  document.getElementById('exp-volunteers').value = r.volunteers || '';
+  const prev = DB.rounds.filter(x => x.id !== r.id && (x.volunteers||'').trim())
+    .sort((a,b) => (b.date||'').localeCompare(a.date||''))[0];
+  const box = document.getElementById('exp-vol-last');
+  box.innerHTML = (!r.volunteers && prev)
+    ? `<button type="button" class="chip-btn" onclick="useLastVolunteers()">כמו בפעם הקודמת: ${prev.volunteers.replace(/</g,'&lt;')}</button>` : '';
+  box.dataset.prev = prev ? prev.volunteers : '';
+  openModal('modal-export');
+}
+function setVolunteers(v) {
+  const r = DB.rounds.find(x=>x.id===curRoundId); if (!r) return;
+  r.volunteers = v; r.updatedAt = nowISO(); persist(DB);
+}
+function useLastVolunteers() {
+  const v = document.getElementById('exp-vol-last').dataset.prev || '';
+  document.getElementById('exp-volunteers').value = v; setVolunteers(v);
+  document.getElementById('exp-vol-last').innerHTML = '';
+}
 
 // ── Backup / restore (a JSON file with everything, photos included) ──
 async function backupData() {
@@ -3098,13 +3107,7 @@ function confirmClearAll() {
 }
 
 // Wire the FAB click to the modal
-document.querySelector('.fab').onclick = () => {
-  const today = new Date().toISOString().slice(0,10);
-  document.getElementById('m-round-date').value = today;
-  document.getElementById('m-round-loc').value = '';
-  document.getElementById('m-round-vol').value = '';
-  openModal('modal-new-round');
-};
+document.querySelector('.fab').onclick = createRound;
 
 // ══════════════════════════════════════════════
 // SERVICE WORKER
