@@ -2957,9 +2957,9 @@ async function renderHomeMap(filterMonth) {
 // ══════════════════════════════════════════════
 // Returns 'medical' if any clinical/intervention data exists, else 'social'
 function classifyEnc(e) {
-  const hasClinical = !!(e.cc || e.exam || e.assessment || e.bp || e.hr || e.spo2 || e.temp);
-  const hasIntervention = !!((e.treatments||[]).length || e.sup_chk || e.ref_chk);
-  return (hasClinical || hasIntervention) ? 'medical' : 'social';
+  // Medical = something was given/done from "טיפול ותרופות" (dressing, ointment, antibiotics, other drug).
+  // Everything else (supplies only, conversation, referral without treatment) is social.
+  return (e.treatments || []).length ? 'medical' : 'social';
 }
 
 // ══════════════════════════════════════════════
