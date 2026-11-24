@@ -3,7 +3,7 @@
 // Icons + CDN libraries: cache-first (they never change at a given URL).
 // Everything else (map tiles, geocoding) goes straight to the network.
 
-const CACHE = 'sm-tlv-v1';
+const CACHE = 'sm-tlv-v2';
 
 const PRECACHE = [
   './',
@@ -17,6 +17,7 @@ const PRECACHE = [
   'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js',
   'https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js',
   'https://cdn.jsdelivr.net/npm/leaflet.heat@0.2.0/dist/leaflet-heat.js',
+  'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js',
 ];
 
 const CDN_HOSTS = ['cdnjs.cloudflare.com', 'cdn.jsdelivr.net'];
