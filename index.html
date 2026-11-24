@@ -2,7 +2,7 @@
 <html lang="he" dir="rtl">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="רפואת רחוב">
@@ -57,7 +57,6 @@
       /* Toast needs contrast against dark bg */
       .toast { background: #3A2860; color: #F5EDE0; }
       /* Rich-preview scroll area (inline background:#fff override) */
-      #rich-preview-scroll { background: var(--card) !important; }
       /* Leaflet map UI */
       .leaflet-popup-content-wrapper,
       .leaflet-popup-tip { background: var(--card); color: var(--text); }
@@ -206,7 +205,10 @@
       -webkit-appearance: none;
     }
     .form-field textarea { resize: none; min-height: 72px; line-height: 1.5; }
+    button, .chip-btn, label { touch-action: manipulation; }
     .req { color:#e74c3c; font-weight:700; }
+    .form-field input.exact-age { margin-top:6px; border:1.5px solid var(--border); border-radius:8px;
+      padding:6px 10px; font-size:16px; width:170px; background:var(--bg); }
     .hint { font-size:12px; color:var(--text-light); margin-top:4px; }
     .chip-btn.big { margin:0 0 6px 6px; }   /* same size as every other chip */
     .chip-grid { display:grid; gap:6px; margin-bottom:6px; }
@@ -235,6 +237,16 @@
     .sum-text { font-size:14px; line-height:1.6; color:var(--text); white-space:pre-line; }
     .card-time { position:absolute; left:34px; top:12px; font-size:11px; color:var(--text-light); font-weight:400; }
     .card-line { font-size:12px; color:var(--text-light); margin-top:2px; }
+    .zrow { display:flex; align-items:center; gap:8px; padding:4px 6px; border-radius:10px; }
+    .zrow.on { background:var(--bg); }
+    .zrow .zname { flex:1; text-align:right; background:none; border:none; font-size:16px; font-family:inherit;
+      color:var(--text); padding:10px 4px; cursor:pointer; }
+    .zrow.on .zname { font-weight:700; }
+    .zbtn { width:44px; height:44px; border-radius:22px; border:1.5px solid var(--border); background:var(--card);
+      color:var(--text); font-size:22px; font-weight:700; line-height:1; cursor:pointer; font-family:inherit; flex:none; }
+    .zbtn.plus { border-color:var(--primary); color:var(--primary); }
+    .zbtn:disabled { opacity:.3; }
+    .zcount { min-width:28px; text-align:center; font-size:17px; font-weight:700; }
     .zchip { display:inline-flex; align-items:center; margin:0 0 6px 6px; }
     .zchip .chip-btn { margin:0; }
     .zchip .zminus { margin-right:2px; width:26px; height:26px; border-radius:13px; border:1.5px solid var(--border);
@@ -279,7 +291,7 @@
     }
     .vc input {
       width: 100%; border: none; outline: none;
-      font-size: 14px; font-family: inherit; background: transparent;
+      font-size: 16px; font-family: inherit; background: transparent;
     }
 
     /* Checkboxes */
@@ -298,7 +310,7 @@
     .sub-input-wrap { margin-top: 8px; }
     .sub-input {
       width: 100%; border: none; border-bottom: 1px solid var(--border);
-      padding: 4px 0; font-size: 14px; font-family: inherit; background: transparent; outline: none;
+      padding: 4px 0; font-size: 16px; font-family: inherit; background: transparent; outline: none;
     }
 
     /* Photos */
@@ -568,7 +580,7 @@
 <div id="pg-stats" class="page">
   <div class="hdr">
     <button class="hdr-btn" onclick="showPage('pg-home')" style="font-size:22px;">›</button>
-    <h1>📊 Stats</h1>
+    <h1>📊 סטטיסטיקות</h1>
   </div>
   <div class="content">
     <!-- Month filter -->
@@ -597,7 +609,7 @@
   <div class="hdr">
     <button class="hdr-btn" onclick="navBack('pg-home')" style="font-size:22px;">›</button>
     <h1 id="round-hdr-title" onclick="pickRoundDate()" style="cursor:pointer;">סיור</h1>
-    <button class="hdr-btn" onclick="confirmDeleteRound()" title="Delete">🗑</button>
+    <button class="hdr-btn" onclick="confirmDeleteRound()" title="מחיקה" aria-label="מחיקה">🗑</button>
   </div>
 
   <!-- Date lives in the header (tap to change); volunteers are asked at export -->
@@ -618,7 +630,7 @@
     <div id="enc-list"></div>
 
     <div class="form-section" style="margin-top:18px;">
-      <div class="form-section-title">📊 סיכום הסיור</div>
+      <div class="form-section-title">סיכום הסיור</div>
       <div class="sum-tiles" id="sum-tiles"></div>
       <div class="form-field">
         <label>ציוד שחולק</label>
@@ -645,7 +657,7 @@
   <div class="hdr">
     <button class="hdr-btn" onclick="navBack('pg-round')" style="font-size:22px;">›</button>
     <h1 id="enc-hdr-title">מפגש</h1>
-    <button class="hdr-btn" onclick="confirmDeleteEnc()" title="Delete">🗑</button>
+    <button class="hdr-btn" onclick="confirmDeleteEnc()" title="מחיקה" aria-label="מחיקה">🗑</button>
   </div>
   <div class="content">
 
@@ -670,7 +682,7 @@
 
     <!-- Patient -->
     <div class="form-section">
-      <div class="form-section-title">👤 מטופל/ת</div>
+      <div class="form-section-title">מטופל/ת</div>
       <div class="form-field" id="field-name" style="position:relative;">
         <label>שם / כינוי <span class="req">*</span></label>
         <input type="text" id="e-name" placeholder="שם או כינוי" autocomplete="off"
@@ -687,6 +699,8 @@
         <input type="hidden" id="e-age">
         <div class="chip-row" id="age-chips"></div>
         <div id="age-legacy" class="hint" style="display:none;"></div>
+        <input type="number" inputmode="numeric" id="e-age-exact" class="exact-age" placeholder="גיל מדויק (אם ידוע)"
+               oninput="setExactAge(this.value)">
         <label style="margin-top:10px;">מגדר</label>
         <div class="chip-row">
           <button type="button" id="sex-btn-M" class="chip-btn big" onclick="setSex('M')">גבר</button>
@@ -702,7 +716,7 @@
 
     <!-- Treatments & medications (one place for every treatment / drug) -->
     <div class="form-section">
-      <div class="form-section-title">💊 טיפול ותרופות</div>
+      <div class="form-section-title">טיפול ותרופות</div>
       <div class="form-field" style="border-bottom:none;padding-bottom:4px;">
         <div class="chip-row" id="treat-chips"></div>
         <div id="treat-details"></div>
@@ -727,7 +741,7 @@
 
     <!-- Supplies -->
     <div class="form-section">
-      <div class="form-section-title">🎒 ציוד</div>
+      <div class="form-section-title">ציוד</div>
       <div class="form-field" style="border-bottom:none;">
         <div id="welfare-chips-container"></div>
         <input class="sub-input" type="text" id="e-welfare-text" placeholder="ציוד אחר — מה נתנו?"
@@ -737,7 +751,7 @@
 
     <!-- Medical -->
     <div class="form-section">
-      <div class="form-section-title">🩺 רפואי</div>
+      <div class="form-section-title">רפואי</div>
       <div class="form-field">
         <label>תלונה עיקרית</label>
         <input type="text" id="e-cc" placeholder="תלונה עיקרית" oninput="autoSaveEnc()">
@@ -771,7 +785,7 @@
 
     <!-- Photos -->
     <div class="form-section">
-      <div class="form-section-title">📷 תמונות</div>
+      <div class="form-section-title">תמונות</div>
       <div class="photos-grid" id="photos-grid"></div>
     </div>
 
@@ -798,7 +812,7 @@
     <div style="margin-bottom:8px;">
       <textarea id="zula-notes" rows="2" placeholder="אחר / הערות..."
                 style="width:100%;border:1.5px solid var(--border);border-radius:10px;padding:8px 10px;
-                       font-size:15px;font-family:inherit;background:var(--bg);color:var(--text);
+                       font-size:16px;font-family:inherit;background:var(--bg);color:var(--text);
                        resize:none;"></textarea>
     </div>
     <div style="margin-bottom:10px;">
@@ -812,55 +826,12 @@
         <input type="text" id="zula-location" placeholder="לדוג': לוינסקי 43" autocomplete="off"
                oninput="zulaLatLon=null; onLocInput(this,'zula-loc-drop')"
                style="width:100%;border:1.5px solid var(--border);border-radius:10px;padding:8px 10px;
-                      font-size:15px;font-family:inherit;background:var(--bg);color:var(--text);">
+                      font-size:16px;font-family:inherit;background:var(--bg);color:var(--text);">
         <div class="loc-drop" id="zula-loc-drop"></div>
       </div>
     </div>
     <button class="btn btn-accent" style="width:100%;font-size:16px;padding:13px;"
             onclick="saveZulaEvent()">שמור חלוקה ✓</button>
-  </div>
-</div>
-
-<!-- New / Edit Non-Medical Contact -->
-<div class="overlay" id="modal-new-contact" onclick="closeModal('modal-new-contact')">
-  <div class="modal-sheet" onclick="event.stopPropagation()">
-    <h3 id="contact-modal-title">מפגש לא-רפואי</h3>
-    <div class="field-wrap">
-      <label style="display:flex;justify-content:space-between;align-items:center;">
-        מיקום
-        <button id="geo-con-btn" onclick="geolocateToField('m-con-loc','geo-con-btn',null)"
-                style="background:none;border:1px solid var(--border);border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;color:var(--text-light);padding:3px 9px;">📍 נוכחי</button>
-      </label>
-      <div class="loc-wrap">
-        <input type="text" id="m-con-loc" placeholder="כתובת" autocomplete="off"
-               oninput="onLocInput(this,'con-loc-drop')">
-        <div class="loc-drop" id="con-loc-drop"></div>
-      </div>
-    </div>
-    <div class="field-wrap">
-      <label>שם / כינוי (אופציונלי)</label>
-      <div style="display:flex;align-items:center;gap:10px;">
-        <input type="text" id="m-con-name" placeholder="אופציונלי"
-               style="flex:1;border:none;outline:none;font-size:16px;font-family:inherit;background:transparent;">
-        <div style="display:flex;gap:6px;flex-shrink:0;">
-          <button id="con-sex-btn-M" class="pill" onclick="setContactSex('M')">גבר</button>
-          <button id="con-sex-btn-F" class="pill" onclick="setContactSex('F')">אשה</button>
-        </div>
-      </div>
-    </div>
-    <div class="field-wrap">
-      <label>ציוד שניתן</label>
-      <div class="chip-row" id="contact-chips-container" style="margin-bottom:8px;"></div>
-      <input type="text" id="m-con-sup-text" placeholder="עוד / אחר..."
-             style="width:100%;border:none;outline:none;font-size:16px;font-family:inherit;background:transparent;">
-    </div>
-    <button class="btn btn-outline" id="contact-save-btn" onclick="saveContact()">הוספת מפגש</button>
-    <div style="height:10px;"></div>
-    <button class="btn btn-gray" onclick="closeModal('modal-new-contact')">ביטול</button>
-    <div id="contact-delete-wrap" style="display:none;">
-      <div style="height:10px;"></div>
-      <button class="btn btn-danger" onclick="deleteCurrentContact()">מחק מפגש</button>
-    </div>
   </div>
 </div>
 
@@ -875,8 +846,8 @@
     </div>
     <button class="btn btn-accent" style="margin-bottom:12px;" onclick="printReport()">📄 שיתוף הדוח כ-PDF</button>
     <div class="export-links">
-      <button onclick="doNotesExport()">העתקת הטקסט</button>
-      <button onclick="doShare()">שליחת הטקסט (וואטסאפ וכו׳)</button>
+      <button onclick="doShare()">שיתוף הטקסט (וואטסאפ, Notes, העתקה…)</button>
+      <button onclick="closeModal('modal-export'); showAbout();">📊 ייצוא כל הנתונים לאקסל</button>
       <button onclick="doPDF()" style="font-weight:500;font-size:13px;">הורדת PDF כקובץ (אם מסך ההדפסה לא נפתח)</button>
     </div>
     <button class="btn btn-gray" onclick="closeModal('modal-export')">ביטול</button>
@@ -902,28 +873,6 @@
     </textarea>
     <div style="height:12px;"></div>
     <button class="btn btn-gray" onclick="closeModal('modal-text-preview')">סגירה</button>
-  </div>
-</div>
-
-<!-- Rich HTML preview modal — Notes export with inline photos -->
-<div class="overlay" id="modal-rich-preview" onclick="closeModal('modal-rich-preview')">
-  <div class="modal-sheet" style="height:90vh;display:flex;flex-direction:column;" onclick="event.stopPropagation()">
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
-      <h3 style="margin:0;">דוח הסיור</h3>
-      <button class="btn btn-accent btn-sm" onclick="copyRichReport()" id="rich-copy-btn">העתקה לנוטס</button>
-    </div>
-    <p style="font-size:12px;color:var(--text-light);margin-bottom:10px;line-height:1.4;">
-      לחצו <strong>העתקה לנוטס</strong>, פתחו Apple Notes והדביקו — טקסט ותמונות יופיעו יחד.
-    </p>
-    <div id="rich-preview-scroll"
-      style="flex:1;overflow-y:auto;border:1px solid var(--border);border-radius:10px;
-             padding:14px;background:#fff;-webkit-overflow-scrolling:touch;">
-      <!-- contenteditable required so execCommand('copy') transfers rendered images to clipboard -->
-      <div id="rich-preview-content" contenteditable="true"
-           style="-webkit-user-select:text;user-select:text;outline:none;"></div>
-    </div>
-    <div style="height:10px;"></div>
-    <button class="btn btn-gray" onclick="closeModal('modal-rich-preview')">סגירה</button>
   </div>
 </div>
 
@@ -1050,13 +999,11 @@ let curSex         = '';
 let curWelfareChips = [];
 let curWelfareChipDetails = {};  // { 'משחה': 'drug name', 'אנטיביוטיקה': 'drug name' }
 let curRefPhotos   = [];  // [{id, url}]
-let curContactChips = [];
-let curContactSex   = '';
 let curSupChips    = [];  // medical encounter supply chips (legacy, kept for data compat)
 // ── Supplies: ONE list for the whole app (encounter chips, zula, stats, exports)
 const SOCIAL_CHIP_GROUPS = [
-  { label: '🍬 אוכל ושתיה', chips: ['מים','מיץ','תה','סוכריות'] },
-  { label: '🎒 ציוד',       chips: ['ספירטים','קונדומים','גרביים','חמצוואר / כובע'] },
+  { label: 'אוכל ושתיה', chips: ['מים','מיץ','תה','סוכריות'] },
+  { label: 'ציוד',       chips: ['ספירטים','קונדומים','גרביים','חמצוואר / כובע'] },
 ];
 const SUPPLY_CHIPS = SOCIAL_CHIP_GROUPS.flatMap(g => g.chips);
 // Legacy spellings → current name (old records / old zula events)
@@ -1334,7 +1281,7 @@ function renderRound(id) {
   } else el.innerHTML = items.map(it => {
     if (it.kind === 'enc') {
       const e = it.e;
-      const head = [e.name || 'ללא שם', fmtAge(e.age||e.age_sex), insHe(e.insurance)].filter(Boolean).map(esc).join(' · ');
+      const head = [e.name || 'ללא שם', fmtAgeE(e)].filter(Boolean).map(esc).join(' · ');
       const line1 = [e.location, e.cc].filter(Boolean).map(esc).join(' · ');
       const line2 = [treatSummary({ treatments: e.treatments }), suppliesLine(e)].filter(Boolean).map(esc).join(' · ');
       return `<div class="card" style="position:relative;">
@@ -1433,6 +1380,7 @@ function openEnc(roundId, encId) {
   hidePatientSuggest();
 
   setAge(e.age || e.age_sex || '', true);
+  document.getElementById('e-age-exact').value = e.age_exact || '';
   curSex = e.sex || '';
   renderSex();
   setInsurance(insHe(e.insurance) || '', true);
@@ -1492,6 +1440,7 @@ function readEnc() {
     name:          document.getElementById('e-name').value,
     patientId:     curPatientId,
     age:           document.getElementById('e-age').value,
+    age_exact:     (v => (v > 0 && v < 120) ? String(v) : '')(parseInt(document.getElementById('e-age-exact').value, 10)),
     sex:           curSex,
     insurance:     document.getElementById('e-insurance').value,
     cc:            document.getElementById('e-cc').value,
@@ -1527,7 +1476,20 @@ function fmtAge(a) {
   if (/^\d0$/.test(a)) return `בשנות ה-${a}`;
   return a;                                   // 70+ or older free text
 }
-function setAge(v, silent) {
+function fmtAgeE(e) {
+  return e.age_exact ? `גיל ${e.age_exact}` : fmtAge(e.age || e.age_sex);
+}
+function decadeOf(n) { return n >= 70 ? '70+' : String(Math.max(20, Math.floor(n / 10) * 10)); }
+// Exact age (optional): also selects the matching decade chip
+function setExactAge(v) {
+  const n = parseInt(v, 10);
+  if (n > 0 && n < 120) setAge(decadeOf(n), false, true);
+  autoSaveEnc();
+}
+function setAge(v, silent, keepExact) {
+  // picking a different decade by hand clears a contradicting exact age
+  const ex = document.getElementById('e-age-exact');
+  if (!keepExact && !silent && ex && ex.value && decadeOf(+ex.value) !== v) ex.value = '';
   document.getElementById('e-age').value = v;
   const el = document.getElementById('age-chips');
   el.className = 'chip-grid'; el.style.gridTemplateColumns = `repeat(${AGE_OPTIONS.length},1fr)`;
@@ -1634,38 +1596,6 @@ function confirmDeleteEnc() {
 // ══════════════════════════════════════════════
 // CONTACTS
 // ══════════════════════════════════════════════
-function saveContact() {
-  saveRound();
-  const r = DB.rounds.find(x=>x.id===curRoundId); if(!r) return;
-  if (!r.contacts) r.contacts = [];
-  const data = readContact();
-  if (curContactIdx < 0) {
-    r.contacts.push(data);
-    toast('מפגש נוסף ✓');
-  } else {
-    r.contacts[curContactIdx] = data;
-    toast('מפגש נשמר ✓');
-  }
-  persist(DB);
-  closeModal('modal-new-contact');
-  renderRound(curRoundId);
-}
-
-function deleteCurrentContact() {
-  if (!confirm('למחוק את המפגש הלא-רפואי?')) return;
-  const r = DB.rounds.find(x=>x.id===curRoundId); if(!r) return;
-  r.contacts.splice(curContactIdx, 1);
-  persist(DB);
-  closeModal('modal-new-contact');
-  renderRound(curRoundId);
-  toast('מפגש נמחק');
-}
-
-function deleteContact(i) {
-  const r = DB.rounds.find(x=>x.id===curRoundId);
-  r.contacts.splice(i,1); persist(DB); renderRound(curRoundId);
-}
-
 // ══════════════════════════════════════════════
 // PHOTOS
 // ══════════════════════════════════════════════
@@ -1676,7 +1606,7 @@ function renderPhotos() {
       <img src="${p.url}" alt="">
       <button class="photo-del" onclick="delPhoto(${i})">×</button>
     </div>`).join('') +
-  `<label class="photo-add" title="Choose from library">
+  `<label class="photo-add" title="בחירה מהאלבום">
     <span>🖼️</span><span class="lbl">אלבום</span>
     <input type="file" accept="image/*" style="display:none" onchange="addPhoto(event)">
   </label>`;
@@ -1743,7 +1673,9 @@ function reportModel(r) {
         kind: 'enc',
         medical: classifyEnc(e) === 'medical',
         time: fmtTime(e.createdAt),
-        head: [e.name || 'ללא שם', fmtAge(e.age || e.age_sex), insHe(e.insurance)].filter(Boolean).join(' · '),
+        name: e.name || 'ללא שם',
+        rest: [ANON_NAMES.includes((e.name||'').trim()) ? '' : (e.sex === 'M' ? 'גבר' : e.sex === 'F' ? 'אשה' : ''),
+               fmtAgeE(e), insHe(e.insurance)].filter(Boolean).join(' · '),
         followup: e.followup === 'Yes',
         rows: [
           ['מיקום', e.location],
@@ -1760,7 +1692,7 @@ function reportModel(r) {
     }
     const sup = Object.entries(z.supplies||{}).filter(([, q]) => q > 0).map(([n, q]) => fmtQty(n, q)).join(', ');
     return {
-      kind: 'zula', medical: false, time: fmtTime(z.ts), head: 'זולה', followup: false,
+      kind: 'zula', medical: false, time: fmtTime(z.ts), name: 'זולה', rest: '', followup: false,
       rows: [['מיקום', z.location], ['ציוד', sup], ['הערות', z.notes]].filter(([, v]) => (v||'').trim()),
       photos: [],
     };
@@ -1777,9 +1709,10 @@ function reportModel(r) {
 }
 
 // ── Plain text: same layout every time; reads well in Notes and WhatsApp ──
-function buildText(r) {
+function buildText(r, opts = {}) {
   const m = reportModel(r);
   const L = [];
+  const B = t => opts.whatsapp ? `*${t}*` : t;     // WhatsApp shows *text* as bold
   L.push('רפואת רחוב תל אביב — דוח סיור');
   L.push(`📅 ${m.date}`);
   if (m.volunteers) L.push(`👤 ${m.volunteers}`);
@@ -1796,7 +1729,7 @@ function buildText(r) {
     L.push(''); L.push('━━━━━━━━━━━━');
     if (it.kind === 'enc') {
       n++;
-      L.push(`${n}. ${it.followup ? '⚠️ ' : ''}${it.head}`);
+      L.push(`${n}. ${it.followup ? '⚠️ ' : ''}${B(it.name)}${it.rest ? ' · ' + it.rest : ''}`);
       L.push(`🕐 ${it.time}${it.time ? ' · ' : ''}${it.medical ? 'רפואי' : 'סוציאלי'}`);
     } else {
       L.push(`⛺ זולה${it.time ? ' · 🕐 ' + it.time : ''}`);
@@ -1804,64 +1737,28 @@ function buildText(r) {
     it.rows.forEach(([k, v]) => L.push(`${k}: ${v}`));
     if (it.photos.length) L.push(it.photos.length === 1 ? '📷 תמונה אחת' : `📷 ${it.photos.length} תמונות`);
   });
-  return L.join('\n') + '\n';
+  return L.map(l => l ? '\u200F' + l : l).join('\n') + '\n';   // RLM: keep every line right-to-left
 }
 
 // ── Copy for Notes: the same layout as the text, plus photos ──
-function buildHTMLReport(r) {
-  const m = reportModel(r);
-  const P = (t, extra = '') => `<div style="margin:0 0 2px;${extra}">${t}</div>`;
-  let h = `<div dir="rtl" style="font-family:-apple-system,Heebo,Arial,sans-serif;font-size:14px;line-height:1.45;color:#1A1A2E;">`;
-  h += P('<b>רפואת רחוב תל אביב — דוח סיור</b>', 'font-size:17px;');
-  h += P(`📅 ${ESC(m.date)}`);
-  if (m.volunteers) h += P(`👤 ${ESC(m.volunteers)}`);
-  h += `<br>` + P('<b>📊 סיכום</b>');
-  h += P(`• מפגשים: ${m.sm.total} (${m.sm.medical} רפואיים, ${m.sm.social} סוציאליים)`);
-  h += P(`• הפניות: ${m.sm.referrals}`) + P(`• פולו-אפים: ${m.sm.followups}`);
-  if (m.sm.supplies) h += P(`• ציוד שחולק: ${ESC(m.sm.supplies)}`);
-  if (m.followups.length) h += `<br>` + P('<b>⚠️ לפולו-אפ</b>') + m.followups.map(f => P(`• ${ESC(f)}`)).join('');
-  if (m.notes) h += `<br>` + P('<b>📝 נקודות לסיור הבא</b>') + P(ESC(m.notes).replace(/\n/g, '<br>'));
-  let n = 0;
-  m.items.forEach(it => {
-    h += `<br>` + P('━━━━━━━━━━━━');
-    if (it.kind === 'enc') {
-      n++;
-      h += P(`<b>${n}. ${it.followup ? '⚠️ ' : ''}${ESC(it.head)}</b>`);
-      h += P(`🕐 ${ESC(it.time)}${it.time ? ' · ' : ''}${it.medical ? 'רפואי' : 'סוציאלי'}`);
-    } else {
-      h += P(`<b>⛺ זולה</b>${it.time ? ' · 🕐 ' + ESC(it.time) : ''}`);
-    }
-    it.rows.forEach(([k, v]) => { h += P(`<b>${ESC(k)}:</b> ${ESC(v).replace(/\n/g, '<br>')}`); });
-    if (it.photos.length) {
-      h += `<div>` + it.photos.map(p => `<img src="${p}" style="width:220px;height:165px;object-fit:cover;border-radius:6px;margin:4px 0 0 4px;">`).join('') + `</div>`;
-    }
-  });
-  return h + `</div>`;
-}
-
 // ── PDF: a fixed A4 layout (same fonts and sizes on every device);
 //    cards never break across pages ──
 const PRINT_CSS = `
-  .rp { font-family:-apple-system,Heebo,'Arial Hebrew',Arial,sans-serif; font-size:10pt; line-height:1.4;
-        color:#1A1A2E; direction:rtl; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
-  .rp-head { background:#6B3FA0; color:#fff; border-radius:8px; padding:10px 14px; margin-bottom:10px; }
-  .rp-head h1 { font-size:15pt; margin:0 0 2px; font-weight:800; }
-  .rp-head div { font-size:10pt; opacity:.95; }
-  .rp-sum { border:1px solid #D9CCEB; border-radius:8px; padding:8px 12px; margin-bottom:12px; break-inside:avoid; }
-  .rp-tiles { display:flex; gap:8px; margin-bottom:6px; }
-  .rp-tile { flex:1; background:#F0E8FF; border-radius:6px; text-align:center; padding:4px 0; }
-  .rp-tile b { display:block; font-size:14pt; color:#4A2670; }
-  .rp-tile span { font-size:8.5pt; color:#555566; }
+  .rp, .rp * { font-size:10pt !important; }
+  .rp { font-family:-apple-system,Heebo,'Arial Hebrew',Arial,sans-serif; line-height:1.45;
+        color:#1A1A2E; direction:rtl; text-align:right; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+  .rp-head { background:#6B3FA0; color:#fff; border-radius:6px; padding:8px 12px; margin-bottom:10px; }
+  .rp-head b { display:block; }
+  .rp-sum { border:1px solid #D9CCEB; border-radius:6px; padding:8px 12px; margin-bottom:12px; break-inside:avoid; }
   .rp-row { margin:2px 0; }
   .rp-row b { color:#4A2670; }
   .rp-card { border:1px solid #E2E2E8; border-right:4px solid #6B3FA0; border-radius:6px;
              padding:6px 10px; margin-bottom:8px; break-inside:avoid; page-break-inside:avoid; }
   .rp-card.med { border-right-color:#27ae60; }
   .rp-card.zula { border-right-color:#B07D10; background:#FFFBF0; }
-  .rp-title { display:flex; justify-content:space-between; align-items:baseline; gap:8px; margin-bottom:2px; }
-  .rp-title b { font-size:11pt; }
-  .rp-meta { font-size:8.5pt; color:#606070; white-space:nowrap; }
-  .rp-tag { font-size:8pt; font-weight:700; border-radius:8px; padding:0 6px; margin-right:4px; }
+  .rp-title { margin-bottom:2px; }
+  .rp-meta { color:#606070; }
+  .rp-tag { font-weight:700; border-radius:8px; padding:0 6px; }
   .rp-tag.med { background:#E3F7EA; color:#1E8449; } .rp-tag.soc { background:#F0E8FF; color:#4A2670; }
   .rp-photos { display:flex; flex-wrap:wrap; gap:4px; margin-top:4px; }
   .rp-photos img { width:52mm; height:39mm; object-fit:cover; border-radius:4px; }
@@ -1870,12 +1767,11 @@ function buildPrintHTML(r) {
   const m = reportModel(r);
   const row = (k, v) => `<div class="rp-row"><b>${ESC(k)}:</b> ${ESC(v).replace(/\n/g, '<br>')}</div>`;
   let h = `<style>${PRINT_CSS}</style><div class="rp">`;
-  h += `<div class="rp-head pdf-card"><h1>רפואת רחוב תל אביב — דוח סיור</h1>
+  h += `<div class="rp-head pdf-card"><b>רפואת רחוב תל אביב — דוח סיור</b>
         <div>📅 ${ESC(m.date)}${m.volunteers ? ' · 👤 ' + ESC(m.volunteers) : ''}</div></div>`;
-  h += `<div class="rp-sum pdf-card"><div class="rp-tiles">${[
-      [m.sm.total,'מפגשים'], [m.sm.medical,'רפואיים'], [m.sm.social,'סוציאליים'],
-      [m.sm.referrals,'הפניות'], [m.sm.followups,'פולו-אפים']]
-      .map(([n, l]) => `<div class="rp-tile"><b>${n}</b><span>${l}</span></div>`).join('')}</div>`;
+  h += `<div class="rp-sum pdf-card">`;
+  h += `<div class="rp-row"><b>מפגשים:</b> ${m.sm.total} (${m.sm.medical} רפואיים, ${m.sm.social} סוציאליים)
+        &nbsp;·&nbsp; <b>הפניות:</b> ${m.sm.referrals} &nbsp;·&nbsp; <b>פולו-אפים:</b> ${m.sm.followups}</div>`;
   if (m.sm.supplies) h += row('ציוד שחולק', m.sm.supplies);
   if (m.followups.length) h += `<div class="rp-row"><b>⚠️ לפולו-אפ:</b><br>${m.followups.map(ESC).join('<br>')}</div>`;
   if (m.notes) h += row('נקודות לסיור הבא', m.notes);
@@ -1886,10 +1782,10 @@ function buildPrintHTML(r) {
     let title;
     if (it.kind === 'enc') {
       n++;
-      title = `<b>${n}. ${it.followup ? '⚠️ ' : ''}${ESC(it.head)}</b>
-               <span class="rp-meta">${ESC(it.time)}<span class="rp-tag ${it.medical ? 'med' : 'soc'}">${it.medical ? 'רפואי' : 'סוציאלי'}</span></span>`;
+      title = `${n}. ${it.followup ? '⚠️ ' : ''}<b>${ESC(it.name)}</b>${it.rest ? ' · ' + ESC(it.rest) : ''}
+               &nbsp;<span class="rp-meta">${ESC(it.time)}</span> <span class="rp-tag ${it.medical ? 'med' : 'soc'}">${it.medical ? 'רפואי' : 'סוציאלי'}</span>`;
     } else {
-      title = `<b>⛺ זולה</b><span class="rp-meta">${ESC(it.time)}</span>`;
+      title = `<b>⛺ זולה</b> &nbsp;<span class="rp-meta">${ESC(it.time)}</span>`;
     }
     h += `<div class="rp-card pdf-card ${cls}"><div class="rp-title">${title}</div>
           ${it.rows.map(([k, v]) => row(k, v)).join('')}
@@ -1914,47 +1810,12 @@ async function printReport() {
 }
 
 // ── NOTES EXPORT (rich HTML with inline photos) ───────────────────────────────
-function doNotesExport() {
-  closeModal('modal-export');
-  const r = DB.rounds.find(x=>x.id===curRoundId); if(!r) return;
-  const html = buildHTMLReport(r);
-  document.getElementById('rich-preview-content').innerHTML = html;
-  document.getElementById('rich-copy-btn').textContent = 'העתקה לנוטס';
-  openModal('modal-rich-preview');
-}
-
-function copyRichReport() {
-  const btn = document.getElementById('rich-copy-btn');
-  const contentEl = document.getElementById('rich-preview-content');
-
-  // NOTE: We intentionally skip navigator.clipboard.write / ClipboardItem here.
-  // WebKit (Safari/iOS) strips data: URLs from HTML blobs written via ClipboardItem,
-  // so images would be lost. execCommand('copy') on a rendered contenteditable div
-  // transfers the actual decoded image pixels, which Apple Notes receives correctly.
-  try {
-    const range = document.createRange();
-    range.selectNodeContents(contentEl);
-    const sel = window.getSelection();
-    sel.removeAllRanges();
-    sel.addRange(range);
-    const ok = document.execCommand('copy');
-    sel.removeAllRanges();
-    if (ok) {
-      btn.textContent = '✓ הועתק!';
-      setTimeout(() => { btn.textContent = 'העתקה לנוטס'; }, 2500);
-    } else {
-      toast('לחצו לחיצה ארוכה על הדוח ← בחרו הכל ← העתקה');
-    }
-  } catch(e) {
-    toast('לחצו לחיצה ארוכה על הדוח ← הכל ← העתקה');
-  }
-}
 // ─────────────────────────────────────────────────────────────────────────────
 
 async function doShare() {
   closeModal('modal-export');
   const r = DB.rounds.find(x=>x.id===curRoundId); if(!r) return;
-  const text = buildText(r);
+  const text = buildText(r, { whatsapp: true });
   if(navigator.share) {
     try {
       await navigator.share({ title:`Street Medicine — ${fmtDate(r.date)}`, text });
@@ -1965,15 +1826,9 @@ async function doShare() {
   openTextPreview(text);
 }
 
-function showTextPreview() {
-  closeModal('modal-export');
-  const r = DB.rounds.find(x=>x.id===curRoundId); if(!r) return;
-  openTextPreview(buildText(r));
-}
-
 function openTextPreview(text) {
   document.getElementById('text-preview-area').value = text;
-  document.getElementById('copy-btn').textContent = 'Copy All';
+  document.getElementById('copy-btn').textContent = 'העתקה';
   openModal('modal-text-preview');
   // Auto-select after a tick so the modal is visible
   setTimeout(() => {
@@ -2151,7 +2006,7 @@ function showPatientSuggest() {
   if (!list.length) { hidePatientSuggest(); return; }
   const esc = x => String(x||'').replace(/&/g,'&amp;').replace(/</g,'&lt;');
   box.innerHTML = list.map(({ p, last }) => {
-    const head = [p.name, fmtAge(p.age), p.insurance].filter(Boolean).map(esc).join(' · ');
+    const head = [p.name, p.age_exact ? `גיל ${p.age_exact}` : fmtAge(p.age), p.insurance].filter(Boolean).map(esc).join(' · ');
     let sub = '';
     if (last) {
       const d = new Date(last.e.createdAt || last.r.date);
@@ -2174,6 +2029,7 @@ function pickPatient(id) {
   curPatientId = p.id;
   document.getElementById('e-name').value = p.name;
   if (p.age) setAge(p.age, true);
+  document.getElementById('e-age-exact').value = p.age_exact || '';
   curSex = p.sex || ''; renderSex();
   if (p.insurance) setInsurance(p.insurance, true);
   ['field-name','field-age','field-insurance'].forEach(clearFieldError);
@@ -2188,7 +2044,7 @@ function linkPatient() {
   if (!DB.patients) DB.patients = [];
   let p = e.patientId && DB.patients.find(x => x.id === e.patientId);
   if (!p) { p = { id: uid(), createdAt: nowISO() }; DB.patients.push(p); e.patientId = p.id; }
-  Object.assign(p, { name: nm, age: e.age, sex: e.sex, insurance: e.insurance, updatedAt: nowISO() });
+  Object.assign(p, { name: nm, age: e.age, age_exact: e.age_exact || p.age_exact || '', sex: e.sex, insurance: e.insurance, updatedAt: nowISO() });
   persist(DB);
 }
 
@@ -2260,7 +2116,7 @@ function setSex(val, silent) {
 function nameBlur() { /* name is only filled by typing or the אנונימי/ת buttons */ }
 
 // ══════════════════════════════════════════════
-// SUPPLY CHIPS (welfare + contacts)
+// SUPPLY CHIPS
 // ══════════════════════════════════════════════
 function fmtSupplies(chips, text) {
   const parts = [...(chips||[])];
@@ -2341,26 +2197,6 @@ function toggleWelfareChip(chip) {
   autoSaveEnc();
 }
 
-function renderContactChips() {
-  const c = document.getElementById('contact-chips-container'); if(!c) return;
-  c.innerHTML = SUPPLY_CHIPS.map(chip =>
-    `<button class="chip-btn${curContactChips.includes(chip)?' on':''}" onclick="toggleContactChip('${chip}')">${chip}</button>`
-  ).join('');
-}
-
-function toggleContactChip(chip) {
-  const idx = curContactChips.indexOf(chip);
-  if (idx>=0) curContactChips.splice(idx,1); else curContactChips.push(chip);
-  renderContactChips();
-}
-
-function renderSupChips() {
-  const c = document.getElementById('sup-chips-container'); if(!c) return;
-  c.innerHTML = SUPPLY_CHIPS.map(chip =>
-    `<button class="chip-btn${curSupChips.includes(chip)?' on':''}" onclick="toggleSupChip('${chip}')">${chip}</button>`
-  ).join('');
-}
-
 // ══════════════════════════════════════════════
 // ZULA DRAWER
 // ══════════════════════════════════════════════
@@ -2399,21 +2235,22 @@ function closeZulaDrawer() {
   document.getElementById('zula-drawer').classList.remove('open');
 }
 
-// Same chips as an encounter; every tap adds one, "−" takes one back
+// Same items as an encounter, one row each: name · − · count · +
 function renderZulaDrawer() {
   const body = document.getElementById('zula-body'); if(!body) return;
   const legacy = Object.keys(zulaQtys).filter(k => zulaQtys[k] > 0 && !SUPPLY_CHIPS.includes(k));
-  const chip = c => {
+  const row = c => {
     const q = zulaQtys[c] || 0;
-    const label = q ? `${c} ×${q}` : c;
-    return `<span class="zchip"><button type="button" class="chip-btn${q?' on':''}" onclick="zulaAdj('${c}',1)">${label}</button>${
-      q ? `<button type="button" class="zminus" onclick="zulaAdj('${c}',-1)" aria-label="הפחתה">−</button>` : ''}</span>`;
+    return `<div class="zrow${q ? ' on' : ''}">
+      <button type="button" class="zname" onclick="zulaAdj('${c}',1)">${c}</button>
+      <button type="button" class="zbtn" onclick="zulaAdj('${c}',-1)" ${q ? '' : 'disabled'} aria-label="פחות ${c}">−</button>
+      <span class="zcount">${q}</span>
+      <button type="button" class="zbtn plus" onclick="zulaAdj('${c}',1)" aria-label="עוד ${c}">+</button>
+    </div>`;
   };
-  body.innerHTML = `<div class="hint" style="margin-bottom:8px;">כל לחיצה מוסיפה 1 · משקאות נספרים בכוסות</div>` +
-    SOCIAL_CHIP_GROUPS.map(g => `<div class="zula-group-label">${g.label}</div>
-      <div style="display:flex;flex-wrap:wrap;">${g.chips.map(chip).join('')}</div>`).join('') +
-    (legacy.length ? `<div class="zula-group-label">אחר (מרשומות קודמות)</div>
-      <div style="display:flex;flex-wrap:wrap;">${legacy.map(chip).join('')}</div>` : '');
+  body.innerHTML =
+    SOCIAL_CHIP_GROUPS.map(g => `<div class="zula-group-label">${g.label}</div>${g.chips.map(row).join('')}`).join('') +
+    (legacy.length ? `<div class="zula-group-label">אחר (מרשומות קודמות)</div>${legacy.map(row).join('')}` : '');
 }
 
 function zulaAdj(c, delta) {
@@ -2490,61 +2327,8 @@ function deleteZulaEvent(eventId) {
   }});
 }
 
-function toggleSupChip(chip) {
-  const idx = curSupChips.indexOf(chip);
-  if (idx>=0) curSupChips.splice(idx,1); else curSupChips.push(chip);
-  renderSupChips();
-  autoSaveEnc();
-}
-
-function setContactSex(val) {
-  curContactSex = (curContactSex === val) ? '' : val;
-  document.getElementById('con-sex-btn-M').classList.toggle('selected', curContactSex==='M');
-  document.getElementById('con-sex-btn-F').classList.toggle('selected', curContactSex==='F');
-  const nameEl = document.getElementById('m-con-name');
-  const n = nameEl.value.trim();
-  if (!n || n === 'אלמוני' || n === 'אלמונית') {
-    nameEl.value = curContactSex === 'F' ? 'אלמונית' : curContactSex === 'M' ? 'אלמוני' : '';
-  }
-}
-
-let curContactIdx = -1; // -1 = new contact, ≥0 = editing existing
 
 // ── Geolocation auto-fill ──────────────────────
-function geolocateToField(fieldId, btnId, onDone) {
-  if (!navigator.geolocation) { toast('הדפדפן לא תומך במיקום'); return; }
-  const btn = document.getElementById(btnId);
-  if (btn) { btn.textContent = '⏳'; btn.disabled = true; }
-  navigator.geolocation.getCurrentPosition(
-    async pos => {
-      const { latitude: lat, longitude: lon } = pos.coords;
-      let addr = `${lat.toFixed(5)}, ${lon.toFixed(5)}`;
-      try {
-        const res = await fetch(
-          `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}&accept-language=he`
-        );
-        const d = await res.json();
-        if (d && d.address) {
-          const a = d.address;
-          const parts = [a.road, a.house_number].filter(Boolean);
-          if (a.suburb || a.neighbourhood) parts.push(a.suburb || a.neighbourhood);
-          if (parts.length) addr = parts.join(' ');
-        }
-      } catch {}
-      const el = document.getElementById(fieldId);
-      if (el) { el.value = addr; el.dispatchEvent(new Event('input')); }
-      if (onDone) onDone();
-      if (btn) { btn.textContent = '📍 Current'; btn.disabled = false; }
-      toast('מיקום מולא ✓');
-    },
-    () => {
-      toast('לא הצלחנו לקבל מיקום');
-      if (btn) { btn.textContent = '📍 Current'; btn.disabled = false; }
-    },
-    { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
-  );
-}
-
 // ── ADDRESS AUTOCOMPLETE ──────────────────────────────────────────────────────
 let _locTimer = null;
 
@@ -2616,55 +2400,6 @@ document.addEventListener('scroll', () => {
   hideLocDrop('con-loc-drop');
 }, true); // capture phase catches scroll on any nested container
 // ─────────────────────────────────────────────────────────────────────────────
-
-function openNewContactModal() {
-  curContactIdx = -1;
-  document.getElementById('contact-modal-title').textContent = 'מפגש חדש';
-  document.getElementById('contact-save-btn').textContent = 'הוספת מפגש';
-  document.getElementById('contact-delete-wrap').style.display = 'none';
-  document.getElementById('m-con-loc').value = '';
-  document.getElementById('m-con-name').value = '';
-  document.getElementById('m-con-sup-text').value = '';
-  curContactChips = [];
-  curContactSex = '';
-  document.getElementById('con-sex-btn-M').classList.remove('selected');
-  document.getElementById('con-sex-btn-F').classList.remove('selected');
-  renderContactChips();
-  openModal('modal-new-contact');
-}
-
-function openEditContact(i) {
-  const r = DB.rounds.find(x => x.id === curRoundId); if (!r) return;
-  const c = (r.contacts||[])[i]; if (!c) return;
-  curContactIdx = i;
-  document.getElementById('contact-modal-title').textContent = 'ערוך מפגש';
-  document.getElementById('contact-save-btn').textContent = 'שמור שינויים';
-  document.getElementById('contact-delete-wrap').style.display = '';
-
-  document.getElementById('m-con-loc').value  = c.location || '';
-  document.getElementById('m-con-name').value = c.name || '';
-  document.getElementById('m-con-sup-text').value = c.sup_text || c.supplies || '';
-
-  curContactChips = [...(c.chips||[])];
-
-  // Infer sex from stored name
-  const stored = (c.name||'').trim();
-  curContactSex = stored === 'אלמונית' ? 'F' : stored === 'אלמוני' ? 'M' : '';
-  document.getElementById('con-sex-btn-M').classList.toggle('selected', curContactSex === 'M');
-  document.getElementById('con-sex-btn-F').classList.toggle('selected', curContactSex === 'F');
-
-  renderContactChips();
-  openModal('modal-new-contact');
-}
-
-function readContact() {
-  return {
-    location: document.getElementById('m-con-loc').value,
-    name:     document.getElementById('m-con-name').value,
-    chips:    [...curContactChips],
-    sup_text: document.getElementById('m-con-sup-text').value,
-  };
-}
 
 // ══════════════════════════════════════════════
 // REFERRAL PHOTOS
@@ -3026,6 +2761,7 @@ const XL_DICT = [
   ['encounters','patient_id','מזהה מטופל קבוע (אותו אדם בסיורים שונים). ריק = אנונימי'],
   ['encounters','name','שם/כינוי (רק אם יוצא עם שמות)'],
   ['encounters','age_group','גיל משוער לפי עשור (50 = בשנות ה-50)'],
+  ['encounters','age_exact','גיל מדויק (אם נרשם)'],
   ['encounters','sex','מגדר'],
   ['encounters','insurance','קופת חולים'],
   ['encounters','type','רפואי / סוציאלי'],
@@ -3080,7 +2816,7 @@ function buildWorkbookData(withNames) {
         patient_id: e.patientId || '' };
       if (withNames) row.name = e.name || '';
       Object.assign(row, {
-        age_group: e.age || e.age_sex || '', sex: e.sex === 'M' ? 'גבר' : e.sex === 'F' ? 'אשה' : '',
+        age_group: e.age || e.age_sex || '', age_exact: e.age_exact ? +e.age_exact : '', sex: e.sex === 'M' ? 'גבר' : e.sex === 'F' ? 'אשה' : '',
         insurance: insHe(e.insurance), type: classifyEnc(e) === 'medical' ? 'רפואי' : 'סוציאלי',
         location: e.location || '', lat: e.lat ?? '', lon: e.lon ?? '',
         chief_complaint: e.cc || '', findings: [e.exam, e.assessment].filter(Boolean).join('\n'),
