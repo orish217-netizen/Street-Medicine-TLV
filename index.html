@@ -207,6 +207,7 @@
     .form-field textarea { resize: none; min-height: 72px; line-height: 1.5; }
     button, .chip-btn, label { touch-action: manipulation; }
     .req { color:#e74c3c; font-weight:700; }
+    .input-error { border-color:#e74c3c !important; background:rgba(231,76,60,.07) !important; }
     .exact-row { display:flex; align-items:center; gap:8px; margin-top:4px; font-size:13px; color:var(--text-light); }
     .form-field input.exact-age { margin-top:0; border:1.5px solid var(--border); border-radius:8px;
       padding:6px 10px; font-size:16px; width:110px; background:var(--bg); color:var(--text); }
@@ -233,6 +234,8 @@
     .pt-item .s { font-size:12px; color:var(--text-light); margin-top:2px; }
     .sum-tiles { display:grid; grid-template-columns:repeat(4,1fr); gap:8px; padding:12px 16px 4px; }
     .sum-tile { border:1px solid var(--border); border-radius:10px; padding:8px 4px; text-align:center; }
+    .sum-tile.total { background:var(--primary); border-color:var(--primary); }
+    .sum-tile.total b, .sum-tile.total span { color:#fff; }
     .sum-tile b { display:block; font-size:20px; color:var(--text); }
     .sum-tile span { font-size:11px; color:var(--text-light); }
     .sum-text { font-size:14px; line-height:1.6; color:var(--text); white-space:pre-line; }
@@ -240,14 +243,14 @@
     .card-line { font-size:12px; color:var(--text-light); margin-top:2px; }
     .zrow { display:flex; align-items:center; gap:8px; padding:4px 6px; border-radius:10px; }
     .zrow.on { background:var(--bg); }
-    .zrow .zname { flex:1; text-align:right; background:none; border:none; font-size:16px; font-family:inherit;
+    .zrow .zname { flex:1; text-align:right; background:none; border:none; font-size:14px; font-family:inherit;
       color:var(--text); padding:10px 4px; cursor:pointer; }
     .zrow.on .zname { font-weight:700; }
-    .zbtn { width:44px; height:44px; border-radius:22px; border:1.5px solid var(--border); background:var(--card);
-      color:var(--text); font-size:22px; font-weight:700; line-height:1; cursor:pointer; font-family:inherit; flex:none; }
+    .zbtn { width:40px; height:40px; border-radius:20px; border:1.5px solid var(--border); background:var(--card);
+      color:var(--text); font-size:19px; font-weight:700; line-height:1; cursor:pointer; font-family:inherit; flex:none; }
     .zbtn.plus { border-color:var(--primary); color:var(--primary); }
     .zbtn:disabled { opacity:.3; }
-    .zcount { min-width:28px; text-align:center; font-size:17px; font-weight:700; }
+    .zcount { min-width:26px; text-align:center; font-size:15px; font-weight:700; }
     .zchip { display:inline-flex; align-items:center; margin:0 0 6px 6px; }
     .zchip .chip-btn { margin:0; }
     .zchip .zminus { margin-right:2px; width:26px; height:26px; border-radius:13px; border:1.5px solid var(--border);
@@ -527,6 +530,7 @@
       transition: all .12s;
     }
     .chip-btn.on { background: var(--primary); color: #fff; border-color: var(--primary); }
+    .chip-btn.on.dim { background: #B8A5D4; border-color: #B8A5D4; color: #fff; }   /* decade implied by an exact age */
 
     /* ── MAPS ── */
     .leaflet-container { font-family: -apple-system, sans-serif; }
@@ -844,8 +848,8 @@
   <div class="modal-sheet" onclick="event.stopPropagation()">
     <h3>שיתוף הדוח</h3>
     <div class="field-wrap">
-      <label>מי היה בסיור?</label>
-      <input type="text" id="exp-volunteers" placeholder="שמות המתנדבים" oninput="setVolunteers(this.value)">
+      <label>מי היה בסיור? <span class="req">*</span></label>
+      <input type="text" id="exp-volunteers" placeholder="שמות המתנדבים" oninput="setVolunteers(this.value); this.classList.remove('input-error')">
       <div id="exp-vol-last" class="chip-row" style="margin-top:6px;"></div>
     </div>
     <button class="btn btn-accent" style="margin-bottom:12px;" onclick="printReport()">📄 שיתוף הדוח כ-PDF</button>
@@ -1285,7 +1289,7 @@ function renderRound(id) {
   } else el.innerHTML = items.map(it => {
     if (it.kind === 'enc') {
       const e = it.e;
-      const head = [e.name || 'ללא שם', fmtAgeE(e)].filter(Boolean).map(esc).join(' · ');
+      const head = [e.name || 'ללא שם', cardAge(e)].filter(Boolean).map(esc).join(' · ');
       const line1 = [e.location, e.cc].filter(Boolean).map(esc).join(' · ');
       const line2 = [treatSummary({ treatments: e.treatments }), suppliesLine(e)].filter(Boolean).map(esc).join(' · ');
       return `<div class="card" style="position:relative;">
@@ -1319,8 +1323,8 @@ function renderRound(id) {
   // Summary
   const sm = computeSummary(r);
   document.getElementById('sum-tiles').innerHTML = [
-    [sm.total,'מפגשים'], [sm.medical,'רפואיים'], [sm.referrals,'הפניות'], [sm.followups,'פולו-אפים']
-  ].map(([n,l]) => `<div class="sum-tile"><b>${n}</b><span>${l}</span></div>`).join('');
+    [sm.total,'סה"כ מפגשים'], [sm.medical,'רפואיים'], [sm.referrals,'הפניות'], [sm.followups,'פולו-אפים']
+  ].map(([n,l], i) => `<div class="sum-tile${i===0?' total':''}"><b>${n}</b><span>${l}</span></div>`).join('');
   document.getElementById('sum-supplies').textContent = sm.supplies || '—';
   const fu = (r.encounters||[]).filter(e => e.followup === 'Yes')
     .map(e => `⚠️ ${e.name || 'ללא שם'}: ${e.notes || 'נדרש פולו-אפ'}`);
@@ -1480,6 +1484,19 @@ function fmtAge(a) {
   if (/^\d0$/.test(a)) return `בשנות ה-${a}`;
   return a;                                   // 70+ or older free text
 }
+// Round-screen card: "בן 42" · "בת 40 בערך" · "בן 70+"
+function cardAge(e) {
+  const nm = (e.name || '').trim();
+  const sex = e.sex || (nm === 'אנונימי' ? 'M' : nm === 'אנונימית' ? 'F' : '');
+  const w = sex === 'M' ? 'בן' : sex === 'F' ? 'בת' : '';
+  const a = String(e.age || e.age_sex || '').trim();
+  let core;
+  if (e.age_exact)          core = String(e.age_exact);
+  else if (/^\d0$/.test(a)) core = `${a} בערך`;
+  else if (a === '70+')     core = '70+';
+  else return fmtAge(a);                       // legacy free text / unknown
+  return w ? `${w} ${core}` : `גיל ${core}`;
+}
 function fmtAgeE(e) {
   return e.age_exact ? `גיל ${e.age_exact}` : fmtAge(e.age || e.age_sex);
 }
@@ -1488,6 +1505,7 @@ function decadeOf(n) { return n >= 70 ? '70+' : String(Math.max(20, Math.floor(n
 function setExactAge(v) {
   const n = parseInt(v, 10);
   if (n > 0 && n < 120) setAge(decadeOf(n), false, true);
+  else setAge(document.getElementById('e-age').value, true);   // re-draw without the dim look
   autoSaveEnc();
 }
 function setAge(v, silent, keepExact) {
@@ -1497,8 +1515,9 @@ function setAge(v, silent, keepExact) {
   document.getElementById('e-age').value = v;
   const el = document.getElementById('age-chips');
   el.className = 'chip-grid'; el.style.gridTemplateColumns = `repeat(${AGE_OPTIONS.length},1fr)`;
+  const hasExact = !!(ex && ex.value);
   el.innerHTML = AGE_OPTIONS.map(o =>
-    `<button type="button" class="chip-btn${v===o?' on':''}" onclick="setAge('${o}')">${o}</button>`).join('');
+    `<button type="button" class="chip-btn${v===o?' on':''}${v===o&&hasExact?' dim':''}" onclick="setAge('${o}')">${o}</button>`).join('');
   const legacy = document.getElementById('age-legacy');
   const isLegacy = v && !AGE_OPTIONS.includes(v);
   legacy.style.display = isLegacy ? 'block' : 'none';
@@ -1801,6 +1820,7 @@ function buildPrintHTML(r) {
 
 // Opens the phone's print / share sheet with the report → "Save as PDF" / share
 async function printReport() {
+  if (!requireVolunteers()) return;
   closeModal('modal-export');
   const r = DB.rounds.find(x=>x.id===curRoundId); if(!r) return;
   saveRound();
@@ -1817,6 +1837,7 @@ async function printReport() {
 // ─────────────────────────────────────────────────────────────────────────────
 
 async function doShare() {
+  if (!requireVolunteers()) return;
   closeModal('modal-export');
   const r = DB.rounds.find(x=>x.id===curRoundId); if(!r) return;
   const text = buildText(r, { whatsapp: true });
@@ -1865,6 +1886,7 @@ function execCopy(ta) {
 }
 
 async function doPDF() {
+  if (!requireVolunteers()) return;
   closeModal('modal-export');
   const r = DB.rounds.find(x=>x.id===curRoundId); if(!r) return;
   if(!window.jspdf)      { toast('ספריית PDF לא נטענה'); return; }
@@ -2247,9 +2269,9 @@ function renderZulaDrawer() {
     const q = zulaQtys[c] || 0;
     return `<div class="zrow${q ? ' on' : ''}">
       <button type="button" class="zname" onclick="zulaAdj('${c}',1)">${c}</button>
-      <button type="button" class="zbtn" onclick="zulaAdj('${c}',-1)" ${q ? '' : 'disabled'} aria-label="פחות ${c}">−</button>
-      <span class="zcount">${q}</span>
       <button type="button" class="zbtn plus" onclick="zulaAdj('${c}',1)" aria-label="עוד ${c}">+</button>
+      <span class="zcount">${q}</span>
+      <button type="button" class="zbtn" onclick="zulaAdj('${c}',-1)" ${q ? '' : 'disabled'} aria-label="פחות ${c}">−</button>
     </div>`;
   };
   body.innerHTML =
@@ -2723,6 +2745,15 @@ function openExport() {
     ? `<button type="button" class="chip-btn" onclick="useLastVolunteers()">כמו בפעם הקודמת: ${prev.volunteers.replace(/</g,'&lt;')}</button>` : '';
   box.dataset.prev = prev ? prev.volunteers : '';
   openModal('modal-export');
+}
+function requireVolunteers() {
+  const r = DB.rounds.find(x=>x.id===curRoundId);
+  const inp = document.getElementById('exp-volunteers');
+  const v = (inp.value || (r && r.volunteers) || '').trim();
+  if (v) { setVolunteers(v); inp.classList.remove('input-error'); return true; }
+  inp.classList.add('input-error'); inp.focus();
+  toast('חסר: מי היה בסיור');
+  return false;
 }
 function setVolunteers(v) {
   const r = DB.rounds.find(x=>x.id===curRoundId); if (!r) return;
