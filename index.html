@@ -206,6 +206,31 @@
       -webkit-appearance: none;
     }
     .form-field textarea { resize: none; min-height: 72px; line-height: 1.5; }
+    .req { color:#e74c3c; font-weight:700; }
+    .hint { font-size:12px; color:var(--text-light); margin-top:4px; }
+    .chip-btn.big { min-height:40px; padding:8px 16px; font-size:15px; margin:0 0 6px 6px; }
+    .mini-btn { background:none; border:1px solid var(--border); border-radius:8px; font-size:12px;
+      font-weight:600; cursor:pointer; color:var(--text-light); padding:3px 9px; font-family:inherit; }
+    .loc-line { display:flex; align-items:center; justify-content:space-between; gap:8px;
+      padding:8px 16px 2px; font-size:13px; color:var(--text-light); }
+    .loc-line button { background:none; border:none; color:var(--primary); font-weight:700;
+      font-size:13px; font-family:inherit; cursor:pointer; padding:6px 0; }
+    .vitals-5 { border:1px solid var(--border); border-radius:10px; overflow:hidden; }
+    .vitals-5 .vc { padding:6px 6px; }
+    .vitals-5 .vc input { font-size:16px; }
+    .pt-suggest { position:absolute; right:12px; left:12px; z-index:60; background:var(--card);
+      border:1px solid var(--border); border-radius:12px; box-shadow:0 8px 24px rgba(0,0,0,.15); overflow:hidden; }
+    .pt-item { padding:10px 14px; border-bottom:1px solid var(--border); cursor:pointer; }
+    .pt-item:last-child { border-bottom:none; }
+    .pt-item .t { font-weight:700; font-size:15px; }
+    .pt-item .s { font-size:12px; color:var(--text-light); margin-top:2px; }
+    .treat-row { display:flex; align-items:center; gap:8px; margin:2px 0 8px; }
+    .treat-row .treat-name { font-size:13px; font-weight:700; color:var(--primary); min-width:58px; }
+    .treat-row input[type=text] { flex:1; min-width:0; border:1.5px solid var(--primary); border-radius:8px;
+      padding:6px 10px; font-size:16px; background:var(--bg); color:var(--text); font-family:inherit; }
+    .treat-left { display:flex; align-items:center; gap:4px; font-size:13px; font-weight:600;
+      color:var(--text); white-space:nowrap; min-height:44px; cursor:pointer; }
+    .treat-left input { width:20px; height:20px; flex:none; accent-color:var(--med-green); -webkit-appearance:checkbox; appearance:auto; }
     .form-field.field-error {
       background: rgba(231,76,60,.07);
       border-right: 3px solid #e74c3c;
@@ -435,6 +460,9 @@
       pointer-events: none;
     }
     .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+    .toast.has-action.show { pointer-events: auto; }
+    .toast button { margin-right: 14px; background: none; border: none; color: #ffd479;
+      font: inherit; font-weight: 700; cursor: pointer; padding: 6px 4px; }
 
     /* Follow-up pill */
     .followup-yes { color: var(--warn); font-weight: 700; font-size: 12px; }
@@ -625,95 +653,68 @@
   </div>
   <div class="content">
 
-    <!-- Patient (includes name at top) -->
+    <!-- Location: captured automatically when the encounter opens -->
+    <div class="loc-line">
+      <span id="loc-line-text">📍 מאתר מיקום…</span>
+      <button type="button" onclick="toggleLocEdit()">שינוי</button>
+    </div>
+    <div id="loc-edit" class="form-section" style="display:none;">
+      <div class="form-field" style="border-bottom:none;">
+        <label style="display:flex;justify-content:space-between;align-items:center;">
+          כתובת
+          <button id="geo-enc-btn" type="button" onclick="autoLocate(true)" class="mini-btn">📍 נוכחי</button>
+        </label>
+        <div class="loc-wrap">
+          <input type="text" id="e-location" placeholder="לדוג': אלנבי 48" autocomplete="off"
+                 oninput="curLatLon=null; updateLocLine(); autoSaveEnc(); onLocInput(this,'enc-loc-drop')">
+          <div class="loc-drop" id="enc-loc-drop"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Patient -->
     <div class="form-section">
       <div class="form-section-title">👤 מטופל/ת</div>
-      <div class="form-field" id="field-name">
-        <label>שם / כינוי <span style="color:#e74c3c;font-weight:700;">*</span></label>
-        <div style="display:flex;align-items:center;gap:8px;">
-          <input type="text" id="e-name" placeholder="שם או כינוי"
-                 oninput="autoSaveEnc(); updateEncHdr(); clearFieldError('field-name')"
-                 onblur="nameBlur()"
-                 style="flex:1;border:none;outline:none;font-size:16px;font-family:inherit;background:transparent;">
-          <button class="pill" style="font-size:12px;padding:4px 10px;flex-shrink:0;background:var(--bg);color:var(--text-light);border:1px solid var(--border);"
-                  onclick="setAnonName('אנונימי')">אנונימי</button>
-          <button class="pill" style="font-size:12px;padding:4px 10px;flex-shrink:0;background:var(--bg);color:var(--text-light);border:1px solid var(--border);"
-                  onclick="setAnonName('אנונימית')">אנונימית</button>
+      <div class="form-field" id="field-name" style="position:relative;">
+        <label>שם / כינוי <span class="req">*</span></label>
+        <input type="text" id="e-name" placeholder="שם או כינוי" autocomplete="off"
+               oninput="autoSaveEnc(); updateEncHdr(); clearFieldError('field-name'); showPatientSuggest()"
+               onblur="setTimeout(hidePatientSuggest,200)">
+        <div id="pt-suggest" class="pt-suggest" style="display:none;"></div>
+        <div class="chip-row" style="margin-top:8px;">
+          <button type="button" class="chip-btn big" onclick="setAnonName('אנונימי')">אנונימי</button>
+          <button type="button" class="chip-btn big" onclick="setAnonName('אנונימית')">אנונימית</button>
         </div>
       </div>
       <div class="form-field" id="field-age">
-        <label>גיל ומגדר <span style="color:#e74c3c;font-weight:700;">*</span></label>
-        <div style="display:flex;align-items:center;gap:10px;">
-          <input type="text" id="e-age" placeholder="לדוג': בשנות ה-50" oninput="autoSaveEnc(); clearFieldError('field-age')" style="flex:1;border:none;outline:none;font-size:16px;font-family:inherit;background:transparent;">
-          <div style="display:flex;gap:6px;flex-shrink:0;">
-            <button id="sex-btn-M" class="pill" onclick="setSex('M'); clearFieldError('field-age')">גבר</button>
-            <button id="sex-btn-F" class="pill" onclick="setSex('F'); clearFieldError('field-age')">אשה</button>
-          </div>
+        <label>גיל משוער <span class="req">*</span></label>
+        <input type="hidden" id="e-age">
+        <div class="chip-row" id="age-chips"></div>
+        <div id="age-legacy" class="hint" style="display:none;"></div>
+        <label style="margin-top:10px;">מגדר</label>
+        <div class="chip-row">
+          <button type="button" id="sex-btn-M" class="chip-btn big" onclick="setSex('M')">גבר</button>
+          <button type="button" id="sex-btn-F" class="chip-btn big" onclick="setSex('F')">אשה</button>
         </div>
       </div>
       <div class="form-field" id="field-insurance">
-        <label>קופ"ח <span style="color:#e74c3c;font-weight:700;">*</span></label>
-        <select id="e-insurance" onchange="autoSaveEnc(); clearFieldError('field-insurance')">
-          <option value="" disabled selected>— בחר קופ"ח —</option>
-          <option value="כללית">כללית</option>
-          <option value="מכבי">מכבי</option>
-          <option value="מאוחדת">מאוחדת</option>
-          <option value="לאומית">לאומית</option>
-          <option value="אין קופ&quot;ח">אין קופ"ח</option>
-          <option value="לא ידוע / לא שאלנו">לא ידוע / לא שאלנו</option>
-        </select>
+        <label>קופ"ח <span class="req">*</span></label>
+        <input type="hidden" id="e-insurance">
+        <div class="chip-row" id="ins-chips"></div>
       </div>
     </div>
 
-    <!-- Clinical (reordered: CC → Exam → Assessment → Vitals) -->
+    <!-- Treatments & medications (one place for every treatment / drug) -->
     <div class="form-section">
-      <div class="form-section-title">🩺 רפואי</div>
-      <div class="form-field">
-        <label>תלונה עיקרית</label>
-        <input type="text" id="e-cc" placeholder="תלונה עיקרית" oninput="autoSaveEnc()">
-      </div>
-      <div class="form-field">
-        <label>ממצאים בבדיקה</label>
-        <textarea id="e-exam" placeholder="ממצאים רלוונטיים" oninput="autoSaveEnc()"></textarea>
-      </div>
-      <div class="form-field">
-        <label>הערכה קלינית</label>
-        <textarea id="e-assessment" placeholder="אבחנת עבודה והתרשמות" oninput="autoSaveEnc()"></textarea>
-      </div>
-      <!-- Vitals: compact single row at bottom -->
-      <div class="vitals-grid">
-        <div class="vc"><label>ל"ד</label><input type="text" id="e-bp" placeholder="120/80" oninput="autoSaveEnc()"></div>
-        <div class="vc"><label>דופק</label><input type="number" id="e-hr" placeholder="72" oninput="autoSaveEnc()"></div>
-        <div class="vc"><label>סטורציה</label><input type="number" id="e-spo2" placeholder="98" oninput="autoSaveEnc()"></div>
-        <div class="vc"><label>טמפ'</label><input type="number" step="0.1" id="e-temp" placeholder="36.5" oninput="autoSaveEnc()"></div>
-      </div>
-    </div>
-
-    <!-- Intervention (no welfare checkbox) -->
-    <div class="form-section">
-      <div class="form-section-title">💊 התערבות</div>
-      <div class="chk-row" onclick="event.stopPropagation()">
-        <input type="checkbox" id="e-wound" onchange="toggleSub('e-wound-sub',this.checked); autoSaveEnc()">
-        <div style="flex:1">
-          <span class="chk-label" onclick="toggleChk('e-wound'); toggleSub('e-wound-sub', document.getElementById('e-wound').checked); autoSaveEnc()">חבישה / טיפול בפצע</span>
-          <div id="e-wound-sub" class="sub-input-wrap" style="display:none">
-            <input class="sub-input" type="text" id="e-wound-detail" placeholder="מיקום, אפיון הפצע, סוג החבישה..." oninput="autoSaveEnc()">
-          </div>
-        </div>
-      </div>
-      <div class="chk-row" onclick="event.stopPropagation()">
-        <input type="checkbox" id="e-med-chk" onchange="toggleSub('e-med-sub',this.checked); autoSaveEnc()">
-        <div style="flex:1">
-          <span class="chk-label" onclick="toggleChk('e-med-chk'); toggleSub('e-med-sub', document.getElementById('e-med-chk').checked); autoSaveEnc()">מתן תרופה</span>
-          <div id="e-med-sub" class="sub-input-wrap" style="display:none">
-            <input class="sub-input" type="text" id="e-med" placeholder="תרופה, מינון, דרך מתן" oninput="autoSaveEnc()">
-          </div>
-        </div>
+      <div class="form-section-title">💊 טיפול ותרופות</div>
+      <div class="form-field" style="border-bottom:none;padding-bottom:4px;">
+        <div class="chip-row" id="treat-chips"></div>
+        <div id="treat-details"></div>
       </div>
       <div class="chk-row" onclick="event.stopPropagation()">
         <input type="checkbox" id="e-ref-chk" onchange="toggleSub('e-ref-sub',this.checked); autoSaveEnc()">
         <div style="flex:1">
-          <span class="chk-label" onclick="toggleChk('e-ref-chk'); toggleSub('e-ref-sub', document.getElementById('e-ref-chk').checked); autoSaveEnc()">הפניה</span>
+          <span class="chk-label" onclick="toggleChk('e-ref-chk'); toggleSub('e-ref-sub', document.getElementById('e-ref-chk').checked); autoSaveEnc()" style="font-weight:700;">הפניה</span>
           <div id="e-ref-sub" class="sub-input-wrap" style="display:none">
             <input class="sub-input" type="text" id="e-ref" placeholder="לאן — מיון / מרפאה / שירותים סוציאליים..." oninput="autoSaveEnc()">
             <div class="ref-photo-mini" id="ref-photos-grid"></div>
@@ -728,29 +729,47 @@
       </div>
     </div>
 
-    <!-- Social (replaces the old welfare checkbox — always visible) -->
+    <!-- Supplies -->
     <div class="form-section">
-      <div class="form-section-title">🤝 סוציאלי</div>
+      <div class="form-section-title">🎒 ציוד</div>
       <div class="form-field" style="border-bottom:none;">
         <div id="welfare-chips-container"></div>
-        <input class="sub-input" type="text" id="e-welfare-text" placeholder="ציוד נוסף / הערות..."
-               oninput="autoSaveEnc()" style="width:100%;border:none;outline:none;font-size:16px;font-family:inherit;background:transparent;margin-top:10px;">
+        <input class="sub-input" type="text" id="e-welfare-text" placeholder="ציוד אחר — מה נתנו?"
+               oninput="autoSaveEnc()" style="display:none;margin-top:4px;">
       </div>
     </div>
 
-    <!-- Follow-up -->
+    <!-- Medical -->
     <div class="form-section">
-      <div class="form-section-title">📌 פולו-אפ</div>
+      <div class="form-section-title">🩺 רפואי</div>
       <div class="form-field">
-        <label>צורך בפולו-אפ?</label>
-        <div class="pill-row">
-          <button class="pill selected" id="pill-no"  onclick="setFollowup('No')">לא</button>
-          <button class="pill"          id="pill-yes" onclick="setFollowup('Yes')">⚠️ כן</button>
-        </div>
+        <label>תלונה עיקרית</label>
+        <input type="text" id="e-cc" placeholder="תלונה עיקרית" oninput="autoSaveEnc()">
       </div>
       <div class="form-field">
-        <label>נקודות לסיור הבא</label>
-        <textarea id="e-notes" placeholder="הערות לצוות בסיור הבא" oninput="autoSaveEnc()"></textarea>
+        <label>ממצאים, אבחנה ופירוט</label>
+        <textarea id="e-exam" placeholder="רק מה שלא סומן למעלה" oninput="autoSaveEnc()"></textarea>
+      </div>
+      <div class="form-field" style="border-bottom:none;">
+        <button type="button" id="vitals-toggle" class="chip-btn big" onclick="toggleVitals()">＋ מדדים חיוניים</button>
+        <div id="vitals-panel" style="display:none;margin-top:10px;">
+          <div class="vitals-grid vitals-5">
+            <div class="vc"><label>סיסט׳</label><input type="number" inputmode="numeric" id="e-bp-sys" placeholder="120" oninput="vitalsAdvance(this,3,'e-bp-dia'); autoSaveEnc()"></div>
+            <div class="vc"><label>דיאס׳</label><input type="number" inputmode="numeric" id="e-bp-dia" placeholder="80" oninput="vitalsAdvance(this,2,'e-hr'); autoSaveEnc()"></div>
+            <div class="vc"><label>דופק</label><input type="number" inputmode="numeric" id="e-hr" placeholder="72" oninput="autoSaveEnc()"></div>
+            <div class="vc"><label>סטורציה</label><input type="number" inputmode="numeric" id="e-spo2" placeholder="98" oninput="autoSaveEnc()"></div>
+            <div class="vc"><label>טמפ׳</label><input type="number" inputmode="decimal" step="0.1" id="e-temp" placeholder="36.5" oninput="autoSaveEnc()"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Follow-up: writing anything here marks the encounter ⚠️ -->
+    <div class="form-section">
+      <div class="form-section-title">⚠️ פולו-אפ</div>
+      <div class="form-field" style="border-bottom:none;">
+        <label>פולו-אפ לסיור הבא</label>
+        <textarea id="e-notes" placeholder="מה לבדוק בפעם הבאה? (ריק = אין צורך)" oninput="autoSaveEnc()"></textarea>
       </div>
     </div>
 
@@ -758,23 +777,6 @@
     <div class="form-section">
       <div class="form-section-title">📷 תמונות</div>
       <div class="photos-grid" id="photos-grid"></div>
-    </div>
-
-    <!-- Location (moved to bottom) -->
-    <div class="form-section">
-      <div class="form-section-title">📍 מיקום המפגש</div>
-      <div class="form-field">
-        <label style="display:flex;justify-content:space-between;align-items:center;">
-          כתובת
-          <button id="geo-enc-btn" onclick="geolocateToField('e-location','geo-enc-btn',()=>autoSaveEnc())"
-                  style="background:none;border:1px solid var(--border);border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;color:var(--text-light);padding:3px 9px;">📍 נוכחי</button>
-        </label>
-        <div class="loc-wrap">
-          <input type="text" id="e-location" placeholder="לדוג': אלנבי 48" autocomplete="off"
-                 oninput="autoSaveEnc(); onLocInput(this,'enc-loc-drop')">
-          <div class="loc-drop" id="enc-loc-drop"></div>
-        </div>
-      </div>
     </div>
 
   </div>
@@ -958,11 +960,15 @@
   <div class="modal-sheet" onclick="event.stopPropagation()">
     <h3>אפליקציית רפואת רחוב <span style="font-size:13px;font-weight:400;color:var(--text-light);">v2</span></h3>
     <p style="font-size:14px;color:var(--text-light);margin-bottom:18px;line-height:1.6;">
-      כל הנתונים מאוחסנים על המכשיר בלבד. שום דבר לא נשלח לשרת חיצוני.<br><br>
-      <strong>טיפ:</strong> בספארי, לחצו Share ← "Add to Home Screen" להתקנה כאפליקציה.
+      כל הנתונים נשמרים רק במכשיר הזה. כדאי לגבות מדי פעם לקובץ — למשל לשמור אותו ב-iCloud או לשלוח לעצמכם.
     </p>
+    <button class="btn btn-green" style="margin-bottom:10px;" onclick="backupData()">גיבוי לקובץ</button>
+    <label class="btn btn-gray" style="margin-bottom:10px;display:block;cursor:pointer;">
+      שחזור מגיבוי
+      <input type="file" accept=".json,application/json" style="display:none" onchange="restoreData(event)">
+    </label>
     <button class="btn btn-danger" style="margin-bottom:10px;" onclick="confirmClearAll()">
-      🗑 Clear ALL data
+      מחיקת כל הנתונים
     </button>
     <button class="btn btn-gray" onclick="closeModal('modal-about')">סגירה</button>
   </div>
@@ -982,10 +988,72 @@
 // ══════════════════════════════════════════════
 // STORAGE
 // ══════════════════════════════════════════════
-const KEY = 'sm_data_v1';
-function load() { try { return JSON.parse(localStorage.getItem(KEY) || '{"rounds":[]}'); } catch { return {rounds:[]}; } }
-function persist(d) { localStorage.setItem(KEY, JSON.stringify(d)); }
-let DB = load();
+// All persistence goes through `Store`. Today it keeps the data in IndexedDB on
+// the device (much larger quota than localStorage, which photos used to fill).
+// When the app moves to the cloud, only Store's internals change — the rest of
+// the code keeps calling persist(DB) / reading the in-memory DB.
+const KEY = 'sm_data_v1';          // legacy localStorage key (migrated once)
+const SCHEMA_VERSION = 2;
+
+const Store = (() => {
+  const DB_NAME = 'street-medicine', OS = 'kv', REC = 'db';
+  let idb = null, useLocal = false, chain = Promise.resolve();
+
+  function open() {
+    return new Promise((res, rej) => {
+      const r = indexedDB.open(DB_NAME, 1);
+      r.onupgradeneeded = () => r.result.createObjectStore(OS);
+      r.onsuccess = () => res(r.result);
+      r.onerror   = () => rej(r.error);
+    });
+  }
+  function tx(mode, fn) {
+    return new Promise((res, rej) => {
+      const t = idb.transaction(OS, mode), os = t.objectStore(OS);
+      const req = fn(os);
+      t.oncomplete = () => res(req && req.result);
+      t.onerror = t.onabort = () => rej(t.error);
+    });
+  }
+  function readLocal() {
+    try { return JSON.parse(localStorage.getItem(KEY) || 'null'); } catch { return null; }
+  }
+
+  return {
+    async init() {
+      try {
+        idb = await open();
+        let data = await tx('readonly', os => os.get(REC));
+        if (!data) {                       // first run on IndexedDB → migrate
+          data = readLocal() || { rounds: [] };
+          await tx('readwrite', os => os.put(data, REC));
+        }
+        if (navigator.storage && navigator.storage.persist) navigator.storage.persist().catch(()=>{});
+        return data;
+      } catch (e) {
+        console.warn('IndexedDB unavailable, falling back to localStorage', e);
+        useLocal = true;
+        return readLocal() || { rounds: [] };
+      }
+    },
+    save(data) {
+      const snapshot = JSON.parse(JSON.stringify(data));   // freeze current state
+      chain = chain.then(() => useLocal
+        ? localStorage.setItem(KEY, JSON.stringify(snapshot))
+        : tx('readwrite', os => os.put(snapshot, REC))
+      ).catch(e => {
+        console.error('save failed', e);
+        toast('⚠️ השמירה נכשלה — כדאי לגבות את הנתונים');
+      });
+      return chain;
+    },
+  };
+})();
+
+let DB = { rounds: [] };
+function load() { return DB; }      // kept for older call sites
+function persist(d) { d.v = SCHEMA_VERSION; return Store.save(d); }
+function nowISO() { return new Date().toISOString(); }
 
 function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2); }
 
@@ -1005,14 +1073,93 @@ let curRefPhotos   = [];  // [{id, url}]
 let curContactChips = [];
 let curContactSex   = '';
 let curSupChips    = [];  // medical encounter supply chips (legacy, kept for data compat)
-const SUPPLY_CHIPS = ['סוכריות','קונדומים','מים','מיץ','תה חם','גרביים','חמצוואר/כובע','חבישות הביתה'];
+// ── Supplies: ONE list for the whole app (encounter chips, zula, stats, exports)
 const SOCIAL_CHIP_GROUPS = [
   { label: '🍬 אוכל ושתיה', chips: ['מים','מיץ','תה','סוכריות'] },
   { label: '🎒 ציוד',       chips: ['ספירטים','קונדומים','גרביים','חמצוואר / כובע'] },
-  { label: '🩹 רפואי',      chips: ['חבישות הביתה','משחה','אנטיביוטיקה'] }
 ];
-const SOCIAL_CHIPS_NEED_DETAIL = ['משחה','אנטיביוטיקה'];
-const SOCIAL_CHIPS_MEDICAL = ['חבישות הביתה','משחה','אנטיביוטיקה'];
+const SUPPLY_CHIPS = SOCIAL_CHIP_GROUPS.flatMap(g => g.chips);
+// Legacy spellings → current name (old records / old zula events)
+const SUPPLY_ALIASES = { 'תה חם':'תה', 'חמצוואר/כובע':'חמצוואר / כובע' };
+const SOCIAL_CHIPS_NEED_DETAIL = [];   // drugs moved to treatments
+const SOCIAL_CHIPS_MEDICAL = [];
+
+// ── Treatments & medications: one place per encounter
+// e.treatments = [{ type, detail, left }]  left = "השארנו" (given to keep → counts as a supply)
+const TREATMENT_TYPES = ['חבישה','משחה','אנטיביוטיקה','תרופה אחרת'];
+const TREATMENT_PH = {
+  'חבישה':'מיקום ואפיון הפצע, סוג החבישה',
+  'משחה':'שם המשחה',
+  'אנטיביוטיקה':'שם ומינון',
+  'תרופה אחרת':'שם, מינון, דרך מתן',
+};
+const TREATMENT_ALWAYS_LEFT = [];   // every treatment has its own "השארנו" box
+let curTreatments = [];
+const ANON_NAMES = ['אנונימי','אנונימית','אלמוני','אלמונית'];
+let curPatientId = null;
+
+// The name a treatment is counted under in supply totals (null = not a supply)
+function treatmentSupplyName(t) {
+  const left = t.left || TREATMENT_ALWAYS_LEFT.includes(t.type);
+  if (!left) return null;
+  if (t.type === 'חבישה') return 'חבישות';
+  return (t.detail || '').trim() || t.type;
+}
+function fmtTreatment(t) {
+  const left = t.left && !TREATMENT_ALWAYS_LEFT.includes(t.type) ? ' (השארנו)' : '';
+  return `${t.type}${t.detail ? ' — ' + t.detail : ''}${left}`;
+}
+
+// One-time upgrade of records saved by older versions of the app
+function migrateData(db) {
+  let changed = false;
+  (db.rounds || []).forEach(r => {
+    (r.encounters || []).forEach(e => {
+      if (!e.createdAt) { e.createdAt = (r.date ? r.date + 'T12:00:00' : nowISO()); changed = true; }
+      if (Array.isArray(e.treatments)) return;
+      const t = [];
+      const chips = [...(e.welfare_chips || [])];
+      const det = e.welfare_chip_details || {};
+      const takeHome = chips.includes('חבישות הביתה');
+      if (e.wound || takeHome) t.push({ type:'חבישה', detail: e.wound_detail || '', left: takeHome });
+      if (e.med_chk) t.push({ type:'תרופה אחרת', detail: e.med || '', left: false });
+      ['משחה','אנטיביוטיקה'].forEach(c => {
+        if (chips.includes(c)) t.push({ type: c, detail: (det[c] || '').trim(), left: true });
+      });
+      e.treatments = t;
+      e.welfare_chips = chips
+        .filter(c => !['חבישות הביתה','משחה','אנטיביוטיקה'].includes(c))
+        .map(c => SUPPLY_ALIASES[c] || c);
+      e.welfare_chip_details = {};
+      delete e.wound; delete e.wound_detail; delete e.med_chk; delete e.med;
+      changed = true;
+    });
+  });
+  // Patients become their own records (stable id) — needed for returning-patient
+  // suggestions now and for syncing between devices later.
+  if (!Array.isArray(db.patients)) {
+    db.patients = [];
+    const byName = new Map();
+    (db.rounds || []).forEach(r => (r.encounters || []).forEach(e => {
+      const nm = (e.name || '').trim();
+      if (!nm || ANON_NAMES.includes(nm)) return;
+      let pt = byName.get(nm);
+      if (!pt) {
+        pt = { id: uid(), name: nm, createdAt: e.createdAt || nowISO() };
+        byName.set(nm, pt); db.patients.push(pt);
+      }
+      // keep the most recent details
+      if (!pt._at || (e.createdAt || '') >= pt._at) {
+        pt._at = e.createdAt || ''; pt.age = e.age || pt.age || ''; pt.sex = e.sex || pt.sex || '';
+        pt.insurance = insHe(e.insurance) || pt.insurance || '';
+      }
+      e.patientId = pt.id;
+    }));
+    db.patients.forEach(pt => { delete pt._at; pt.updatedAt = nowISO(); });
+    changed = true;
+  }
+  if (changed) persist(db);
+}
 
 // ══════════════════════════════════════════════
 // NAVIGATION
@@ -1026,8 +1173,15 @@ function showPage(id) {
 function navBack(target) {
   if (target === 'pg-home') { saveRound(); renderHome(); showPage('pg-home'); }
   if (target === 'pg-round') {
+    if (encIsEmpty(readEnc())) {           // opened by mistake → discard quietly
+      const r = DB.rounds.find(x=>x.id===curRoundId);
+      if (r) r.encounters = r.encounters.filter(x=>x.id!==curEncId);
+      persist(DB); renderRound(curRoundId); showPage('pg-round');
+      toast('מפגש ריק לא נשמר');
+      return;
+    }
     if (!validateEnc()) return;   // block if required fields missing
-    saveEnc(); renderRound(curRoundId); showPage('pg-round');
+    saveEnc(); linkPatient(); renderRound(curRoundId); showPage('pg-round');
   }
 }
 
@@ -1191,7 +1345,7 @@ function renderRound(id) {
               ${typeBadge}
               ${e.followup==='Yes'?'<span class="followup-yes">⚠️ פולו-אפ</span>':''}
             </div>
-            <div class="card-sub">${[e.location, [e.age, e.sex].filter(Boolean).join(' / ') || e.age_sex, e.cc].filter(Boolean).join(' · ')}</div>
+            <div class="card-sub">${[fmtAge(e.age||e.age_sex), insHe(e.insurance), e.location, e.cc].filter(Boolean).join(' · ')}</div>
             ${vitals?`<div class="card-sub" style="margin-top:2px;font-family:monospace;font-size:12px;">${vitals}</div>`:''}
             ${(e.photos||[]).length?`<div class="card-sub" style="margin-top:2px;">📷 ${e.photos.length} תמונות</div>`:''}
           </div>
@@ -1265,14 +1419,15 @@ function createEnc() {
     id:uid(), name:'', location:'', age:'', sex:'', insurance:'',
     cc:'', bp:'', hr:'', spo2:'', temp:'',
     exam:'', assessment:'',
-    wound:false, wound_detail:'',
-    med_chk:false, med:'', sup_chk:false, sup:'',
+    treatments:[], sup_chk:false, sup:'',
+    createdAt: nowISO(), updatedAt: nowISO(),
     ref_chk:false, ref:'', ref_photos:[],
     welfare:false, welfare_chips:[], welfare_chip_details:{}, welfare_text:'',
-    followup:'No', notes:'', photos:[]
+    followup:'No', notes:'', photos:[], patientId:null, lat:null, lon:null
   };
   r.encounters.push(e); persist(DB);
   openEnc(curRoundId, e.id);
+  autoLocate(false);
 }
 
 function openEnc(roundId, encId) {
@@ -1282,30 +1437,33 @@ function openEnc(roundId, encId) {
 
   document.getElementById('enc-hdr-title').textContent = e.name||'מפגש';
   document.getElementById('e-location').value = e.location||'';
+  curLatLon = (e.lat != null && e.lon != null) ? { lat:e.lat, lon:e.lon } : null;
+  document.getElementById('loc-edit').style.display = 'none';
+  updateLocLine();
   document.getElementById('e-name').value = e.name||'';
-  // Backwards-compat: old records stored age_sex as a combined string
-  document.getElementById('e-age').value = e.age || e.age_sex || '';
+  curPatientId = e.patientId || null;
+  hidePatientSuggest();
+
+  setAge(e.age || e.age_sex || '', true);
   curSex = e.sex || '';
-  document.getElementById('sex-btn-M').classList.toggle('selected', curSex==='M');
-  document.getElementById('sex-btn-F').classList.toggle('selected', curSex==='F');
-  document.getElementById('e-insurance').value = e.insurance||'';
+  renderSex();
+  setInsurance(insHe(e.insurance) || '', true);
+
   document.getElementById('e-cc').value = e.cc||'';
-  document.getElementById('e-bp').value = e.bp||'';
+  // Vitals: blood pressure is stored as "sys/dia"
+  const [sys, dia] = String(e.bp||'').split('/');
+  document.getElementById('e-bp-sys').value = (sys||'').trim();
+  document.getElementById('e-bp-dia').value = (dia||'').trim();
   document.getElementById('e-hr').value = e.hr||'';
   document.getElementById('e-spo2').value = e.spo2||'';
   document.getElementById('e-temp').value = e.temp||'';
-  document.getElementById('e-exam').value = e.exam||'';
-  document.getElementById('e-assessment').value = e.assessment||'';
+  showVitals(!!(e.bp || e.hr || e.spo2 || e.temp));
+  // Findings + (older) assessment are now one field
+  document.getElementById('e-exam').value = [e.exam, e.assessment].filter(x => (x||'').trim()).join('\n');
 
-  // Wound care
-  document.getElementById('e-wound').checked = !!e.wound;
-  toggleSub('e-wound-sub', !!e.wound);
-  document.getElementById('e-wound-detail').value = e.wound_detail||'';
-
-  // Medication
-  document.getElementById('e-med-chk').checked = !!e.med_chk;
-  toggleSub('e-med-sub', !!e.med_chk);
-  document.getElementById('e-med').value = e.med||'';
+  // Treatments & medications
+  curTreatments = JSON.parse(JSON.stringify(e.treatments || []));
+  renderTreatments();
 
   // Supplies (legacy — מתן ציוד removed from UI; data kept for backward-compat)
   curSupChips = [...(e.sup_chips||[])];
@@ -1317,15 +1475,18 @@ function openEnc(roundId, encId) {
   curRefPhotos = (e.ref_photos||[]).map(url=>({id:uid(),url}));
   renderRefPhotos();
 
-  // Welfare
-  // סוציאלי — always visible, no toggle needed
+  // Supplies
   curWelfareChips = [...(e.welfare_chips||[])];
   curWelfareChipDetails = {...(e.welfare_chip_details||{})};
+  const wt = document.getElementById('e-welfare-text');
+  wt.value = e.welfare_text||'';
+  otherSupplyOpen = !!wt.value.trim();
   renderWelfareChips();
-  document.getElementById('e-welfare-text').value = e.welfare_text||'';
 
-  setFollowup(e.followup||'No', true);
-  document.getElementById('e-notes').value = e.notes||'';
+  // Follow-up: one field. Older records that only had "כן" keep a note.
+  let notes = e.notes || '';
+  if (e.followup === 'Yes' && !notes.trim()) notes = 'נדרש פולו-אפ';
+  document.getElementById('e-notes').value = notes;
 
   curPhotos = (e.photos||[]).map(url=>({id:uid(),url}));
   renderPhotos();
@@ -1333,23 +1494,26 @@ function openEnc(roundId, encId) {
 }
 
 function readEnc() {
+  const sys = document.getElementById('e-bp-sys').value.trim();
+  const dia = document.getElementById('e-bp-dia').value.trim();
+  const notes = document.getElementById('e-notes').value;
   return {
     location:      document.getElementById('e-location').value,
+    lat:           curLatLon ? curLatLon.lat : null,
+    lon:           curLatLon ? curLatLon.lon : null,
     name:          document.getElementById('e-name').value,
+    patientId:     curPatientId,
     age:           document.getElementById('e-age').value,
     sex:           curSex,
     insurance:     document.getElementById('e-insurance').value,
     cc:            document.getElementById('e-cc').value,
-    bp:            document.getElementById('e-bp').value,
+    bp:            (sys || dia) ? `${sys}/${dia}` : '',
     hr:            document.getElementById('e-hr').value,
     spo2:          document.getElementById('e-spo2').value,
     temp:          document.getElementById('e-temp').value,
     exam:          document.getElementById('e-exam').value,
-    assessment:    document.getElementById('e-assessment').value,
-    wound:         document.getElementById('e-wound').checked,
-    wound_detail:  document.getElementById('e-wound-detail').value,
-    med_chk:       document.getElementById('e-med-chk').checked,
-    med:           document.getElementById('e-med').value,
+    assessment:    '',
+    treatments:    JSON.parse(JSON.stringify(curTreatments)),
     sup_chk:            false,
     sup_chips:          [...curSupChips],
     sup:                '',
@@ -1360,16 +1524,101 @@ function readEnc() {
     welfare_chips:      [...curWelfareChips],
     welfare_chip_details: {...curWelfareChipDetails},
     welfare_text:       document.getElementById('e-welfare-text').value,
-    followup:      followupState,
-    notes:         document.getElementById('e-notes').value,
+    followup:      notes.trim() ? 'Yes' : 'No',
+    notes:         notes,
     photos:        curPhotos.map(p=>p.url),
   };
+}
+
+// ── Age (decade chips) ──
+const AGE_OPTIONS = ['20','30','40','50','60','70+','?'];
+function fmtAge(a) {
+  a = String(a||'').trim();
+  if (!a) return '';
+  if (a === '?') return 'גיל לא ידוע';
+  if (/^\d0$/.test(a)) return `בשנות ה-${a}`;
+  return a;                                   // 70+ or older free text
+}
+function setAge(v, silent) {
+  document.getElementById('e-age').value = v;
+  document.getElementById('age-chips').innerHTML = AGE_OPTIONS.map(o =>
+    `<button type="button" class="chip-btn big${v===o?' on':''}" onclick="setAge('${o}')">${o==='?'?'לא ידוע':o}</button>`).join('');
+  const legacy = document.getElementById('age-legacy');
+  const isLegacy = v && !AGE_OPTIONS.includes(v);
+  legacy.style.display = isLegacy ? 'block' : 'none';
+  legacy.textContent = isLegacy ? `נרשם בעבר: ${v}` : '';
+  if (!silent) { clearFieldError('field-age'); autoSaveEnc(); }
+}
+
+// ── Insurance (chips) ──
+const INS_OPTIONS = ['כללית','מכבי','מאוחדת','לאומית','אין קופ"ח','לא ידוע / לא שאלנו'];
+function setInsurance(v, silent) {
+  document.getElementById('e-insurance').value = v;
+  document.getElementById('ins-chips').innerHTML = INS_OPTIONS.map((o,i) =>
+    `<button type="button" class="chip-btn big${v===o?' on':''}" onclick="setInsurance(INS_OPTIONS[${i}])">${o==='לא ידוע / לא שאלנו'?'לא ידוע':o}</button>`).join('');
+  if (!silent) { clearFieldError('field-insurance'); autoSaveEnc(); }
+}
+
+// ── Vitals panel ──
+function showVitals(open) {
+  document.getElementById('vitals-panel').style.display = open ? 'block' : 'none';
+  document.getElementById('vitals-toggle').textContent = open ? '− הסתרת מדדים' : '＋ מדדים חיוניים';
+}
+function toggleVitals() {
+  const open = document.getElementById('vitals-panel').style.display === 'none';
+  showVitals(open);
+  if (open) document.getElementById('e-bp-sys').focus();
+}
+function vitalsAdvance(el, len, nextId) {
+  if (el.value.length >= len) { const n = document.getElementById(nextId); if (n) n.focus(); }
+}
+
+// ── Location (auto on open, editable) ──
+let curLatLon = null;
+function updateLocLine() {
+  const v = document.getElementById('e-location').value.trim();
+  document.getElementById('loc-line-text').textContent = v ? `📍 ${v}` : '📍 ללא מיקום';
+}
+function toggleLocEdit() {
+  const el = document.getElementById('loc-edit');
+  el.style.display = el.style.display === 'none' ? 'block' : 'none';
+}
+function autoLocate(manual) {
+  const line = document.getElementById('loc-line-text');
+  if (!navigator.geolocation) { if (manual) toast('הדפדפן לא תומך במיקום'); updateLocLine(); return; }
+  const encId = curEncId;
+  line.textContent = '📍 מאתר מיקום…';
+  navigator.geolocation.getCurrentPosition(async pos => {
+    const { latitude: lat, longitude: lon } = pos.coords;
+    let addr = `${lat.toFixed(5)}, ${lon.toFixed(5)}`;
+    try {
+      const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}&accept-language=he`);
+      const d = await res.json();
+      if (d && d.address) {
+        const a = d.address, parts = [a.road, a.house_number].filter(Boolean);
+        if (!parts.length && (a.suburb || a.neighbourhood)) parts.push(a.suburb || a.neighbourhood);
+        if (parts.length) addr = parts.join(' ');
+      }
+    } catch {}
+    if (curEncId !== encId) {                 // user already left this encounter
+      const r = DB.rounds.find(x=>x.id===curRoundId);
+      const e = r && r.encounters.find(x=>x.id===encId);
+      if (e && !e.location) { e.location = addr; e.lat = lat; e.lon = lon; persist(DB); }
+      return;
+    }
+    document.getElementById('e-location').value = addr;
+    curLatLon = { lat, lon };
+    updateLocLine(); autoSaveEnc();
+  }, () => {
+    updateLocLine();
+    if (manual) toast('לא הצלחנו לקבל מיקום');
+  }, { enableHighAccuracy: true, timeout: 10000, maximumAge: 60000 });
 }
 
 function saveEnc() {
   const r = DB.rounds.find(x=>x.id===curRoundId); if(!r) return;
   const idx = r.encounters.findIndex(x=>x.id===curEncId); if(idx<0) return;
-  r.encounters[idx] = { ...r.encounters[idx], ...readEnc() };
+  r.encounters[idx] = { ...r.encounters[idx], ...readEnc(), updatedAt: nowISO() };
   persist(DB);
 }
 
@@ -1465,12 +1714,8 @@ function delPhoto(i) { curPhotos.splice(i,1); saveEnc(); renderPhotos(); }
 // ══════════════════════════════════════════════
 // FOLLOW-UP PILLS
 // ══════════════════════════════════════════════
-function setFollowup(val, silent) {
-  followupState = val;
-  document.getElementById('pill-no').classList.toggle('selected',  val==='No');
-  document.getElementById('pill-yes').classList.toggle('selected', val==='Yes');
-  if(!silent) autoSaveEnc();
-}
+function setFollowup(val, silent) { followupState = val; }   // kept for old call sites
+
 
 // ══════════════════════════════════════════════
 // EXPORT
@@ -1504,26 +1749,22 @@ function buildText(r) {
       const typeLabel = classifyEnc(e) === 'medical' ? '🩺 רפואי' : '🤝 סוציאלי';
       const sexLabel  = e.sex === 'M' ? 'גבר' : e.sex === 'F' ? 'אשה' : '';
       // Title: שם, מין, גיל, קופ"ח — סוג
-      const titleParts = [e.name||'—', sexLabel, e.age||e.age_sex, insHe(e.insurance)].filter(Boolean);
+      const titleParts = [e.name||'—', sexLabel, fmtAge(e.age||e.age_sex), insHe(e.insurance)].filter(Boolean);
       t += `━━━ ${titleParts.join(', ')} — ${typeLabel} ━━━\n`;
       if(e.location) t += `📍 ${e.location}\n`;
 
       if(e.cc)         t += `\nתלונה עיקרית: ${e.cc}\n`;
       const v = [e.bp&&`BP ${e.bp}`,e.hr&&`HR ${e.hr}`,e.spo2&&`SpO₂ ${e.spo2}%`,e.temp&&`T ${e.temp}°C`].filter(Boolean);
       if(v.length)     t += `סימנים חיוניים: ${v.join(' | ')}\n`;
-      if(e.exam)       t += `בדיקה: ${e.exam}\n`;
+      if(e.exam)       t += `ממצאים, אבחנה ופירוט: ${e.exam}\n`;
       if(e.assessment) t += `הערכה: ${e.assessment}\n`;
 
       // ── Interventions (only if any exist) ──
-      const hasIntv = e.wound || e.med_chk || e.sup_chk || e.ref_chk;
+      const treats = e.treatments || [];
+      const hasIntv = treats.length || e.sup_chk || e.ref_chk;
       if(hasIntv) {
-        t += `\nהתערבות:\n`;
-        if(e.wound) {
-          t += `  ✓ חבישה / טיפול בפצע`;
-          if(e.wound_detail) t += ` — ${e.wound_detail}`;
-          t += `\n`;
-        }
-        if(e.med_chk) t += `  ✓ תרופות: ${e.med||'—'}\n`;
+        t += `\nטיפול ותרופות:\n`;
+        treats.forEach(tr => { t += `  ✓ ${fmtTreatment(tr)}\n`; });
         if(e.sup_chk) {
           const medSup = fmtSupplies(e.sup_chips||[], e.sup||'');
           t += `  ✓ ציוד: ${medSup||'—'}\n`;
@@ -1639,7 +1880,7 @@ function buildHTMLReport(r) {
 
       // ── Title line ──
       const sexLabel   = e.sex==='M'?'גבר':e.sex==='F'?'אשה':'';
-      const titleParts = [e.name||'—', sexLabel, e.age||e.age_sex, insHe(e.insurance)].filter(Boolean);
+      const titleParts = [e.name||'—', sexLabel, fmtAge(e.age||e.age_sex), insHe(e.insurance)].filter(Boolean);
       h += `<div style="font-weight:800;font-size:13px;color:${accentColor};margin-bottom:5px;">
         ${titleParts.map(esc).join(' · ')}
         <span style="font-weight:500;font-size:11px;color:${C.sub};margin-right:6px;">— ${typeLabel}</span>
@@ -1648,7 +1889,7 @@ function buildHTMLReport(r) {
 
       // ── Clinical ──
       if(e.cc)         h += `<p style="margin:0 0 2px;"><strong>תלונה:</strong> ${esc(e.cc)}</p>`;
-      if(e.exam)       h += `<p style="margin:0 0 2px;"><strong>בדיקה:</strong> ${esc(e.exam)}</p>`;
+      if(e.exam)       h += `<p style="margin:0 0 2px;"><strong>ממצאים, אבחנה ופירוט:</strong> ${esc(e.exam)}</p>`;
       if(e.assessment) h += `<p style="margin:0 0 2px;"><strong>הערכה:</strong> ${esc(e.assessment)}</p>`;
 
       // ── Vitals pill-bar ──
@@ -1663,13 +1904,11 @@ function buildHTMLReport(r) {
       }
 
       // ── Interventions ──
-      const anyIntv = e.wound || e.med_chk || e.sup_chk || e.ref_chk;
+      const treats = e.treatments || [];
+      const anyIntv = treats.length || e.sup_chk || e.ref_chk;
       if(anyIntv) {
-        h += `<p style="margin:4px 0 2px;font-weight:700;font-size:11px;color:${C.sub};text-transform:uppercase;letter-spacing:.5px;">התערבות</p>`;
-        if(e.wound) {
-          h += `<p style="margin:0 0 1px 10px;">✓ חבישה / טיפול בפצע${e.wound_detail?' — '+esc(e.wound_detail):''}</p>`;
-        }
-        if(e.med_chk) h += `<p style="margin:0 0 1px 10px;">✓ תרופות: ${esc(e.med||'—')}</p>`;
+        h += `<p style="margin:4px 0 2px;font-weight:700;font-size:11px;color:${C.sub};text-transform:uppercase;letter-spacing:.5px;">טיפול ותרופות</p>`;
+        treats.forEach(tr => { h += `<p style="margin:0 0 1px 10px;">✓ ${esc(fmtTreatment(tr))}</p>`; });
         if(e.sup_chk) {
           const sup = fmtSupplies(e.sup_chips||[], e.sup||'');
           h += `<p style="margin:0 0 1px 10px;">✓ ציוד: ${esc(sup||'—')}</p>`;
@@ -1979,6 +2218,71 @@ async function doPDF() {
 // ══════════════════════════════════════════════
 // SEX BUTTONS
 // ══════════════════════════════════════════════
+// ── Patients (returning-patient suggestions) ──
+function encountersOf(patientId) {
+  const out = [];
+  DB.rounds.forEach(r => (r.encounters||[]).forEach(e => {
+    if (e.patientId === patientId && e.id !== curEncId) out.push({ r, e });
+  }));
+  return out.sort((a, b) => (b.e.createdAt||'').localeCompare(a.e.createdAt||''));
+}
+function treatSummary(e) {
+  const t = (e.treatments||[]).map(x => x.type === 'חבישה' ? 'חבישה' : ((x.detail||'').trim() || x.type));
+  return t.length ? t.join(', ') : ((e.cc||'').trim() || ((e.welfare_chips||[]).length ? 'ציוד' : ''));
+}
+function showPatientSuggest() {
+  const box = document.getElementById('pt-suggest');
+  const q = document.getElementById('e-name').value.trim();
+  if (q.length < 2 || ANON_NAMES.includes(q)) { hidePatientSuggest(); return; }
+  const list = (DB.patients||[])
+    .filter(p => p.name && p.name.includes(q) && p.id !== curPatientId)
+    .map(p => ({ p, last: encountersOf(p.id)[0] }))
+    .sort((a, b) => ((b.last&&b.last.e.createdAt)||'').localeCompare((a.last&&a.last.e.createdAt)||''))
+    .slice(0, 5);
+  if (!list.length) { hidePatientSuggest(); return; }
+  const esc = x => String(x||'').replace(/&/g,'&amp;').replace(/</g,'&lt;');
+  box.innerHTML = list.map(({ p, last }) => {
+    const head = [p.name, fmtAge(p.age), p.insurance].filter(Boolean).map(esc).join(' · ');
+    let sub = '';
+    if (last) {
+      const d = new Date(last.e.createdAt || last.r.date);
+      const seen = isNaN(d) ? '' : `נראה ב-${d.getDate()}.${d.getMonth()+1}`;
+      sub = [seen, treatSummary(last.e)].filter(Boolean).map(esc).join(' · ');
+      if (last.e.followup === 'Yes') sub += `<br>⚠️ ${esc(last.e.notes || 'נדרש פולו-אפ')}`;
+    }
+    return `<div class="pt-item" onmousedown="event.preventDefault()" onclick="pickPatient('${p.id}')">
+      <div class="t">${last && last.e.followup === 'Yes' ? '⚠️ ' : ''}${head}</div>
+      ${sub ? `<div class="s">${sub}</div>` : ''}</div>`;
+  }).join('');
+  box.style.display = 'block';
+}
+function hidePatientSuggest() {
+  const box = document.getElementById('pt-suggest');
+  if (box) box.style.display = 'none';
+}
+function pickPatient(id) {
+  const p = (DB.patients||[]).find(x => x.id === id); if (!p) return;
+  curPatientId = p.id;
+  document.getElementById('e-name').value = p.name;
+  if (p.age) setAge(p.age, true);
+  curSex = p.sex || ''; renderSex();
+  if (p.insurance) setInsurance(p.insurance, true);
+  ['field-name','field-age','field-insurance'].forEach(clearFieldError);
+  hidePatientSuggest(); updateEncHdr(); autoSaveEnc();
+}
+// After a valid save: attach the encounter to a patient record (new or existing)
+function linkPatient() {
+  const r = DB.rounds.find(x=>x.id===curRoundId); if (!r) return;
+  const e = r.encounters.find(x=>x.id===curEncId); if (!e) return;
+  const nm = (e.name||'').trim();
+  if (!nm || ANON_NAMES.includes(nm)) { if (e.patientId) { e.patientId = null; persist(DB); } return; }
+  if (!DB.patients) DB.patients = [];
+  let p = e.patientId && DB.patients.find(x => x.id === e.patientId);
+  if (!p) { p = { id: uid(), createdAt: nowISO() }; DB.patients.push(p); e.patientId = p.id; }
+  Object.assign(p, { name: nm, age: e.age, sex: e.sex, insurance: e.insurance, updatedAt: nowISO() });
+  persist(DB);
+}
+
 function setAnonName(v) {
   const el = document.getElementById('e-name');
   if (!el) return;
@@ -1987,6 +2291,7 @@ function setAnonName(v) {
   // Auto-set gender based on anonymous label
   if (v === 'אנונימי')  { curSex = ''; setSex('M', true); }
   if (v === 'אנונימית') { curSex = ''; setSex('F', true); }
+  curPatientId = null; hidePatientSuggest();
   autoSaveEnc();
   updateEncHdr();
 }
@@ -1994,6 +2299,15 @@ function setAnonName(v) {
 function clearFieldError(fieldId) {
   const el = document.getElementById(fieldId);
   if (el) el.classList.remove('field-error');
+}
+
+function encIsEmpty(e) {
+  const txt = ['name','age','insurance','sex','cc','exam','assessment','bp','hr','spo2','temp',
+               'welfare_text','notes','ref'];          // location is automatic, so it doesn't count
+  return txt.every(k => !String(e[k]||'').trim())
+    && !(e.treatments||[]).length && !(e.welfare_chips||[]).length
+    && !(e.photos||[]).length && !(e.ref_photos||[]).length && !e.ref_chk
+    && e.followup !== 'Yes';
 }
 
 function validateEnc() {
@@ -2017,34 +2331,24 @@ function validateEnc() {
     // Scroll to first error
     const first = document.getElementById(errors[0]);
     if (first) first.scrollIntoView({ behavior:'smooth', block:'center' });
-    toast('יש למלא שם, גיל וקופ"ח לפני השמירה');
+    const names = { 'field-name':'שם', 'field-age':'גיל', 'field-insurance':'קופ"ח' };
+    toast('חסר: ' + errors.map(id => names[id]).join(', '));
     return false;
   }
   return true;
 }
 
+function renderSex() {
+  document.getElementById('sex-btn-M').classList.toggle('on', curSex==='M');
+  document.getElementById('sex-btn-F').classList.toggle('on', curSex==='F');
+}
 function setSex(val, silent) {
   curSex = (curSex === val) ? '' : val;  // tap again = deselect
-  document.getElementById('sex-btn-M').classList.toggle('selected', curSex==='M');
-  document.getElementById('sex-btn-F').classList.toggle('selected', curSex==='F');
-  // Auto-update name if it's still an auto-name or empty
-  const nameEl = document.getElementById('e-name');
-  const n = nameEl.value.trim();
-  if (!n || n === 'אלמוני' || n === 'אלמונית') {
-    nameEl.value = curSex === 'F' ? 'אלמונית' : 'אלמוני';
-    updateEncHdr();
-  }
+  renderSex();
   if (!silent) autoSaveEnc();
 }
 
-function nameBlur() {
-  const nameEl = document.getElementById('e-name');
-  if (!nameEl.value.trim()) {
-    nameEl.value = curSex === 'F' ? 'אלמונית' : 'אלמוני';
-    updateEncHdr();
-    autoSaveEnc();
-  }
-}
+function nameBlur() { /* name is only filled by typing or the אנונימי/ת buttons */ }
 
 // ══════════════════════════════════════════════
 // SUPPLY CHIPS (welfare + contacts)
@@ -2055,55 +2359,76 @@ function fmtSupplies(chips, text) {
   return parts.join(', ');
 }
 
-function renderWelfareChips() {
-  const c = document.getElementById('welfare-chips-container'); if(!c) return;
-  c.innerHTML = SOCIAL_CHIP_GROUPS.map(group => {
-    // Row 1: all chip buttons (never jumps)
-    const chipsRow = group.chips.map(chip => {
-      const on = curWelfareChips.includes(chip);
-      return `<button class="chip-btn${on?' on':''}" onclick="toggleWelfareChip('${chip}')"
-                style="white-space:nowrap;margin:0 4px 6px 0;">${chip}</button>`;
-    }).join('');
-    // Row 2: detail inputs, only for active chips that need a drug name
-    const detailInputs = group.chips
-      .filter(chip => SOCIAL_CHIPS_NEED_DETAIL.includes(chip) && curWelfareChips.includes(chip))
-      .map(chip => {
-        const v = curWelfareChipDetails[chip] || '';
-        return `<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
-          <span style="font-size:13px;font-weight:600;color:var(--primary);min-width:64px;">${chip}:</span>
-          <input type="text" value="${v}" placeholder="שם תרופה..."
-                 onchange="curWelfareChipDetails['${chip}']=this.value;autoSaveEnc();"
-                 oninput="curWelfareChipDetails['${chip}']=this.value;autoSaveEnc();"
-                 onclick="event.stopPropagation()"
-                 style="flex:1;border:1.5px solid var(--primary);border-radius:8px;
-                        padding:5px 10px;font-size:14px;background:var(--bg);
-                        color:var(--text);font-family:inherit;">
-        </div>`;
-      }).join('');
-    return `<div style="margin-bottom:10px;">
-      <div style="font-size:12px;font-weight:700;color:var(--subtext);margin-bottom:5px;">${group.label}</div>
-      <div style="display:flex;flex-wrap:wrap;">${chipsRow}</div>
-      ${detailInputs}
+function renderTreatments() {
+  const chipsEl = document.getElementById('treat-chips');
+  const detEl   = document.getElementById('treat-details');
+  if (!chipsEl || !detEl) return;
+  const on = type => curTreatments.some(t => t.type === type);
+  chipsEl.innerHTML = TREATMENT_TYPES.map(type =>
+    `<button class="chip-btn${on(type)?' on':''}" onclick="toggleTreatment('${type}')"
+             style="white-space:nowrap;margin:0 4px 6px 0;">${type}</button>`).join('');
+  detEl.innerHTML = curTreatments.map((t, i) => {
+    const leftBox = TREATMENT_ALWAYS_LEFT.includes(t.type) ? '' :
+      `<label class="treat-left">
+         <input type="checkbox" ${t.left?'checked':''} onchange="curTreatments[${i}].left=this.checked;autoSaveEnc()">
+         השארנו
+       </label>`;
+    return `<div class="treat-row">
+      <span class="treat-name">${t.type}</span>
+      <input type="text" value="${(t.detail||'').replace(/"/g,'&quot;')}" placeholder="${TREATMENT_PH[t.type]||''}"
+             data-treat="${i}" oninput="curTreatments[${i}].detail=this.value;autoSaveEnc()">
+      ${leftBox}
     </div>`;
   }).join('');
 }
 
+function toggleTreatment(type) {
+  const i = curTreatments.findIndex(t => t.type === type);
+  if (i >= 0) curTreatments.splice(i, 1);
+  else curTreatments.push({ type, detail: '', left: false });
+  renderTreatments();
+  if (i < 0) {
+    const inp = document.querySelector(`#treat-details input[data-treat="${curTreatments.length-1}"]`);
+    if (inp) inp.focus();
+  }
+  autoSaveEnc();
+}
+
+let otherSupplyOpen = false;
+function renderWelfareChips() {
+  const c = document.getElementById('welfare-chips-container'); if(!c) return;
+  const groups = SOCIAL_CHIP_GROUPS.map(group => {
+    const chipsRow = group.chips.map(chip => {
+      const on = curWelfareChips.includes(chip);
+      return `<button type="button" class="chip-btn${on?' on':''}" onclick="toggleWelfareChip('${chip}')"
+                style="white-space:nowrap;margin:0 4px 6px 0;">${chip}</button>`;
+    }).join('');
+    return `<div style="margin-bottom:8px;">
+      <div style="font-size:12px;font-weight:700;color:var(--subtext);margin-bottom:5px;">${group.label}</div>
+      <div style="display:flex;flex-wrap:wrap;">${chipsRow}</div>
+    </div>`;
+  }).join('');
+  // Chips from older records that are no longer in the list stay visible
+  const extra = curWelfareChips.filter(ch => !SUPPLY_CHIPS.includes(ch)).map(ch =>
+    `<button type="button" class="chip-btn on" onclick="toggleWelfareChip('${ch}')" style="margin:0 4px 6px 0;">${ch}</button>`).join('');
+  const other = `<button type="button" class="chip-btn${otherSupplyOpen?' on':''}" onclick="toggleOtherSupply()"
+                   style="margin:0 4px 6px 0;">אחר +</button>`;
+  c.innerHTML = groups + `<div style="display:flex;flex-wrap:wrap;">${extra}${other}</div>`;
+  document.getElementById('e-welfare-text').style.display = otherSupplyOpen ? 'block' : 'none';
+}
+
+function toggleOtherSupply() {
+  const inp = document.getElementById('e-welfare-text');
+  if (otherSupplyOpen && inp.value.trim()) { inp.focus(); return; }   // don't hide typed text
+  otherSupplyOpen = !otherSupplyOpen;
+  renderWelfareChips();
+  if (otherSupplyOpen) inp.focus();
+}
+
 function toggleWelfareChip(chip) {
   const idx = curWelfareChips.indexOf(chip);
-  if (idx >= 0) {
-    curWelfareChips.splice(idx, 1);
-    if (SOCIAL_CHIPS_NEED_DETAIL.includes(chip)) delete curWelfareChipDetails[chip];
-  } else {
-    curWelfareChips.push(chip);
-  }
+  if (idx >= 0) curWelfareChips.splice(idx, 1); else curWelfareChips.push(chip);
   renderWelfareChips();
-  // Focus detail input if just activated
-  if (curWelfareChips.includes(chip) && SOCIAL_CHIPS_NEED_DETAIL.includes(chip)) {
-    setTimeout(() => {
-      const inputs = document.querySelectorAll('#welfare-chips-container input[type=text]');
-      inputs.forEach(inp => { if(inp.placeholder === 'שם תרופה...') inp.focus(); });
-    }, 50);
-  }
   autoSaveEnc();
 }
 
@@ -2216,9 +2541,14 @@ function saveZulaEvent() {
 
 function deleteZulaEvent(eventId) {
   const r = DB.rounds.find(x => x.id === curRoundId); if(!r) return;
-  r.zula_events = (r.zula_events||[]).filter(x => x.id !== eventId);
+  const list = r.zula_events || [];
+  const idx = list.findIndex(x => x.id === eventId); if (idx < 0) return;
+  const [removed] = list.splice(idx, 1);
   persist(DB);
   renderRound(curRoundId);
+  toast('החלוקה נמחקה', { label: 'ביטול', run: () => {
+    list.splice(idx, 0, removed); persist(DB); renderRound(curRoundId);
+  }});
 }
 
 function toggleSupChip(chip) {
@@ -2573,39 +2903,12 @@ async function renderHomeMap(filterMonth) {
     ? DB.rounds.filter(r => r.date && r.date.startsWith(filterMonth))
     : DB.rounds;
 
-  // ── Tally supplies ──
-  const chipCounts = {};
-  const freeMap    = {};   // free-text → count (deduped)
-  rounds.forEach(r => {
-    (r.encounters||[]).forEach(e => {
-      if (e.welfare) {
-        (e.welfare_chips||[]).forEach(c => { chipCounts[c]=(chipCounts[c]||0)+1; });
-        const t = (e.welfare_text||'').trim();
-        if (t) freeMap[t] = (freeMap[t]||0)+1;
-      }
-      if (e.sup_chk) {
-        (e.sup_chips||[]).forEach(c => { chipCounts[c]=(chipCounts[c]||0)+1; });
-        const t = (e.sup||'').trim();
-        if (t) freeMap[t] = (freeMap[t]||0)+1;
-      }
-    });
-    // contacts merged — skip
-    if(false) r.contacts.forEach(c => {
-      (c.chips||[]).forEach(chip => { chipCounts[chip]=(chipCounts[chip]||0)+1; });
-      const t = (c.sup_text||'').trim();
-      if (t) freeMap[t] = (freeMap[t]||0)+1;
-    });
-  });
-
-  const freeParts = Object.entries(freeMap).map(([t,n]) => n>1 ? `${t} ×${n}` : t);
-  const chipHtml = SUPPLY_CHIPS.filter(c=>chipCounts[c])
-    .map(c=>`<button class="chip-btn on" style="pointer-events:none;font-size:12px;">${c} ×${chipCounts[c]}</button>`)
-    .join('');
-  const freeHtml = freeParts.length
-    ? `<div style="margin-top:6px;font-size:13px;color:var(--text-light);">${freeParts.join(' · ')}</div>` : '';
-  suppliesEl.innerHTML = chipHtml
-    ? `<div class="chip-row" style="margin-bottom:4px;">${chipHtml}</div>${freeHtml}`
-    : `<span style="color:var(--text-light);font-size:14px;">No supplies recorded yet.</span>`;
+  // ── Tally supplies (same function as the round summary, includes zula) ──
+  const tally = tallySupplies(rounds);
+  suppliesEl.innerHTML = tally.length
+    ? `<div class="chip-row" style="margin-bottom:4px;">${tally.map(([n,c]) =>
+        `<button class="chip-btn on" style="pointer-events:none;font-size:12px;">${n} ×${c}</button>`).join('')}</div>`
+    : `<span style="color:var(--text-light);font-size:14px;">עוד לא נרשם ציוד</span>`;
 
   // ── Collect encounter + zula locations from filtered rounds ──
   const allAddrs = [];  // { addr, type, label }
@@ -2655,9 +2958,8 @@ async function renderHomeMap(filterMonth) {
 // Returns 'medical' if any clinical/intervention data exists, else 'social'
 function classifyEnc(e) {
   const hasClinical = !!(e.cc || e.exam || e.assessment || e.bp || e.hr || e.spo2 || e.temp);
-  const hasIntervention = !!(e.wound || e.med_chk || e.sup_chk || e.ref_chk);
-  const hasSocialMedical = (e.welfare_chips||[]).some(c => SOCIAL_CHIPS_MEDICAL.includes(c));
-  return (hasClinical || hasIntervention || hasSocialMedical) ? 'medical' : 'social';
+  const hasIntervention = !!((e.treatments||[]).length || e.sup_chk || e.ref_chk);
+  return (hasClinical || hasIntervention) ? 'medical' : 'social';
 }
 
 // ══════════════════════════════════════════════
@@ -2685,75 +2987,39 @@ function autoCalcAll() {
   toast('הסיכום עודכן ✓');
 }
 
-function autoCalcSupplies(silent) {
-  const r = DB.rounds.find(x=>x.id===curRoundId); if(!r) return;
-  const counts      = {};   // chip → count  (for non-detail chips)
-  const drugCounts  = {};   // displayName → count  (for detail chips: drug name or chip name fallback)
-  const freeMap     = {};   // free-text entry → count
-
-  // From encounters
-  (r.encounters||[]).forEach(e => {
-    if (e.welfare) {
-      (e.welfare_chips||[]).forEach(chip => {
-        if (SOCIAL_CHIPS_NEED_DETAIL.includes(chip)) {
-          // Use explicit drug name if entered, else fall back to chip name
-          const nm = ((e.welfare_chip_details||{})[chip]||'').trim();
-          const key = nm || chip;
-          drugCounts[key] = (drugCounts[key]||0) + 1;
-        } else {
-          counts[chip] = (counts[chip]||0) + 1;
-        }
-      });
-      const t = (e.welfare_text||'').trim();
-      if (t) freeMap[t] = (freeMap[t]||0) + 1;
-    }
-    if (e.sup_chk) {
-      (e.sup_chips||[]).forEach(chip => { counts[chip] = (counts[chip]||0) + 1; });
-      const t = (e.sup||'').trim();
-      if (t) freeMap[t] = (freeMap[t]||0) + 1;
-    }
-  });
-
-  // From zula events — actual quantities; no drug-name detail available, use chip name
-  (r.zula_events||[]).forEach(z => {
-    Object.entries(z.supplies||{}).forEach(([chip, qty]) => {
-      if (SOCIAL_CHIPS_NEED_DETAIL.includes(chip)) {
-        drugCounts[chip] = (drugCounts[chip]||0) + qty;
-      } else {
-        counts[chip] = (counts[chip]||0) + qty;
-      }
+// One tally used everywhere (round summary, stats page, exports).
+// Returns [[name, count], …] — known chips first in list order, then drugs, then free text.
+function tallySupplies(rounds) {
+  const counts = new Map();
+  const add = (name, n = 1) => {
+    name = SUPPLY_ALIASES[name] || (name || '').trim();
+    if (!name || !n) return;
+    counts.set(name, (counts.get(name) || 0) + n);
+  };
+  rounds.forEach(r => {
+    (r.encounters || []).forEach(e => {
+      (e.welfare_chips || []).forEach(c => add(c));
+      (e.treatments || []).forEach(t => { const nm = treatmentSupplyName(t); if (nm) add(nm); });
+      add((e.welfare_text || '').trim());
+      if (e.sup_chk) { (e.sup_chips || []).forEach(c => add(c)); add((e.sup || '').trim()); }
+    });
+    (r.zula_events || []).forEach(z => Object.entries(z.supplies || {}).forEach(([c, q]) => add(c, +q || 0)));
+    (r.contacts || []).forEach(c => {           // very old records
+      (c.chips || []).forEach(ch => add(ch));
+      add((c.sup_text || '').trim());
     });
   });
+  const known = SUPPLY_CHIPS.filter(c => counts.has(c)).map(c => [c, counts.get(c)]);
+  const rest  = [...counts].filter(([c]) => !SUPPLY_CHIPS.includes(c));
+  return [...known, ...rest];
+}
+function fmtTally(list) {
+  return list.map(([n, c]) => c > 1 ? `${n} ×${c}` : n).join(', ');
+}
 
-  // Legacy contacts
-  (r.contacts||[]).forEach(c => {
-    (c.chips||[]).forEach(chip => { counts[chip] = (counts[chip]||0) + 1; });
-    const t = (c.sup_text||'').trim();
-    if (t) freeMap[t] = (freeMap[t]||0) + 1;
-    if (!c.chips && c.supplies && c.supplies.trim()) {
-      freeMap[c.supplies.trim()] = (freeMap[c.supplies.trim()]||0) + 1;
-    }
-  });
-
-  // Regular chips (exclude detail chips — they go in drugCounts)
-  const allKnownChips = [...new Set([
-    ...SUPPLY_CHIPS,
-    ...SOCIAL_CHIP_GROUPS.flatMap(g => g.chips)
-  ])].filter(c => !SOCIAL_CHIPS_NEED_DETAIL.includes(c));
-
-  const regularStr = allKnownChips.filter(c => counts[c])
-    .map(c => counts[c] > 1 ? `${c} ×${counts[c]}` : c)
-    .join(', ');
-
-  const drugStr = Object.entries(drugCounts)
-    .map(([name, cnt]) => cnt > 1 ? `${name} ×${cnt}` : name)
-    .join(', ');
-
-  const freeParts = Object.entries(freeMap)
-    .map(([t, n]) => n > 1 ? `${t} ×${n}` : t);
-
-  const all = [regularStr, drugStr, ...freeParts].filter(Boolean).join(', ');
-  document.getElementById('r-supplies').value = all || '—';
+function autoCalcSupplies(silent) {
+  const r = DB.rounds.find(x=>x.id===curRoundId); if(!r) return;
+  document.getElementById('r-supplies').value = fmtTally(tallySupplies([r])) || '—';
   if (!silent) { autoSaveRound(); toast('ציוד עודכן ✓'); }
 }
 
@@ -2772,17 +3038,62 @@ function toggleChk(id) {
 }
 function toggleSub(id, show) { document.getElementById(id).style.display = show?'block':'none'; }
 
-function toast(msg) {
+let toastTimer = null;
+function toast(msg, action) {
   const el = document.getElementById('toast-el');
-  el.textContent = msg; el.classList.add('show');
-  setTimeout(()=>el.classList.remove('show'), 2200);
+  el.textContent = msg;
+  el.classList.toggle('has-action', !!action);
+  if (action) {
+    const b = document.createElement('button');
+    b.textContent = action.label;
+    b.onclick = () => { el.classList.remove('show'); action.run(); };
+    el.appendChild(b);
+  }
+  el.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(()=>el.classList.remove('show'), action ? 5000 : 2200);
 }
 
 function showAbout() { openModal('modal-about'); }
 
+// ── Backup / restore (a JSON file with everything, photos included) ──
+async function backupData() {
+  const json = JSON.stringify({ app: 'street-medicine-tlv', exportedAt: nowISO(), data: DB });
+  const name = `street-medicine-backup-${new Date().toISOString().slice(0,10)}.json`;
+  const file = new File([json], name, { type: 'application/json' });
+  try {
+    if (navigator.canShare && navigator.canShare({ files: [file] })) {
+      await navigator.share({ files: [file], title: 'גיבוי רפואת רחוב' });
+      return;
+    }
+  } catch (e) { if (e.name === 'AbortError') return; }
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(file); a.download = name;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+  toast('הגיבוי נשמר ✓');
+}
+
+function restoreData(ev) {
+  const f = ev.target.files[0]; ev.target.value = ''; if (!f) return;
+  const reader = new FileReader();
+  reader.onload = () => {
+    try {
+      const parsed = JSON.parse(reader.result);
+      const data = parsed.data || parsed;              // accept raw DB files too
+      if (!Array.isArray(data.rounds)) throw new Error('bad file');
+      const n = data.rounds.length;
+      if (!confirm(`לשחזר ${n} סיורים מהגיבוי? הנתונים הנוכחיים במכשיר יוחלפו.`)) return;
+      DB = data; migrateData(DB); persist(DB);
+      renderHome(); closeModal('modal-about'); toast('השחזור הושלם ✓');
+    } catch (e) { toast('הקובץ לא תקין'); }
+  };
+  reader.readAsText(f);
+}
+
 function confirmClearAll() {
-  if(confirm('⚠️ Delete ALL rounds and encounters? This cannot be undone.')) {
-    localStorage.removeItem(KEY); DB={rounds:[]}; renderHome(); closeModal('modal-about'); toast('כל הנתונים נמחקו');
+  if(confirm('⚠️ למחוק את כל הסיורים והמפגשים? אי אפשר לשחזר — מומלץ לגבות קודם.')) {
+    localStorage.removeItem(KEY); DB={rounds:[]}; persist(DB); renderHome(); closeModal('modal-about'); toast('כל הנתונים נמחקו');
   }
 }
 
@@ -2868,7 +3179,12 @@ if('serviceWorker' in navigator) {
 // ══════════════════════════════════════════════
 // INIT
 // ══════════════════════════════════════════════
-renderHome();
+Store.init().then(data => {
+  DB = data;
+  if (!Array.isArray(DB.rounds)) DB.rounds = [];
+  migrateData(DB);
+  renderHome();
+});
 </script>
 </body>
 </html>
