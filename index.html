@@ -207,8 +207,9 @@
     .form-field textarea { resize: none; min-height: 72px; line-height: 1.5; }
     button, .chip-btn, label { touch-action: manipulation; }
     .req { color:#e74c3c; font-weight:700; }
-    .form-field input.exact-age { margin-top:6px; border:1.5px solid var(--border); border-radius:8px;
-      padding:6px 10px; font-size:16px; width:170px; background:var(--bg); }
+    .exact-row { display:flex; align-items:center; gap:8px; margin-top:4px; font-size:13px; color:var(--text-light); }
+    .form-field input.exact-age { margin-top:0; border:1.5px solid var(--border); border-radius:8px;
+      padding:6px 10px; font-size:16px; width:110px; background:var(--bg); color:var(--text); }
     .hint { font-size:12px; color:var(--text-light); margin-top:4px; }
     .chip-btn.big { margin:0 0 6px 6px; }   /* same size as every other chip */
     .chip-grid { display:grid; gap:6px; margin-bottom:6px; }
@@ -699,8 +700,11 @@
         <input type="hidden" id="e-age">
         <div class="chip-row" id="age-chips"></div>
         <div id="age-legacy" class="hint" style="display:none;"></div>
-        <input type="number" inputmode="numeric" id="e-age-exact" class="exact-age" placeholder="גיל מדויק (אם ידוע)"
-               oninput="setExactAge(this.value)">
+        <div class="exact-row">
+          <span>או גיל מדויק:</span>
+          <input type="number" inputmode="numeric" id="e-age-exact" class="exact-age" placeholder="אם ידוע"
+                 oninput="setExactAge(this.value)">
+        </div>
         <label style="margin-top:10px;">מגדר</label>
         <div class="chip-row">
           <button type="button" id="sex-btn-M" class="chip-btn big" onclick="setSex('M')">גבר</button>
@@ -879,7 +883,7 @@
 <!-- About / Settings -->
 <div class="overlay" id="modal-about" onclick="closeModal('modal-about')">
   <div class="modal-sheet" onclick="event.stopPropagation()">
-    <h3>אפליקציית רפואת רחוב <span style="font-size:13px;font-weight:400;color:var(--text-light);">v2</span></h3>
+    <h3>אפליקציית רפואת רחוב <span style="font-size:13px;font-weight:400;color:var(--text-light);">גרסה 3 · 24/11/2026</span></h3>
     <p style="font-size:14px;color:var(--text-light);margin-bottom:18px;line-height:1.6;">
       כל הנתונים נשמרים רק במכשיר הזה. כדאי לגבות מדי פעם לקובץ — למשל לשמור אותו ב-iCloud או לשלוח לעצמכם.
     </p>
