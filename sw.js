@@ -3,7 +3,7 @@
 // Icons + CDN libraries: cache-first (they never change at a given URL).
 // Everything else (map tiles, geocoding) goes straight to the network.
 
-const CACHE = 'sm-tlv-v15';
+const CACHE = 'sm-tlv-v16';
 
 const PRECACHE = [
   './',

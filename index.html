@@ -942,6 +942,13 @@
     .sum-tile.total { -webkit-backdrop-filter:none !important; backdrop-filter:none !important; }
     .sum-tile.total { background:#23282F !important; }
     @media (prefers-color-scheme: dark) { .sum-tile.total { background:var(--coral) !important; } }
+    /* PDF / print: always plain white, whatever the phone's dark-mode setting */
+    @media print {
+      :root { color-scheme: light only !important; }
+      html, body { background:#FFFFFF !important; color:#1A1A2E !important; }
+      #print-root, #print-root * { -webkit-backdrop-filter:none !important; backdrop-filter:none !important; box-shadow:none !important; }
+      #print-root { background:#FFFFFF !important; }
+    }
   </style>
 </head>
 <body>
@@ -2366,22 +2373,25 @@ function buildText(r, opts = {}) {
 // ── PDF: a fixed A4 layout (same fonts and sizes on every device);
 //    cards never break across pages ──
 const PRINT_CSS = `
-  .rp, .rp * { font-size:10pt !important; }
+  .rp, .rp * { font-size:10pt !important; color-scheme: light; }
   .rp { font-family:'Rubik',-apple-system,'Arial Hebrew',Arial,sans-serif; line-height:1.45;
-        color:#1A1A2E; direction:rtl; text-align:right; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
-  .rp-head { background:#23282F; color:#fff; border-radius:6px; padding:8px 12px; margin-bottom:10px; }
+        color:#1A1A2E !important; background:#FFFFFF !important; direction:rtl; text-align:right;
+        -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+  .rp div, .rp span, .rp b { color:inherit; }
+  .rp-sum, .rp-card { background:#FFFFFF !important; color:#1A1A2E !important; }
+  .rp-head { background:#23282F !important; color:#FFFFFF !important; border-radius:6px; padding:8px 12px; margin-bottom:10px; }
   .rp-head b { display:block; }
   .rp-sum { border:1px solid #D9CCEB; border-radius:6px; padding:8px 12px; margin-bottom:12px; break-inside:avoid; }
   .rp-row { margin:2px 0; }
-  .rp-row b { color:#4A2670; }
+  .rp-row b { color:#23282F !important; }
   .rp-card { border:1px solid #E2E2E8; border-right:4px solid #C6A8F0; border-radius:6px;
              padding:6px 10px; margin-bottom:8px; break-inside:avoid; page-break-inside:avoid; }
   .rp-card.med { border-right-color:#23282F; }
-  .rp-card.zula { border-right-color:#B07D10; background:#FFFBF0; }
+  .rp-card.zula { border-right-color:#F2676A; background:#FFFFFF !important; }
   .rp-title { margin-bottom:2px; }
-  .rp-meta { color:#606070; }
+  .rp-meta { color:#5E6470 !important; }
   .rp-tag { font-weight:700; border-radius:8px; padding:0 6px; }
-  .rp-tag.med { background:#E3F7EA; color:#1E8449; } .rp-tag.soc { background:#F0E8FF; color:#4A2670; }
+  .rp-tag.med { background:#E4EEF9 !important; color:#1F63AE !important; } .rp-tag.soc { background:#EEECF2 !important; color:#675F77 !important; }
   .rp-photos { display:flex; flex-wrap:wrap; gap:4px; margin-top:4px; }
   .rp-photos img { width:52mm; height:39mm; object-fit:cover; border-radius:4px; }
 `;
@@ -2503,7 +2513,7 @@ async function doPDF() {
     renderDiv.id = '_pdf_render';
     renderDiv.style.cssText = [
       'position:fixed','top:-9999px','left:0',
-      'width:718px','background:#fff','padding:0',
+      'width:718px','background:#fff','color:#1A1A2E','color-scheme:light','padding:0',
       'pointer-events:none','z-index:-1'
     ].join(';');
     document.body.appendChild(renderDiv);
